@@ -294,8 +294,17 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'' };
+  state = { screen:'dash', scope:'__all', data:{}, flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'' };
   go(s){ return ()=>this.setState({screen:s}); }
+  // Charge les tables depuis la base via l'API (/bo/franchisor/*) — aucune donnée en dur.
+  _loadFB(){
+    if(this._fbStarted || typeof window==='undefined' || !window.FB) return;
+    this._fbStarted=true;
+    const set=(k,rows)=>this.setState(prev=>({data:Object.assign({},prev.data,{[k]:rows})}));
+    ['shops','vouchers','pricing','templates','users','audit'].forEach(k=>window.FB.get('/'+k).then(r=>set(k,r)).catch(()=>{}));
+    window.FB.get('/catalog').then(r=>set('catalog',r)).catch(()=>{});
+    window.FB.get('/dashboard').then(r=>set('dashboard',r)).catch(()=>{});
+  }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   formDefs(){
@@ -349,6 +358,7 @@ class Component extends DCLogic {
   submitForm(){ const c=this.formDefs()[this.state.formKey]; if(!c) return; const ed=this.state.formEdit; this.setState({formKey:null}); this.printJob((ed?'✔ Mis à jour dans ':'✔ Enregistré dans ')+c.table); }
   navStyle(s){ const on=this.state.screen===s; return 'display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:none;border-radius:9px;cursor:pointer;font:'+(on?'600':'500')+' 13px/1 var(--font-ui);text-align:left;'+(on?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text)'); }
   renderVals(){
+    this._loadFB();
     const S=this.state;
     const pill=(bg,c)=>'display:inline-flex;align-items:center;font:600 10px var(--font-ui);border-radius:20px;padding:4px 10px;background:'+bg+';color:'+c;
     const tog=(key,def)=>{ const on=S.flags[key]!==undefined?S.flags[key]:def; return { on,
@@ -387,13 +397,7 @@ class Component extends DCLogic {
     ];
 
     // Boutiques
-    const shopsRaw=[
-      {id:'bxl',nom:'L\'Atelier — Bruxelles-Centre',ville:'Bruxelles 1000',web:true,contrat:'Succursale',act:true,caShop:29800,caOffice:8400,adoption:96,accent:'var(--color-primary)'},
-      {id:'and',nom:'L\'Atelier — Anderlecht',ville:'Anderlecht 1070',web:true,contrat:'Franchise',act:true,caShop:18600,caOffice:6200,adoption:88,accent:APRICOT},
-      {id:'ucc',nom:'L\'Atelier — Uccle',ville:'Uccle 1180',web:true,contrat:'Franchise',act:true,caShop:22100,caOffice:9400,adoption:79,accent:COPPER},
-      {id:'sch',nom:'L\'Atelier — Schaerbeek',ville:'Schaerbeek 1030',web:false,contrat:'Franchise',act:true,caShop:0,caOffice:0,adoption:0,accent:APRICOT},
-      {id:'lv',nom:'L\'Atelier — Louvain',ville:'Louvain 3000',web:true,contrat:'Master',act:false,caShop:14200,caOffice:5200,adoption:71,accent:COPPER},
-    ];
+    const shopsRaw=((S.data&&S.data.shops)||[]).map(s=>({id:s.id,nom:s.name,ville:s.city||'',web:!!s.active,contrat:'—',act:!!s.active,caShop:+s.ca_shop||0,caOffice:+s.ca_office||0,adoption:(s.mand_total>0?Math.round(s.mand_carried/s.mand_total*100):0),accent:'var(--color-primary)'}));
     const shopsRows=shopsRaw.map(s=>{ const w=tog('shopWeb_'+s.id,s.web), a=tog('shopAct_'+s.id,s.act); const ca=s.caShop+s.caOffice;
       const adColor=s.adoption>=85?'#2d7a3e':(s.adoption>=70?'#b26a00':'var(--color-primary)');
       return {...s, ca:ca?this.eur(ca):'—', caShopTxt:s.caShop?this.eur(s.caShop):'—', caOfficeTxt:s.caOffice?this.eur(s.caOffice):'—', adoption:s.adoption+' %', adColor,
@@ -443,16 +447,8 @@ class Component extends DCLogic {
 
     // Promotions
     const porteeBadge=pill('#eef3fb','#2a5a9e');
-    const vouchersM=[
-      {code:'MARQUE15',valeur:'−15 % sur la pâtisserie',type:'Panier',validite:'campagne été'},
-      {code:'BIENVENUE',valeur:'Onboarding B2B',type:'add_office',validite:'permanent'},
-      {code:'RENTREE10',valeur:'−10 € dès 50 €',type:'Montant',validite:'sept.'},
-    ];
-    const pricingR=[
-      {nom:'Menu marque printemps',cible:'Menus',effet:'19,90 €'},
-      {nom:'Tarif réseau pâtisserie',cible:'Pâtisserie fraîche',effet:'prix fixe'},
-      {nom:'Happy hour réseau',cible:'Boulangerie 18–19h',effet:'−20 %'},
-    ];
+    const vouchersM=((S.data&&S.data.vouchers)||[]).map(v=>({code:v.code,valeur:(v.type==='percent'?('−'+(+v.value)+' %'):('−'+(+v.value)+' €'))+((+v.min_order)>0?(' dès '+(+v.min_order)+' €'):''),type:v.type,validite:v.expires_at?('exp. '+String(v.expires_at).slice(0,10)):'permanent'}));
+    const pricingR=((S.data&&S.data.pricing)||[]).map(r=>({nom:r.label||('Règle #'+r.id),cible:r.rule_type,effet:(r.x&&r.y?(r.x+' pour '+r.y):(r.threshold?('dès '+r.threshold):'—'))}));
 
     // Config marque (ws_param)
     const paramRaw=[
@@ -467,34 +463,17 @@ class Component extends DCLogic {
 
     // Communications
     const langBadge=pill('var(--color-background-secondary)','var(--color-text-muted)');
-    const templates=[
-      {cle:'order_confirm',langue:'FR',sujet:'Votre commande {{commande_ref}} est confirmée'},
-      {cle:'order_ready',langue:'FR',sujet:'Votre commande est prête'},
-      {cle:'invoice',langue:'FR',sujet:'Facture {{commande_ref}}'},
-      {cle:'office_onboarding',langue:'FR',sujet:'Bienvenue — votre compte {{bureau}}'},
-      {cle:'office_reject',langue:'FR',sujet:'Votre demande de rattachement'},
-    ].map(t=>({...t,edit:this.editForm('template',{cle:t.cle,langue:t.langue,sujet:t.sujet})}));
+    const templates=((S.data&&S.data.templates)||[]).map(t=>({cle:t.tpl_key,langue:String(t.lang||'').toUpperCase(),sujet:t.subject})).map(t=>({...t,edit:this.editForm('template',{cle:t.cle,langue:t.langue,sujet:t.sujet})}));
 
     // Utilisateurs
-    const usersRaw=[
-      {nom:'Sophie Renard',email:'sophie.renard@latelierby.be',role:'Siège',portee:'Réseau complet',act:true},
-      {nom:'Thomas Legrand',email:'thomas.legrand@latelierby.be',role:'Franchise',portee:'Bruxelles-Centre',act:true},
-      {nom:'Marek Kowalski',email:'m.kowalski@latelierby.be',role:'Franchise',portee:'Anderlecht, Uccle',act:true},
-      {nom:'Julie Peeters',email:'j.peeters@latelierby.be',role:'Franchise',portee:'Louvain',act:false},
-    ];
+    const usersRaw=((S.data&&S.data.users)||[]).map(u=>({nom:u.display_name||u.email,email:u.email,role:(u.role==='siege'?'Siège':'Franchise'),portee:(u.role==='siege'?'Réseau complet':((u.shops||0)+' boutique'+((u.shops||0)>1?'s':''))),act:!!u.active}));
     const usersRows=usersRaw.map((u,i)=>{ const a=tog('userAct_'+i,u.act);
       return {...u, rolePill:pill(u.role==='Siège'?'#fbe9eb':'var(--color-background-secondary)',u.role==='Siège'?'var(--color-primary)':'var(--color-text-muted)'),
         actStyle:a.style,actKnob:a.knob,toggleAct:a.toggle, edit:this.editForm('user',{nom:u.nom,email:u.email,role:u.role,portee:u.portee})}; });
 
     // Audit
     const vPill=v=>pill(v==='Création'?'#eaf5ec':(v==='Suppression'?'#fbe9eb':'#fbf1e3'),v==='Création'?'#2d7a3e':(v==='Suppression'?'var(--color-primary)':'#b26a00'));
-    const auditRows=[
-      {ts:'17/07 14:22',user:'Sophie Renard',verb:'Modification',entity:'ws_products #128 (brand_mandatory)',shop:'Réseau'},
-      {ts:'17/07 13:05',user:'Thomas Legrand',verb:'Création',entity:'ws_vouchers BXL10',shop:'Bruxelles-Centre'},
-      {ts:'17/07 11:40',user:'Sophie Renard',verb:'Modification',entity:'ws_param webshop.enabled',shop:'Réseau'},
-      {ts:'16/07 18:12',user:'Marek Kowalski',verb:'Suppression',entity:'ws_office_delivery_sites #44',shop:'Anderlecht'},
-      {ts:'16/07 09:30',user:'Sophie Renard',verb:'Création',entity:'bo_users j.peeters',shop:'Louvain'},
-    ].map(a=>({...a,actPill:vPill(a.verb)}));
+    const auditRows=((S.data&&S.data.audit)||[]).map(a=>({ts:(function(){var t=String(a.created_at||'');return t?(t.slice(8,10)+'/'+t.slice(5,7)+' '+t.slice(11,16)):'';})(),user:a.user_email||('#'+a.user_id),verb:a.action,entity:(a.entity||'')+(a.entity_id?(' #'+a.entity_id):''),shop:(a.shop_id?('#'+a.shop_id):'Réseau')})).map(a=>({...a,actPill:vPill(a.verb)}));
 
     // Form modal view
     const fCfg=S.formKey?this.formDefs()[S.formKey]:null;
