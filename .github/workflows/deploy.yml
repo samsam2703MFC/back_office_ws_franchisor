@@ -10,8 +10,6 @@ name: Deploy to server (SSH / rsync)
 #     SSH_HOST       server IP/host, e.g. 185.180.206.46
 #     SSH_USER       ssh user (dedicated deploy user recommended)
 #     SSH_PASSWORD   that user's password
-#   Variables:
-#     DEPLOY_ENABLED set to  true  to turn this workflow on (dormant otherwise)
 #   Optional variables:
 #     SSH_PORT       ssh port (default 22)
 #     DEPLOY_DIR     absolute server dir mapped to the URL /webshop/backoffice_franchisor
@@ -32,8 +30,6 @@ on:
 
 jobs:
   deploy:
-    # Dormant until you set the repository variable DEPLOY_ENABLED = true.
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
