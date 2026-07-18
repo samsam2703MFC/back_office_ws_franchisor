@@ -4,14 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/react.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/react-dom.js"};</script>
-<script src="./support.js"></script>
+<script src="api-config.js"></script>
+<script src="bo_server.js"></script>
+<script>
+/* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime,
+   avec repli seed : si l'API ne répond pas / pas de jeton, on rend le seed.
+   - tables (bo_server) via BOServer.hydrate()
+   - menu builder via /franchisor/menus → window.__FR_MENUS (lu par menu_api.js) */
+(function(){
+  function boot(){ var s=document.createElement('script'); s.src='./support.js'; document.head.appendChild(s); }
+  var fr = window.__FR || {}, jobs = [];
+  try {
+    if (window.BOServer && window.BOServer.hydrate) jobs.push(window.BOServer.hydrate());
+    if (fr.base) {
+      jobs.push(fetch(fr.base + '/franchisor/menus', { headers: fr.token ? {'X-Admin-Token': fr.token} : {}, credentials: 'omit' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if (d && typeof d === 'object' && !Array.isArray(d)) window.__FR_MENUS = d; })
+        .catch(function(){}));
+    }
+    var done=false, go=function(){ if(done) return; done=true; clearTimeout(to); boot(); };
+    var to=setTimeout(go, 4000);             // ne jamais bloquer le boot
+    Promise.all(jobs).then(go, go);
+  } catch(e){ boot(); }
+})();
+</script>
 </head>
 <body>
 <x-dc>
 <helmet>
 <link rel="stylesheet" href="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/global.css">
 <script src="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/_ds_bundle.js"></script>
-<script src="bo_server.js"></script>
 <style>
   html,body{height:100%}
   a{color:var(--color-primary);text-decoration:none}

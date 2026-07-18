@@ -138,6 +138,26 @@
     getParam: function(key, dflt){ var db = ensure(); var rows = db.params || []; for (var i=0;i<rows.length;i++){ if (rows[i].cle===key){ var r=rows[i]; return (r.val!==undefined ? r.val : (r.def!==undefined ? r.def : dflt)); } } return dflt; },
     setParam: function(key, val){ ensure(); var rows = DB.params || (DB.params = []); var found=false; for (var i=0;i<rows.length;i++){ if (rows[i].cle===key){ rows[i].val=val; found=true; } } if (!found) rows.push({cle:key, type:'bool', val:val}); return persist(); },
     save: function(n, rows){ ensure(); DB[n] = JSON.parse(JSON.stringify(rows)); return persist(); },
-    reset: function(){ DB = JSON.parse(JSON.stringify(SEED)); return persist(); }
+    reset: function(){ DB = JSON.parse(JSON.stringify(SEED)); return persist(); },
+    // Charge la vraie donnée depuis l'API PHP (/franchisor/*) EN MÉMOIRE, avec
+    // repli seed par table : toute table absente/erreur/401 garde le seed, donc
+    // le rendu ne casse jamais. Ne persiste pas l'API dans localStorage (pas de
+    // cache périmé). À appeler AVANT le boot du runtime (données prêtes au 1er rendu).
+    hydrate: function(){
+      var fr = (typeof window !== 'undefined' && window.__FR) || {};
+      if (!fr.base) return Promise.resolve(false);
+      ensure();
+      var MAP = { kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
+                  pricing_rules:'pricing-rules', params:'params',
+                  email_templates:'email-templates', users:'users', audit:'audit' };
+      var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
+      var jobs = Object.keys(MAP).map(function(key){
+        return fetch(fr.base + '/franchisor/' + MAP[key], { headers: headers, credentials: 'omit' })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(data){ if (Array.isArray(data)) DB[key] = data; })
+          .catch(function(){ /* garde le seed pour cette table */ });
+      });
+      return Promise.all(jobs).then(function(){ return true; });
+    }
   };
 })();

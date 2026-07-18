@@ -11,7 +11,10 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 let DB = null;
 
 function read() { try { const r = localStorage.getItem(LS); if (r) return JSON.parse(r); } catch (e) {} return null; }
-function ensure() { if (DB) return DB; DB = read() || clone(SEED); persist(); return DB; }
+// Donnée serveur pré-chargée (window.__FR_MENUS, hydratée avant le boot) : elle
+// fait foi quand elle existe ; sinon repli localStorage puis seed.
+function serverDB() { try { const s = (typeof window !== 'undefined') && window.__FR_MENUS; return (s && typeof s === 'object' && !Array.isArray(s)) ? s : null; } catch (e) { return null; } }
+function ensure() { if (DB) return DB; const srv = serverDB(); DB = srv ? clone(srv) : (read() || clone(SEED)); persist(); return DB; }
 function persist() { try { localStorage.setItem(LS, JSON.stringify(DB)); } catch (e) {} return clone(DB); }
 
 function nid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
