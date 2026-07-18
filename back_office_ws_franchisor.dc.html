@@ -53,7 +53,7 @@
   <!-- SIDEBAR -->
   <aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">
-      <img src="img/logo.png" alt="L'Atelier" style="height:30px;width:auto;display:block"/>
+      <img src="img/logo.png" alt="L'Atelier" style="width:100%;max-width:206px;height:auto;display:block"/>
       <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
@@ -177,7 +177,7 @@
       <sc-if value="{{ isPromos }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons marque</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">ws_vouchers · shop_id NULL = tout le réseau ⇩</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons marque</div><div style="{{ srcHint }}">ws_vouchers · shop_id NULL = tout le réseau ⇩</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
             <sc-for list="{{ vouchersM }}" as="v" hint-placeholder-count="3">
               <div style="border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px">
@@ -189,7 +189,7 @@
           </div>
         </div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Règles de prix réseau</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">ws_pricing_rules · shop_id NULL</div></div><button onClick="{{ addPricing }}" class="btn-secondary" style="font-size:12px;flex:none">+ Règle</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Règles de prix réseau</div><div style="{{ srcHint }}">ws_pricing_rules · shop_id NULL</div></div><button onClick="{{ addPricing }}" class="btn-secondary" style="font-size:12px;flex:none">+ Règle</button></div>
           <div style="display:grid;grid-template-columns:1.8fr 1.1fr .9fr;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Règle</span><span class="t-admin-label">Cible</span><span class="t-admin-label" style="text-align:right">Effet</span></div>
           <sc-for list="{{ pricingR }}" as="r" hint-placeholder-count="3">
             <div style="display:grid;grid-template-columns:1.8fr 1.1fr .9fr;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
@@ -746,7 +746,12 @@ class Component extends DCLogic {
     const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
-    const tableBadge='display:inline-flex;align-items:center;font:600 11px var(--font-mono,monospace);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:7px;padding:6px 11px';
+    // Affichage de l'origine des données (table source) piloté par ws_param 'bo_show_source'
+    // (1 = afficher, 0 = masquer). Défaut 1 (phase debug) si le param est absent.
+    const _srcP=(SRV('params')||[]).find(p=>p&&p.cle==='bo_show_source');
+    const showSource=_srcP?(String(_srcP.val).trim()==='1'):true;
+    const tableBadge=showSource?'display:inline-flex;align-items:center;font:600 11px var(--font-mono,monospace);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:7px;padding:6px 11px':'display:none';
+    const srcHint=showSource?'font:400 11px var(--font-ui);color:var(--color-text-muted)':'display:none';
     const pencilStyle='background:transparent;border:.5px solid var(--color-border-tertiary);border-radius:7px;cursor:pointer;color:var(--color-text-muted);width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex:none';
 
     // KPIs réseau
@@ -974,7 +979,7 @@ class Component extends DCLogic {
 
     return {
       navBlocks, pageTitle:titles[S.screen], pageSub:subs[S.screen],
-      tableBadge, pencilStyle, porteeBadge, langBadge,
+      tableBadge, srcHint, pencilStyle, porteeBadge, langBadge,
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
       isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})), addProduct:this.openForm('product'),
