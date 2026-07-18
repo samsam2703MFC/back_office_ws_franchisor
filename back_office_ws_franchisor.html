@@ -4,65 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>L'Atelier By — Console marque (Siège)</title>
-<!-- WebShop admin stylesheet (copied verbatim from samsam2703MFC/WebShop · admin-app.css). -->
+<!-- Same stylesheets & order as the WebShop admin (tournee-admin.html):
+     admin.css (shell + @font-face Gotham/Vank) then admin-app.css.
+     Both vendored verbatim from samsam2703MFC/WebShop, fonts under ./fonts. -->
+<link rel="stylesheet" href="./admin.css">
 <link rel="stylesheet" href="./admin-app.css">
 <style>
-/* ==========================================================================
-   L'Atelier By — Back-office · Console marque (franchiseur)
-   Design tokens (global.css) + base reset. The component styling lives in the
-   WebShop admin stylesheet (admin-app.css); the runtime theme in data.json
-   overrides these :root defaults via style.setProperty on boot.
-   ========================================================================== */
-:root{
-  --color-primary:#8D1D2C;
-  --color-secondary:#F2C9A0;
-  --color-bg:#EAE4DC;
-  --color-surface:#FFFFFF;
-  --color-text:#222222;
-  --color-text-muted:#666666;
-  --color-text-primary:var(--color-text);
-  --color-text-secondary:var(--color-text-muted);
-  --color-background-secondary:#F4EFE8;
-  --color-border-secondary:rgba(34,34,34,.18);
-  --color-border-tertiary:rgba(34,34,34,.10);
-  /* extra tokens admin-app.css references */
-  --color-on-abricot:#6b4420;
-  --color-collection-border:#c17a2a;
-  --color-popup:#78554B;
-  --weight-regular:400;
-  --weight-medium:500;
-  --tracking-admin:.08em;
-  --font-display:'Vank','Gotham',Georgia,serif;
-  --font-ui:'Gotham',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  --font-mono:'Courier New',ui-monospace,Menlo,Consolas,monospace;
-}
-/* Brand fonts — self-hosted when available; graceful fallback otherwise. */
-@font-face{font-family:'Gotham';src:url('_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/Gotham_Regular_New.otf') format('opentype');font-weight:400;font-display:swap}
-@font-face{font-family:'Gotham';src:url('_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/Gotham_Medium.otf') format('opentype');font-weight:500;font-display:swap}
-@font-face{font-family:'Gotham';src:url('_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/Gotham_Regular.otf') format('opentype');font-weight:600;font-display:swap}
-@font-face{font-family:'Gotham';src:url('_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/Gotham_Black.otf') format('opentype');font-weight:700;font-display:swap}
-@font-face{font-family:'Vank';src:url('_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/GC_Vank.ttf') format('truetype');font-weight:400;font-display:swap;unicode-range:U+0020-007E}
+  html, body, #app { height: 100%; margin: 0; }
+  #app { display: block; }
 
-*,*::before,*::after{box-sizing:border-box}
-html,body{height:100%;margin:0;padding:0}
-body{background:var(--color-bg);color:var(--color-text);font-family:var(--font-ui);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-input,textarea,select,button,optgroup,option{font-family:var(--font-ui)}
-a{color:var(--color-primary);text-decoration:none}
-::-webkit-scrollbar{width:12px;height:12px}
-::-webkit-scrollbar-thumb{background:rgba(34,34,34,.2);border-radius:8px;border:3px solid transparent;background-clip:padding-box}
-::-webkit-scrollbar-track{background:transparent}
-.lz{scrollbar-width:thin}
-button,select,input,textarea,a,[onclick]{touch-action:manipulation}
-button{-webkit-tap-highlight-color:transparent}
-select,input[type="text"],input[type="number"],textarea{font-size:13px}
+  /* Tokens admin-app.css references but admin.css does not define. The runtime
+     theme in data.json still overrides colours on :root via setProperty. */
+  :root{
+    --color-background-secondary:#F4EFE8;
+    --weight-regular:400;
+    --weight-medium:500;
+    --tracking-admin:.08em;
+    --color-popup:#78554B;
+    --font-mono:'Courier New',ui-monospace,Menlo,Consolas,monospace;
+  }
 
-/* app-specific helpers layered on top of the WebShop admin stylesheet */
-.admin__scroll{flex:1;overflow-y:auto;min-height:0}
-.admin__content{padding:10px 28px 48px;display:flex;flex-direction:column;gap:16px}
-.card{background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px}
-.t-admin-label{font-family:var(--font-ui);font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:var(--tracking-admin);color:var(--color-text-secondary)}
-.t-section-title{font-family:var(--font-display);font-weight:400;line-height:1.3;color:var(--color-text)}
-.admin__nav-group--btn{display:flex;align-items:center;gap:8px;width:100%;border:none;background:transparent;cursor:pointer;text-align:left}
+  ::-webkit-scrollbar{width:12px;height:12px}
+  ::-webkit-scrollbar-thumb{background:rgba(34,34,34,.2);border-radius:8px;border:3px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-track{background:transparent}
+  .lz{scrollbar-width:thin}
+
+  /* app-specific helpers layered on top of the WebShop admin stylesheets */
+  .admin__scroll{flex:1;overflow-y:auto;min-height:0}
+  .admin__content{padding:10px 28px 48px;display:flex;flex-direction:column;gap:16px}
+  .card{background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px}
+  .t-admin-label{font-family:var(--font-ui);font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:var(--tracking-admin);color:var(--color-text-secondary,var(--color-text-muted))}
+  .t-section-title{font-family:var(--font-display);font-weight:400;line-height:1.3;color:var(--color-text)}
+  .admin__nav-item{cursor:pointer}
 </style>
 </head>
 <body>

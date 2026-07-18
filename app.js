@@ -102,6 +102,23 @@ var pencilStyle = 'background:transparent;border:.5px solid var(--color-border-t
 var PENCIL_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'
                + '<path d="M4 20h3l11-11-3-3L4 17z"/><path d="M14 5l3 3"/></svg>';
 
+/* nav icon paths — lifted verbatim from the WebShop admin bundle's Icon set */
+var ICONS = {
+  home:      '<path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/>',
+  shop:      '<path d="M4 9l1.5-4h13L20 9"/><path d="M4 9v11h16V9"/><path d="M9 13h6v7H9z"/>',
+  clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9 11h6M9 15h4"/>',
+  product:   '<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>',
+  campaign:  '<path d="M4 12V8a2 2 0 012-2h6l8-3v18l-8-3H6a2 2 0 01-2-2v-2"/><path d="M9 14v5"/>',
+  cog:       '<circle cx="12" cy="12" r="3"/><path d="M19 12h2M3 12h2M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+  mail:      '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  user:      '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>'
+};
+function icon(name, size){
+  var d = ICONS[name]; if (!d) return '';
+  var s = size || 14;
+  return '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor" stroke-width="1.7" style="flex:none">' + d + '</svg>';
+}
+
 /* ==========================================================================
    CELL ENGINE — one column descriptor → one grid cell of HTML
    ========================================================================== */
@@ -205,28 +222,15 @@ function countFor(screen){
 
 function renderSidebar(){
   var b = DB.brand;
-  var backItem = '<a href="#" class="admin__nav-item" style="color:var(--color-text-muted)">'
-    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg>'
-    + '<span style="flex:1">' + esc(b.backLink) + '</span></a>';
-
   var blocks = (DB.nav || []).map(function(grp){
-    var open = grp.collapsible ? state.paramNavOpen : true;
-    var head;
-    if (grp.collapsible) {
-      var chev = 'flex:none;transition:transform .15s' + (open ? ';transform:rotate(90deg)' : '');
-      head = '<button data-act="navToggle" class="admin__nav-group admin__nav-group--btn">'
-        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="' + chev + '"><path d="M9 6l6 6-6 6"/></svg>'
-        + '<span style="flex:1">' + esc(grp.label) + '</span></button>';
-    } else {
-      head = '<div class="admin__nav-group">' + esc(grp.label) + '</div>';
-    }
-    var items = open ? grp.items.map(function(it){
+    var head = '<div class="admin__nav-group">' + esc(grp.label) + '</div>';
+    var items = grp.items.map(function(it){
       var active = state.screen === it.screen ? ' admin__nav-item--active' : '';
       var n = countFor(it.screen);
       var count = n === '' ? '' : '<span class="admin__nav-count">' + n + '</span>';
       return '<a data-act="go" data-screen="' + esc(it.screen) + '" class="admin__nav-item' + active + '">'
-        + '<span style="flex:1">' + esc(it.label) + '</span>' + count + '</a>';
-    }).join('') : '';
+        + icon(it.icon) + '<span style="flex:1">' + esc(it.label) + '</span>' + count + '</a>';
+    }).join('');
     return head + items;
   }).join('');
 
@@ -235,7 +239,7 @@ function renderSidebar(){
     +   '<div class="admin__brand-mark">' + esc(b.mark || 'A') + '</div>'
     +   '<div><div class="admin__brand-name">' + esc(b.name) + '</div>'
     +     '<div class="admin__brand-sub">' + esc(b.consoleLabel) + '</div></div></div>'
-    + backItem + blocks
+    + blocks
     + '</aside>';
 }
 
