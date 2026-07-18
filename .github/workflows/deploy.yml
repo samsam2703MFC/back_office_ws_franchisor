@@ -1,9 +1,11 @@
 name: Deploy to server (SSH / rsync)
 
 # Pushes the static back-office (Console marque franchiseur) to the client's
-# server over SSH (rsync), exactly like the WebShop repo. This app is a static,
-# data-driven site (no build step): back_office_ws_franchisor.html + app.js +
-# data.json + img/. It is served at  http://<host>/webshop/backoffice_franchisor
+# server over SSH (rsync), exactly like the WebShop repo. This app is the
+# Claude Design "DC" export run natively: back_office_ws_franchisor.dc.html +
+# support.js (runtime) + bo_server.js / menu_api.js / menu_seed.js (data) +
+# the L'Atelier design system under _ds/ + vendored React under vendor/.
+# It is served at  http://<host>/webshop/backoffice_franchisor
 #
 # ─── One-time setup (GitHub → Settings → Secrets and variables → Actions) ─────
 #   Secrets (same names as WebShop):
@@ -17,8 +19,8 @@ name: Deploy to server (SSH / rsync)
 #
 #   Notes:
 #   • rsync runs WITHOUT --delete, so nothing else on the server is wiped.
-#   • An index.html (copy of back_office_ws_franchisor.html) is generated so the
-#     directory URL serves the app directly.
+#   • An index.html (copy of back_office_ws_franchisor.dc.html) is generated so
+#     the directory URL serves the app directly.
 #   • SECURITY: prefer a dedicated non-root deploy user + SSH key over the root
 #     password (replace the sshpass lines with an ssh-agent key, drop SSH_PASSWORD).
 # ─────────────────────────────────────────────────────────────────────────────
@@ -36,11 +38,12 @@ jobs:
 
       - name: Assemble static site
         run: |
-          rm -rf site && mkdir -p site/img
-          cp back_office_ws_franchisor.html app.js data.json admin.css admin-app.css site/
-          cp back_office_ws_franchisor.html site/index.html
-          cp -r fonts site/
-          cp img/logo.png site/img/
+          rm -rf site && mkdir -p site
+          cp back_office_ws_franchisor.dc.html support.js bo_server.js menu_api.js menu_seed.js site/
+          cp back_office_ws_franchisor.dc.html site/index.html
+          cp -r _ds site/
+          cp -r vendor site/
+          mkdir -p site/img && cp img/logo.png site/img/
           ls -R site
 
       - name: Install sshpass
@@ -71,19 +74,23 @@ jobs:
             -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s << 'REMOTE'
           BASE="http://localhost/webshop/backoffice_franchisor"
-          echo "== served page references app.js =="
-          curl -fsS "$BASE/" | grep -o './app.js' | head -1 || echo "WARN: app.js ref not found"
+          DS="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd"
+          echo "== served page references support.js =="
+          curl -fsS "$BASE/" | grep -o './support.js' | head -1 || echo "WARN: support.js ref not found"
           echo "== asset status (code type bytes) =="
           fail=0
-          for f in admin.css admin-app.css app.js data.json \
-                   fonts/GC_Vank.ttf fonts/Gotham_Regular.otf fonts/Gotham_Medium.otf \
-                   fonts/Gotham_Book.otf fonts/Gotham_Light.otf; do
+          for f in support.js bo_server.js menu_api.js menu_seed.js \
+                   vendor/react.js vendor/react-dom.js \
+                   "$DS/global.css" "$DS/_ds_bundle.js" \
+                   "$DS/fonts/Gotham_Book.otf" "$DS/fonts/Gotham_Medium.otf" \
+                   "$DS/fonts/Gotham_Light.otf" "$DS/fonts/GC_Vank.ttf"; do
             out=$(curl -s -o /dev/null -w "%{http_code} %{content_type} %{size_download}" "$BASE/$f")
             set -- $out; code=$1; type=$2; size=$3
             echo "  $code  $type  ${size}b  $f"
             case "$f" in
-              fonts/*) if [ "$code" != "200" ] || [ "${size:-0}" -lt 1000 ]; then echo "  ^ FONT NOT OK"; fail=1; fi ;;
+              *fonts/*) if [ "$code" != "200" ] || [ "${size:-0}" -lt 1000 ]; then echo "  ^ FONT NOT OK"; fail=1; fi ;;
+              *) if [ "$code" != "200" ]; then echo "  ^ ASSET NOT OK"; fail=1; fi ;;
             esac
           done
-          if [ "$fail" = "0" ]; then echo "ALL FONTS OK"; else echo "FONT CHECK FAILED"; exit 1; fi
+          if [ "$fail" = "0" ]; then echo "ALL ASSETS OK"; else echo "ASSET CHECK FAILED"; exit 1; fi
           REMOTE
