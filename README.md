@@ -6,18 +6,39 @@
 
 ## Running
 
-Open `back_office_ws_franchisor.html` in any modern browser — no build step and
-no external runtime. Because it references the logo asset with a relative path,
-serve the folder (or open the file directly):
+The app is **data-driven**: it fetches `data.json` at startup, so it must be
+served over HTTP (opening the file directly is blocked by the browser's
+`file://` fetch policy — the page shows a hint if you do).
 
 ```bash
-# either open the file directly…
-xdg-open back_office_ws_franchisor.html
-
-# …or serve the folder
 python3 -m http.server 8080
 # then visit http://localhost:8080/back_office_ws_franchisor.html
 ```
+
+No build step and no external runtime.
+
+## Architecture — data-driven, no hardcoding
+
+The implementation is split so that **all content and configuration live in
+data, and the code is a generic engine** — mirroring the design system's own
+rule ("theme is fetched once on app init and applied to `:root`… zero hardcoded
+colours, fonts or spacing in component code").
+
+- **`data.json`** — the single source of truth. Theme tokens, brand strings,
+  navigation, per-screen configuration (layout kind, backing-table label,
+  **column schemas**), every dataset (shops, catalogue, vouchers, params,
+  templates, users, audit…) and all form definitions.
+- **`app.js`** — a generic render engine containing **zero domain data**. On
+  boot it fetches `data.json`, applies `theme` to `:root` via
+  `style.setProperty`, then renders each screen from its config. A small cell
+  engine turns a column descriptor (`{type, field, align, map, …}`) into a grid
+  cell — `text`, `muted`, `mono`, `euro`, `pill`, `statePill`, `toggle`,
+  `thresholdText`, `nameAccent`, `edit`, etc. Colours are referenced by
+  palette name and resolved against `data.json`'s `palette` map.
+
+Changing a shop, a price, a colour, a column or a whole screen is a `data.json`
+edit — no JavaScript changes required. This is also what a real deployment
+would do: swap the static `data.json` for the brand/theme/catalogue API.
 
 ## What it does
 
@@ -57,5 +78,6 @@ tokens (see the `:root` block in `back_office_ws_franchisor.html`):
 ## Files
 
 - `back_office_ws_franchisor.html` — page shell + design tokens + component CSS
-- `app.js` — data, rendering, and event handling
+- `data.json` — all data & configuration (the single source of truth)
+- `app.js` — generic render engine (fetches `data.json`; no domain data)
 - `img/logo.png` — L'Atelier By wordmark
