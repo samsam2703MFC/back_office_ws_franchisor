@@ -366,8 +366,7 @@
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
           <div style="flex:1;min-width:160px"><span style="display:block;font:600 9.5px var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:3px">Menu · ws_products</span><span style="font-family:var(--font-display);font-size:16px;color:var(--color-text)">{{ menuProductName }}</span></div>
           <div style="display:flex;align-items:center;gap:9px;background:var(--color-background-secondary);border-radius:9px;padding:8px 13px">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
-            <div style="line-height:1.2"><div style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted)">Prix base · bloqué</div><div style="font:700 14px var(--font-ui);color:var(--color-text)">{{ menuBasePrice }}</div></div>
+            <div style="line-height:1.2"><div style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted)">Prix de base (€)</div><input type="number" step="0.01" min="0" value="{{ menuBasePriceRaw }}" onChange="{{ setMenuBasePrice }}" style="width:84px;border:.5px solid var(--color-border-secondary);border-radius:7px;padding:5px 8px;font:700 14px var(--font-ui);color:var(--color-text);background:var(--color-surface);margin-top:3px"/></div>
           </div>
 
         </div>
@@ -940,6 +939,7 @@ class Component extends DCLogic {
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', usersRows, addUser:this.openForm('user'),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
+      menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,
       toggleProductPicker:()=>this.setState(st=>({productPickerOpen:!st.productPickerOpen})),
       setProductSearch:e=>{ const v=e.target.value; this.setState({productSearch:v}); },
