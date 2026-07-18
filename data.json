@@ -32,6 +32,9 @@
   "brand": {
     "logo": "img/logo.png",
     "logoAlt": "L'Atelier",
+    "name": "L'Atelier By",
+    "mark": "A",
+    "app": "Console marque",
     "consoleLabel": "Console marque · Siège",
     "backLink": "Retour à l'ERP",
     "date": "jeu. 17 juil. 2026",
