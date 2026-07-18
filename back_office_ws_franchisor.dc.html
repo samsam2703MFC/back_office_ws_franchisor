@@ -835,9 +835,35 @@ class Component extends DCLogic {
     const IMGC={a:'#E8A15C',b:'#8C4A2F',c:'#9E2A3B',d:'#7a8c5a'};
     const imgBox=(img)=>{ const base='width:38px;height:38px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font:700 15px var(--font-ui);cursor:pointer;'; return img?(base+'background:'+(IMGC[img]||'#b98')+';color:#fff;border:none'):(base+'background:var(--color-background-secondary);color:var(--color-text-muted);border:1px dashed var(--color-border-secondary)'); };
     const pvImg=(img)=>'width:34px;height:34px;border-radius:8px;flex:none;'+(img?('background:'+(IMGC[img]||'#b98')):'background:var(--color-background-secondary)');
+    // Icône de catégorie (SVG inline, aucune ressource externe) : une étape
+    // validée affiche l'icône de la catégorie du produit choisi plutôt qu'une
+    // simple pastille de couleur. Matché par mot-clé sur le nom de catégorie.
+    const catSlug=(s)=>(s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const CAT_COLOR=(cat)=>{ const k=catSlug(cat);
+      if(k.indexOf('boulang')>=0)return '#C98A3C';
+      if(k.indexOf('patiss')>=0)return '#9E2A3B';
+      if(k.indexOf('chocolat')>=0)return '#5A3A2E';
+      if(k.indexOf('traiteur')>=0)return '#3E6B57';
+      if(k.indexOf('glace')>=0)return '#5B7CA8';
+      if(k.indexOf('menu')>=0||k.indexOf('formule')>=0)return 'var(--color-primary)';
+      return '#8a7a70'; };
+    const CAT_PATHS=(cat)=>{ const k=catSlug(cat);
+      if(k.indexOf('boulang')>=0)return '<path d="M4 13.5c0-2.5 3.6-4.5 8-4.5s8 2 8 4.5-3.6 4.5-8 4.5-8-2-8-4.5z"/><path d="M9 10l1.3 7M12.7 9.2L13.6 17M6.6 11.6l1 4.8"/>';
+      if(k.indexOf('patiss')>=0)return '<path d="M6 20h12M7 20l-1-7h12l-1 7"/><path d="M6 13a6 6 0 0112 0"/><path d="M12 7V4M12 4c-.8 0-1.3-.6-1.3-1.2S11.2 1.6 12 1.6s1.3.6 1.3 1.2S12.8 4 12 4z"/>';
+      if(k.indexOf('chocolat')>=0)return '<rect x="5" y="4" width="14" height="16" rx="1.6"/><path d="M5 9h14M5 14.5h14M12 4v16"/>';
+      if(k.indexOf('traiteur')>=0)return '<path d="M3 18.5h18"/><path d="M5 18a7 7 0 0114 0"/><path d="M12 8V5.2M12 5.2h.01"/>';
+      if(k.indexOf('glace')>=0)return '<path d="M8 9.5a4 4 0 018 0"/><path d="M7.6 9.5h8.8L12 21z"/>';
+      if(k.indexOf('menu')>=0||k.indexOf('formule')>=0)return '<path d="M7 3v18M7 3a2.2 2.2 0 00-2 2.2v3.3A2.2 2.2 0 007 10.7"/><path d="M17 3v18M17 3c-1.6 0-2.6 1.7-2.6 3.8S15.4 10.7 17 10.7"/>';
+      return '<circle cx="12" cy="12" r="6.5"/>'; };
+    const CAT_ICON=(cat)=>{ const raw='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+CAT_PATHS(cat)+'</svg>'; return "url('data:image/svg+xml,"+encodeURIComponent(raw)+"')"; };
+    // Boîte icône-catégorie : carré arrondi (éditeur) ou rond (aperçu client).
+    const catBox=(cat,size,round)=>{ const s=size||38; return 'width:'+s+'px;height:'+s+'px;border-radius:'+(round?'50%':'8px')+';flex:none;border:none;background-color:'+CAT_COLOR(cat)+';background-image:'+CAT_ICON(cat)+';background-repeat:no-repeat;background-position:center;background-size:'+Math.round(s*0.6)+'px '+Math.round(s*0.6)+'px;cursor:pointer'; };
     let activeBundleId=S.activeBundle; if(!M.bundles.find(b=>b.id===activeBundleId))activeBundleId=M.bundles[0]&&M.bundles[0].id;
     const pq=(S.productSearch||'').toLowerCase();
     const flatProds=[]; CATALOG.forEach(c=>{ c.prods.forEach(p=>{ const id=p.id||('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')); flatProds.push({id,name:p.nom,cat:c.cat,price:p.prix,menu:!!p.menu}); }); });
+    // Nom de produit -> catégorie : un choix dont le libellé = un produit connu
+    // hérite de l'icône de sa catégorie (étape validée).
+    const prodCat={}; flatProds.forEach(pp=>{ if(pp.name)prodCat[pp.name]=pp.cat; });
     const productOptions=flatProds.filter(p=>p.name.toLowerCase().includes(pq)||p.cat.toLowerCase().includes(pq)).map(p=>{ const on=p.id===pid0; const has=(S.menus&&S.menus[p.id]&&S.menus[p.id].bundles.length)||0;
       return { id:p.id, name:p.name, catLabel:p.cat, countLabel: has?(has+(has>1?' formules':' formule')):(p.menu?'menu':'—'),
         style:'display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;background:'+(on?'#fbe9eb':'transparent'),
@@ -892,14 +918,14 @@ class Component extends DCLogic {
         up:()=>this.moveSlot(AB.id,s.id,-1), down:()=>this.moveSlot(AB.id,s.id,1), del:()=>this.removeSlot(AB.id,s.id),
         sActStyle:switchS(s.active), sActKnob:knobS(s.active), sActToggle:()=>this.setSlotField(AB.id,s.id,'active',!s.active), real:true, ph:false, cardStyle:'border:.5px solid var(--color-border-tertiary);border-radius:11px;padding:13px;background:var(--color-background-secondary)'+(s.active?'':';opacity:.5'),
         invalid, invalidMsg:'Étape requise sans choix actif — bloquera la commande client', addChoice:()=>this.addChoice(AB.id,s.id), miniInput, sqBtn,
-        choices:s.choices.map(c=>({ id:c.id, label:c.label, setLabel:e=>this.setChoiceField(AB.id,s.id,c.id,'label',e.target.value),
+        choices:s.choices.map(c=>{ const cCat=prodCat[c.label]; return ({ id:c.id, label:c.label, setLabel:e=>this.setChoiceField(AB.id,s.id,c.id,'label',e.target.value),
           openPicker:()=>this.setState({choicePickerFor:c.id,choiceSearch:''}), pickerOpen:(S.choicePickerFor===c.id), choiceSearch:S.choiceSearch||'', setChoiceSearch:e=>{ const v=e.target.value; this.setState({choiceSearch:v}); },
           options:(S.choicePickerFor===c.id)?flatProds.filter(pp=>pp.name.toLowerCase().includes((S.choiceSearch||'').toLowerCase())||pp.cat.toLowerCase().includes((S.choiceSearch||'').toLowerCase())).map(pp=>({name:pp.name,catLabel:pp.cat,style:'display:flex;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer',pick:()=>{ this.setChoiceField(AB.id,s.id,c.id,'label',pp.name); this.setState({choicePickerFor:null}); }})):[],
           delta:c.delta, setDelta:e=>this.setChoiceField(AB.id,s.id,c.id,'delta',parseFloat(e.target.value)||0),
           cost:(c.cost!=null?c.cost:0), setCost:e=>this.setChoiceField(AB.id,s.id,c.id,'cost',parseFloat(e.target.value)||0),
-          imgStyle:imgBox(c.img), imgLabel:c.img?'':'＋', pick:()=>this.pickImage(AB.id,s.id,c.id),
+          imgStyle:(cCat?catBox(cCat,38,false):imgBox(c.img)), imgLabel:(cCat?'':(c.img?'':'＋')), pick:()=>this.pickImage(AB.id,s.id,c.id),
           actStyle:switchS(c.active), actKnob:knobS(c.active), actToggle:()=>this.toggleChoiceActive(AB.id,s.id,c.id),
-          up:()=>this.moveChoice(AB.id,s.id,c.id,-1), down:()=>this.moveChoice(AB.id,s.id,c.id,1), del:()=>this.removeChoice(AB.id,s.id,c.id), miniInput, sqBtn })) };
+          up:()=>this.moveChoice(AB.id,s.id,c.id,-1), down:()=>this.moveChoice(AB.id,s.id,c.id,1), del:()=>this.removeChoice(AB.id,s.id,c.id), miniInput, sqBtn }); }) };
     }):[];
     // Déclencheur (catégorie OU produit) : l'étape 1 = le produit déclencheur
     // (auto/verrouillé), donc seulement 2 étapes éditables (2 & 3) ; sinon 3.
@@ -911,11 +937,14 @@ class Component extends DCLogic {
       else { selected=Array.isArray(selMap[s.id])?selMap[s.id]:[]; effSel[s.id]=selected; }
       return { label:s.label, tag:s.required?(isSingle?'Choisir 1':'Obligatoire'):(isSingle?'Optionnel':'jusqu\'à '+s.max_select),
         tagStyle:pill(s.required?'#fbe9eb':'var(--color-background-secondary)',s.required?'var(--color-primary)':'var(--color-text-muted)'),
-        choices:acs.map(c=>{ const on=isSingle?selected===c.id:selected.includes(c.id);
+        choices:acs.map(c=>{ const on=isSingle?selected===c.id:selected.includes(c.id); const cCat=prodCat[c.label];
+          // Étape validée : la pastille de sélection devient l'icône de la
+          // catégorie du produit choisi (sinon pastille ✓ classique).
+          const markSel=(on&&cCat)?catBox(cCat,18,isSingle):((isSingle?'border-radius:50%;':'border-radius:5px;')+'width:18px;height:18px;flex:none;border:2px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'transparent')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px');
           return { label:c.label, imgStyle:pvImg(c.img), priceTag:c.delta?((c.delta>0?'+':'')+this.eur2(c.delta)):'inclus',
             rowStyle:'display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid '+(on?'var(--color-primary)':'var(--color-border-tertiary)')+';background:'+(on?'#fdf3f4':'var(--color-surface)'),
-            markStyle:(isSingle?'border-radius:50%;':'border-radius:5px;')+'width:18px;height:18px;flex:none;border:2px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'transparent')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px',
-            mark:on?'✓':'', pick:isSingle?(()=>this.selectSingle(s.id,c.id)):(()=>this.toggleMulti(s.id,c.id,s.max_select)) }; }) };
+            markStyle:markSel,
+            mark:(on&&!cCat)?'✓':'', pick:isSingle?(()=>this.selectSingle(s.id,c.id)):(()=>this.toggleMulti(s.id,c.id,s.max_select)) }; }) };
     }):[];
     const mtotal=(this.api&&AB)?this.api.resolvePrice(pid0,AB.id,effSel):Math.max(0,M.basePrice+(AB?AB.price_modifier:0));
     const mar=(this.api&&AB)?this.api.resolveMargin(pid0,AB.id,effSel):{price:0,cost:0,margin:0,marginPct:0,foodCostPct:0};
