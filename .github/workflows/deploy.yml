@@ -70,20 +70,20 @@ jobs:
           sshpass -e ssh -p ${{ vars.SSH_PORT || '22' }} \
             -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s << 'REMOTE'
-          set -e
           BASE="http://localhost/webshop/backoffice_franchisor"
           echo "== served page references app.js =="
           curl -fsS "$BASE/" | grep -o './app.js' | head -1 || echo "WARN: app.js ref not found"
-          echo "== asset status (code · type · bytes) =="
+          echo "== asset status (code type bytes) =="
           fail=0
           for f in admin.css admin-app.css app.js data.json \
                    fonts/GC_Vank.ttf fonts/Gotham_Regular.otf fonts/Gotham_Medium.otf \
                    fonts/Gotham_Book.otf fonts/Gotham_Light.otf; do
-            read -r code type size < <(curl -s -o /dev/null -w "%{http_code} %{content_type} %{size_download}" "$BASE/$f")
+            out=$(curl -s -o /dev/null -w "%{http_code} %{content_type} %{size_download}" "$BASE/$f")
+            set -- $out; code=$1; type=$2; size=$3
             echo "  $code  $type  ${size}b  $f"
             case "$f" in
-              fonts/*) [ "$code" = "200" ] && [ "${size:-0}" -gt 1000 ] || { echo "  ^ FONT NOT OK"; fail=1; } ;;
+              fonts/*) if [ "$code" != "200" ] || [ "${size:-0}" -lt 1000 ]; then echo "  ^ FONT NOT OK"; fail=1; fi ;;
             esac
           done
-          [ "$fail" = "0" ] && echo "ALL FONTS OK ✔" || { echo "FONT CHECK FAILED"; exit 1; }
+          if [ "$fail" = "0" ]; then echo "ALL FONTS OK"; else echo "FONT CHECK FAILED"; exit 1; fi
           REMOTE
