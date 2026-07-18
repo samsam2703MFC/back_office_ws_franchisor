@@ -37,8 +37,9 @@ jobs:
       - name: Assemble static site
         run: |
           rm -rf site && mkdir -p site/img
-          cp back_office_ws_franchisor.html app.js data.json site/
+          cp back_office_ws_franchisor.html app.js data.json admin.css admin-app.css site/
           cp back_office_ws_franchisor.html site/index.html
+          cp -r fonts site/
           cp img/logo.png site/img/
           ls -R site
 
