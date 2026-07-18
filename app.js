@@ -195,65 +195,86 @@ function tableRows(columns, rows){
 /* ==========================================================================
    CHROME — sidebar + header, both driven by DB.brand / DB.nav
    ========================================================================== */
-function navItemStyle(screen){
-  var on = state.screen === screen;
-  return 'display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:none;border-radius:9px;'
-       + 'cursor:pointer;font:' + (on ? '600' : '500') + ' 13px/1 var(--font-ui);text-align:left;'
-       + (on ? 'background:var(--color-primary);color:#fff' : 'background:transparent;color:var(--color-text)');
+/* how many rows a screen lists — shown as a nav count pill (WebShop style) */
+function countFor(screen){
+  var s = DB.screens[screen];
+  if (!s || s.kind === 'dashboard' || s.kind === 'catalogue' || s.kind === 'promos') return '';
+  if (s.dataset && Array.isArray(ds(s.dataset))) return ds(s.dataset).length;
+  return '';
 }
+
 function renderSidebar(){
   var b = DB.brand;
+  var backItem = '<a href="#" class="admin__nav-item" style="color:var(--color-text-muted)">'
+    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg>'
+    + '<span style="flex:1">' + esc(b.backLink) + '</span></a>';
+
   var blocks = (DB.nav || []).map(function(grp){
     var open = grp.collapsible ? state.paramNavOpen : true;
     var head;
     if (grp.collapsible) {
       var chev = 'flex:none;transition:transform .15s' + (open ? ';transform:rotate(90deg)' : '');
-      head = '<button data-act="navToggle" style="display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;margin:14px 0 2px;'
-        + 'border:none;border-radius:8px;cursor:pointer;text-align:left;background:transparent;color:var(--color-text-muted)">'
-        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="' + chev + '"><path d="M9 6l6 6-6 6"/></svg>'
-        + '<span style="flex:1;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase">' + esc(grp.label) + '</span></button>';
+      head = '<button data-act="navToggle" class="admin__nav-group admin__nav-group--btn">'
+        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="' + chev + '"><path d="M9 6l6 6-6 6"/></svg>'
+        + '<span style="flex:1">' + esc(grp.label) + '</span></button>';
     } else {
-      head = '<div style="margin:14px 8px 6px;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-muted)">' + esc(grp.label) + '</div>';
+      head = '<div class="admin__nav-group">' + esc(grp.label) + '</div>';
     }
     var items = open ? grp.items.map(function(it){
-      var dc = state.screen === it.screen ? '#fff' : col(it.dot);
-      return '<button data-act="go" data-screen="' + esc(it.screen) + '" style="' + navItemStyle(it.screen) + '">'
-        + '<span style="' + dotStyle(dc) + '"></span><span style="flex:1;text-align:left">' + esc(it.label) + '</span></button>';
+      var active = state.screen === it.screen ? ' admin__nav-item--active' : '';
+      var n = countFor(it.screen);
+      var count = n === '' ? '' : '<span class="admin__nav-count">' + n + '</span>';
+      return '<a data-act="go" data-screen="' + esc(it.screen) + '" class="admin__nav-item' + active + '">'
+        + '<span style="flex:1">' + esc(it.label) + '</span>' + count + '</a>';
     }).join('') : '';
     return head + items;
   }).join('');
 
-  return '<aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">'
-    + '<div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">'
-    +   '<img src="' + esc(b.logo) + '" alt="' + esc(b.logoAlt) + '" style="height:30px;width:auto;display:block"/>'
-    +   '<div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span>'
-    +     '<span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">' + esc(b.consoleLabel) + '</span></div></div>'
-    + '<nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">'
-    +   '<a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)">'
-    +     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>' + esc(b.backLink) + '</span></a>'
-    +   blocks
-    + '</nav>'
-    + '<div style="padding:12px 16px;border-top:.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px">'
-    +   '<div style="width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px var(--font-ui)">' + esc(b.user.initials) + '</div>'
-    +   '<div style="line-height:1.2"><div style="font:500 12px var(--font-ui);color:var(--color-text)">' + esc(b.user.name) + '</div>'
-    +     '<div style="font:400 10px var(--font-ui);color:var(--color-text-muted)">' + esc(b.user.role) + '</div></div></div>'
+  return '<aside class="admin__side">'
+    + '<div class="admin__brand">'
+    +   '<div class="admin__brand-mark">' + esc(b.mark || 'A') + '</div>'
+    +   '<div><div class="admin__brand-name">' + esc(b.name) + '</div>'
+    +     '<div class="admin__brand-sub">' + esc(b.consoleLabel) + '</div></div></div>'
+    + backItem + blocks
     + '</aside>';
 }
-function renderHeader(sc){
-  return '<header style="height:58px;flex:none;background:var(--color-surface);border-bottom:.5px solid var(--color-border-tertiary);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:16px">'
-    + '<div style="display:flex;align-items:baseline;gap:12px;min-width:0;flex:1">'
-    +   '<h1 class="t-page-title" style="font-size:21px;margin:0;white-space:nowrap">' + esc(sc.title) + '</h1>'
-    +   '<span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(sc.sub) + '</span></div>'
-    + '<div style="display:flex;align-items:center;gap:12px;flex:none"><span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap">' + esc(DB.brand.date) + '</span></div>'
-    + '</header>';
+
+function renderTopbar(sc){
+  var b = DB.brand;
+  return '<div class="admin__topbar">'
+    + '<div class="admin__breadcrumb"><span>' + esc(b.app) + '</span>'
+    +   '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg>'
+    +   '<strong>' + esc(sc.title) + '</strong></div>'
+    + '<div class="admin__topbar-spacer"></div>'
+    + '<span class="admin__topbar-pill">'
+    +   '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+    +   esc(b.date) + '</span>'
+    + '<div class="admin__topbar-user" title="' + esc(b.user.name) + ' · ' + esc(b.user.role) + '">' + esc(b.user.initials) + '</div>'
+    + '</div>';
+}
+
+function renderPageHead(sc){
+  return '<div class="page-head">'
+    + '<div><h1 class="page-head__title">' + esc(sc.title) + '</h1>'
+    +   '<p class="page-head__sub">' + esc(sc.sub) + '</p></div>'
+    + '<div class="page-head__actions">' + addBtn(sc.add) + '</div>'
+    + '</div>';
+}
+
+/* backing-table label row (small mono chip), shown under the page head */
+function renderBadgeRow(sc){
+  if (!sc.badge) return '';
+  var aside = sc.badgeAside ? '<span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">' + esc(sc.badgeAside) + '</span>' : '';
+  return '<div style="padding:6px 28px 0;display:flex;justify-content:space-between;align-items:center;gap:12px">'
+    + '<span style="' + tableBadge + '">' + esc(sc.badge) + '</span>' + aside + '</div>';
 }
 
 /* ----- reusable pieces --------------------------------------------------- */
-function card(inner){ return '<div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">' + inner + '</div>'; }
+function card(inner){ return '<div class="card">' + inner + '</div>'; }
 function addBtn(add){
   if (!add) return '';
-  var cls = add.variant === 'secondary' ? 'btn-secondary' : 'btn-primary';
-  return '<button data-act="openForm" data-key="' + esc(add.form) + '" class="' + cls + '" style="font-size:12px;flex:none">' + esc(add.label) + '</button>';
+  var cls = add.variant === 'secondary' ? 'btn' : 'btn btn--primary';
+  return '<button data-act="openForm" data-key="' + esc(add.form) + '" class="' + cls + '">' + esc(add.label) + '</button>';
 }
 function ds(name){ return (DB.datasets && DB.datasets[name]) || []; }
 
@@ -261,39 +282,27 @@ function ds(name){ return (DB.datasets && DB.datasets[name]) || []; }
    SCREEN KINDS
    ========================================================================== */
 function renderTableScreen(sc){
-  var table = tableHead(sc.columns) + tableRows(sc.columns, ds(sc.dataset));
-  var footer = sc.footer ? '<div style="margin-top:12px;background:var(--color-background-secondary);border-radius:9px;padding:11px 13px;font:400 11px/1.6 var(--font-ui);color:var(--color-text-muted)">' + sc.footer + '</div>' : '';
-
-  // Card-title shape: title + backing-table badge sit inside the card
-  // (e.g. the audit log). No separate top action row.
-  if (sc.cardTitle) {
-    var inner = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-      + '<div class="t-section-title" style="font-size:15px">' + esc(sc.cardTitle) + '</div>'
-      + '<span style="' + tableBadge + '">' + esc(sc.badge) + '</span></div>';
-    if (sc.note) inner += '<div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">' + esc(sc.note) + '</div>';
-    return '<div style="display:flex;flex-direction:column;gap:16px">' + card(inner + table + footer) + '</div>';
-  }
-
-  // Top-badge shape: [backing-table badge | + Add] row, then a plain table card.
-  var header = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">'
-    + '<span style="' + tableBadge + '">' + esc(sc.badge) + '</span>' + addBtn(sc.add) + '</div>';
-  return '<div style="display:flex;flex-direction:column;gap:16px">' + header + card(table + footer) + '</div>';
+  var inner = '';
+  if (sc.note) inner += '<div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">' + esc(sc.note) + '</div>';
+  inner += tableHead(sc.columns) + tableRows(sc.columns, ds(sc.dataset));
+  if (sc.footer) inner += '<div style="margin-top:12px;background:var(--color-background-secondary);border-radius:9px;padding:11px 13px;font:400 11px/1.6 var(--font-ui);color:var(--color-text-muted)">' + sc.footer + '</div>';
+  return card(inner);
 }
 
 function renderDashboard(sc){
   var kpiCards = ds(sc.kpis).map(function(k){
-    return '<div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px">'
-      + '<div class="t-admin-label">' + esc(k.label) + '</div>'
-      + '<div style="font:700 26px/1 var(--font-ui);color:' + col(k.valColor) + ';margin:9px 0 4px">' + esc(k.value) + '</div>'
-      + '<div style="font:400 11px var(--font-ui);color:' + col(k.deltaColor) + '">' + esc(k.delta) + '</div></div>';
+    return '<div class="vstat">'
+      + '<div class="vstat__label">' + esc(k.label) + '</div>'
+      + '<div class="vstat__value" style="color:' + col(k.valColor) + '">' + esc(k.value) + '</div>'
+      + '<div class="vstat__sub" style="color:' + col(k.deltaColor) + '">' + esc(k.delta) + '</div></div>';
   }).join('');
   var t = sc.table;
   var tableCard = card(
     '<div class="t-section-title" style="font-size:15px;margin-bottom:3px">' + esc(t.title) + '</div>'
     + '<div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">' + esc(t.note) + '</div>'
     + tableHead(t.columns) + tableRows(t.columns, ds(t.dataset)));
-  return '<div style="display:flex;flex-direction:column;gap:18px">'
-    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">' + kpiCards + '</div>'
+  return '<div style="display:flex;flex-direction:column;gap:16px">'
+    + '<div class="vstats" style="grid-template-columns:repeat(3,1fr);padding:0">' + kpiCards + '</div>'
     + tableCard + '</div>';
 }
 
@@ -327,11 +336,7 @@ function renderCatalogue(sc){
         + '<div style="display:flex;justify-content:flex-end"><button data-act="editRow" data-form="product" data-vals="' + esc(JSON.stringify(editV)) + '" style="' + pencilStyle + '">' + PENCIL_SVG + '</button></div></div>';
     });
   });
-  return '<div style="display:flex;flex-direction:column;gap:16px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="' + tableBadge + '">' + esc(sc.badge) + '</span>'
-    +   '<span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">' + esc(sc.badgeAside) + '</span></div>'
-    + card('<div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">' + sc.note + '</div>' + tableHead(sc.columns) + body)
-    + '</div>';
+  return card('<div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">' + sc.note + '</div>' + tableHead(sc.columns) + body);
 }
 
 function renderPromos(sc){
@@ -375,10 +380,8 @@ function renderParams(sc){
       + '<span style="font:600 11.5px var(--font-mono);color:var(--color-text)">' + esc(pr.cle) + '</span>' + valCell
       + '<span style="font:400 11px var(--font-ui);color:var(--color-text-muted);text-align:center">' + esc(pr.type === 'bool' ? 'bool' : 'text') + '</span></div>';
   }).join('');
-  var inner = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-    + '<div class="t-section-title" style="font-size:15px">' + esc(sc.cardTitle) + '</div><span style="' + tableBadge + '">' + esc(sc.badge) + '</span></div>'
-    + '<div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">' + esc(sc.note) + '</div>' + head + rows;
-  return '<div style="display:flex;flex-direction:column;gap:16px">' + card(inner) + '</div>';
+  var inner = '<div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">' + esc(sc.note) + '</div>' + head + rows;
+  return card(inner);
 }
 
 var KINDS = { dashboard: renderDashboard, table: renderTableScreen, catalogue: renderCatalogue, promos: renderPromos, params: renderParams };
@@ -461,29 +464,32 @@ function renderModal(){
     +     '<button data-act="formClose" style="background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);font-size:22px;line-height:1;padding:0">×</button></div>'
     +   '<div style="padding:18px 24px;display:flex;flex-direction:column;gap:14px">' + fields + '</div>'
     +   '<div style="padding:14px 24px 20px;border-top:.5px solid var(--color-border-tertiary);display:flex;gap:10px">'
-    +     '<button data-act="formClose" class="btn-secondary" style="flex:1;font-size:13px">Annuler</button>'
-    +     '<button data-act="formSubmit" class="btn-primary" style="flex:2;font-size:13px">' + esc(c.save) + '</button></div>'
+    +     '<button data-act="formClose" class="btn" style="flex:1;justify-content:center">Annuler</button>'
+    +     '<button data-act="formSubmit" class="btn btn--primary" style="flex:2;justify-content:center">' + esc(c.save) + '</button></div>'
     + '</div></div>';
 }
 function renderToast(){
   if (!state.toast) return '';
-  return '<div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2500;background:var(--color-text);color:#fff;'
-    + 'border-radius:10px;padding:14px 22px;font:500 13px var(--font-ui);box-shadow:0 8px 30px rgba(0,0,0,.3)">' + esc(state.toast) + '</div>';
+  return '<div class="toast">' + esc(state.toast) + '</div>';
 }
 
 /* ==========================================================================
-   MAIN RENDER
+   MAIN RENDER — WebShop admin shell: sidebar + topbar + page-head + content
    ========================================================================== */
 function render(){
   if (!DB) return;
   var sc = DB.screens[state.screen] || DB.screens[DB.defaultScreen];
   var main = (KINDS[sc.kind] || renderTableScreen)(sc);
   document.getElementById('app').innerHTML =
-    '<div style="display:grid;grid-template-columns:250px 1fr;height:100vh;background:var(--color-bg);overflow:hidden">'
+    '<div class="admin">'
     + renderSidebar()
-    + '<div style="display:flex;flex-direction:column;overflow:hidden">'
-    +   renderHeader(sc)
-    +   '<main class="lz" style="flex:1;overflow-y:auto;padding:24px 26px 60px">' + main + '</main>'
+    + '<div class="admin__main">'
+    +   renderTopbar(sc)
+    +   '<div class="admin__scroll lz">'
+    +     renderPageHead(sc)
+    +     renderBadgeRow(sc)
+    +     '<div class="admin__content">' + main + '</div>'
+    +   '</div>'
     + '</div>' + renderToast() + renderModal() + '</div>';
 }
 
