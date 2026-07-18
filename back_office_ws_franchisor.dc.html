@@ -641,7 +641,7 @@ class Component extends DCLogic {
   toggleBundleActive(id){ if(!this.api)return; this.apply(this.api.toggleBundle(this.pid(),id)); }
   moveBundle(id,d){ if(!this.api)return; this.apply(this.api.moveBundle(this.pid(),id,d)); this.printJob('↕ POST /admin/bundles · sort_order'); }
   setBundleField(id,f,v){ if(!this.api)return; this.apply(this.api.updateBundle(this.pid(),id,{[f]:v})); }
-  addSlot(bid){ if(!this.api)return; const b=this.state.menus&&this.state.menus[this.pid()]&&this.state.menus[this.pid()].bundles.find(x=>x.id===bid); if(b&&b.slots.length>=3){ this.printJob('Maximum 3 étapes par formule'); return; } this.apply(this.api.addSlot(this.pid(),bid)); }
+  addSlot(bid){ if(!this.api)return; const tl=this.state.trigLock; const catTrig=!!(tl&&tl.side==='cat'&&tl.id===this.pid()); const max=catTrig?2:3; const b=this.state.menus&&this.state.menus[this.pid()]&&this.state.menus[this.pid()].bundles.find(x=>x.id===bid); if(b&&b.slots.length>=max){ this.printJob(catTrig?'Max 2 étapes (l\'étape 1 = produit déclencheur)':'Maximum 3 étapes par formule'); return; } this.apply(this.api.addSlot(this.pid(),bid)); }
   removeSlot(bid,sid){ if(!this.api)return; this.apply(this.api.removeSlot(this.pid(),bid,sid)); }
   moveSlot(bid,sid,d){ if(!this.api)return; this.apply(this.api.moveSlot(this.pid(),bid,sid,d)); }
   setSlotField(bid,sid,f,v){ if(!this.api)return; this.apply(this.api.updateSlot(this.pid(),bid,sid,{[f]:v})); }
@@ -901,7 +901,10 @@ class Component extends DCLogic {
           actStyle:switchS(c.active), actKnob:knobS(c.active), actToggle:()=>this.toggleChoiceActive(AB.id,s.id,c.id),
           up:()=>this.moveChoice(AB.id,s.id,c.id,-1), down:()=>this.moveChoice(AB.id,s.id,c.id,1), del:()=>this.removeChoice(AB.id,s.id,c.id), miniInput, sqBtn })) };
     }):[];
-    const slotView=editSlots.slice(0,3); if(AB){ while(slotView.length<3){ const idx=slotView.length+1; slotView.push({ph:true,real:false,name:'Étape '+idx,miniInput,phStyle:switchS(false),phKnob:knobS(false),addToggle:()=>this.addSlot(AB.id)}); } }
+    // Déclencheur catégorie : l'étape 1 est le produit déclencheur (auto/verrouillé),
+    // donc seulement 2 étapes éditables (2 & 3) ; sinon 3 (1,2,3).
+    const slotCap=catCommitted?2:3, stepOffset=catCommitted?1:0;
+    const slotView=editSlots.slice(0,slotCap); if(AB){ while(slotView.length<slotCap){ const idx=slotView.length+1+stepOffset; slotView.push({ph:true,real:false,name:'Étape '+idx,miniInput,phStyle:switchS(false),phKnob:knobS(false),addToggle:()=>this.addSlot(AB.id)}); } }
     const effSel={};
     const previewSlots=AB?AB.slots.filter(s=>s.active).map(s=>{ const acs=s.choices.filter(c=>c.active); const isSingle=s.kind==='single';
       let selected; if(isSingle){ selected=selMap[s.id]!==undefined?selMap[s.id]:(s.required&&acs[0]?acs[0].id:null); if(acs.every(c=>c.id!==selected))selected=(s.required&&acs[0]?acs[0].id:null); effSel[s.id]=selected; }
