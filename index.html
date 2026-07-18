@@ -603,6 +603,12 @@ class Component extends DCLogic {
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
+  // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
+  frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
+    const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
+    return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
+      .then(r=>r.ok?r.json():Promise.reject(r.status)).then(()=>{ this.printJob('✔ Enregistré en base'); return true; })
+      .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   componentDidMount(){ import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
@@ -674,9 +680,18 @@ class Component extends DCLogic {
     };
   }
   openForm(key){ return ()=>{ const c=this.formDefs()[key]; const v={}; c.fields.forEach(f=>{ v[f.k]=f.type==='checks'?[]:(f.type==='bool'?(f.def!==undefined?f.def:false):(f.def!==undefined?f.def:'')); }); this.setState({formKey:key,formVals:v,formEdit:false}); }; }
-  editForm(key,vals){ return ()=>{ const c=this.formDefs()[key]; const v={}; c.fields.forEach(f=>{ if(f.type==='checks'){ v[f.k]=Array.isArray(vals&&vals[f.k])?vals[f.k]:[]; } else if(f.type==='bool'){ v[f.k]=(vals&&vals[f.k]!==undefined)?vals[f.k]:(f.def!==undefined?f.def:false); } else { v[f.k]=(vals&&vals[f.k]!==undefined&&vals[f.k]!=='')?vals[f.k]:(f.def!==undefined?f.def:''); } }); this.setState({formKey:key,formVals:v,formEdit:true}); }; }
+  editForm(key,vals){ return ()=>{ const c=this.formDefs()[key]; const v={}; c.fields.forEach(f=>{ if(f.type==='checks'){ v[f.k]=Array.isArray(vals&&vals[f.k])?vals[f.k]:[]; } else if(f.type==='bool'){ v[f.k]=(vals&&vals[f.k]!==undefined)?vals[f.k]:(f.def!==undefined?f.def:false); } else { v[f.k]=(vals&&vals[f.k]!==undefined&&vals[f.k]!=='')?vals[f.k]:(f.def!==undefined?f.def:''); } }); if(vals&&vals.id!=null) v.id=vals.id; this.setState({formKey:key,formVals:v,formEdit:true}); }; }
   closeForm(){ this.setState({formKey:null}); }
-  submitForm(){ const c=this.formDefs()[this.state.formKey]; if(!c) return; const ed=this.state.formEdit; this.setState({formKey:null}); this.printJob((ed?'✔ Mis à jour dans ':'✔ Enregistré dans ')+c.table); }
+  submitForm(){ const key=this.state.formKey, c=this.formDefs()[key]; if(!c) return; const v=this.state.formVals||{}; this.setState({formKey:null});
+    // Mappe le formulaire → endpoint d'écriture ; repli toast si non câblé.
+    let path=null, payload=null;
+    if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
+    else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active}; }
+    else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
+    else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
+    if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
+    else { this.printJob((this.state.formEdit?'✔ Mis à jour dans ':'✔ Enregistré dans ')+c.table); } }
   navStyle(s){ const on=this.state.screen===s; return 'display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:none;border-radius:9px;cursor:pointer;font:'+(on?'600':'500')+' 13px/1 var(--font-ui);text-align:left;'+(on?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text)'); }
   renderVals(){
     const S=this.state;
@@ -716,8 +731,9 @@ class Component extends DCLogic {
       const adColor=s.adoption>=85?'#2d7a3e':(s.adoption>=70?'#b26a00':'var(--color-primary)');
       return {...s, ca:ca?this.eur(ca):'—', caShopTxt:s.caShop?this.eur(s.caShop):'—', caOfficeTxt:s.caOffice?this.eur(s.caOffice):'—', adoption:s.adoption+' %', adColor,
         webPill:pill(w.on?'#eaf5ec':'var(--color-background-secondary)',w.on?'#2d7a3e':'var(--color-text-muted)'), webTxt:w.on?'En ligne':'Coupé',
-        webStyle:w.style,webKnob:w.knob,toggleWeb:w.toggle, actStyle:a.style,actKnob:a.knob,toggleAct:a.toggle,
-        edit:this.editForm('shop',{nom:s.nom,ville:s.ville.replace(/\s\d+$/,''),contrat:s.contrat})}; });
+        webStyle:w.style,webKnob:w.knob,toggleWeb:()=>{ w.toggle(); this.frPost('/franchisor/shop',{id:s.id,webshop_enabled:!w.on}); },
+        actStyle:a.style,actKnob:a.knob,toggleAct:()=>{ a.toggle(); this.frPost('/franchisor/shop',{id:s.id,active:!a.on}); },
+        edit:this.editForm('shop',{id:s.id,nom:s.nom,ville:s.ville.replace(/\s\d+$/,''),contrat:(s.contrat&&s.contrat!=='—')?s.contrat:''})}; });
 
     // Catalogue + gouvernance + prix — arbre catégories › produits
     const CATALOG=SRV('catalog');
