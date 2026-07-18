@@ -927,10 +927,12 @@ class Component extends DCLogic {
       return { label:s.label, tag:s.required?(isSingle?'Choisir 1':'Obligatoire'):(isSingle?'Optionnel':'jusqu\'à '+s.max_select),
         tagStyle:pill(s.required?'#fbe9eb':'var(--color-background-secondary)',s.required?'var(--color-primary)':'var(--color-text-muted)'),
         choices:acs.map(c=>{ const on=isSingle?selected===c.id:selected.includes(c.id); const cImg=choiceCatImg(c.label);
-          // Étape validée : la pastille de sélection devient la vignette de la
-          // catégorie du produit choisi (sinon pastille ✓ classique).
-          const markSel=(on&&cImg)?catBox(cImg,18,isSingle):((isSingle?'border-radius:50%;':'border-radius:5px;')+'width:18px;height:18px;flex:none;border:2px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'transparent')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px');
-          return { label:c.label, imgStyle:pvImg(c.img), priceTag:c.delta?((c.delta>0?'+':'')+this.eur2(c.delta)):'inclus',
+          // Vignette = image de catégorie (comme l'éditeur) ; la sélection est
+          // marquée par l'anneau sur la vignette + la surbrillance de la ligne,
+          // donc plus de pastille de couleur pour un produit du catalogue.
+          const tile=cImg?(catBox(cImg,34,false)+(on?';outline:2px solid var(--color-primary);outline-offset:2px':'')):pvImg(c.img);
+          const markSel=cImg?'display:none':((isSingle?'border-radius:50%;':'border-radius:5px;')+'width:18px;height:18px;flex:none;border:2px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'transparent')+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px');
+          return { label:c.label, imgStyle:tile, priceTag:c.delta?((c.delta>0?'+':'')+this.eur2(c.delta)):'inclus',
             rowStyle:'display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:10px;cursor:pointer;border:1px solid '+(on?'var(--color-primary)':'var(--color-border-tertiary)')+';background:'+(on?'#fdf3f4':'var(--color-surface)'),
             markStyle:markSel,
             mark:(on&&!cImg)?'✓':'', pick:isSingle?(()=>this.selectSingle(s.id,c.id)):(()=>this.toggleMulti(s.id,c.id,s.max_select)) }; }) };
