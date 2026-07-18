@@ -43,12 +43,20 @@ back_office_ws_franchisor (front)                webshop/php-api (backend, MÊME
 
 ## Migration DB (`php-api/migrations/0003_franchisor_backoffice.sql`)
 
-Idempotente, additive (aucune donnée existante écrasée). S'applique
-automatiquement au déploiement webshop (`migrate.sh`, jouée une seule fois).
+Idempotente, additive, compatible MySQL 8 (garde `information_schema` + `PREPARE`,
+pas de `ADD COLUMN IF NOT EXISTS`). Appliquée une seule fois par `migrate.sh`.
 
-- **Colonnes ajoutées** : `ws_categories.menu_default` · `ws_products.menu_override`,`base_cost`,`brand_mandatory`,`brand_whitelist` ·
-  `ws_shops.contrat`,`webshop_enabled` · `ws_bundle_slots.kind`,`min_select`,`max_select` · `ws_bundle_slot_choices.cost`.
-- **Tables créées** : `ws_email_templates`, `bo_users`, `bo_user_shops`, `bo_audit` (+ seed démo gardé).
+- **Colonnes ajoutées** (seules réellement manquantes) : `ws_categories.menu_default` ·
+  `ws_products.menu_override`,`base_cost`,`brand_whitelist` · `ws_shops.contrat`,`webshop_enabled` ·
+  `ws_bundle_slots.kind`,`min_select`,`max_select` · `ws_bundle_slot_choices.cost`.
+- **Tables NON recréées** : `bo_users`, `bo_user_shops`, `bo_audit`,
+  `ws_email_templates` et `ws_products.brand_mandatory` **existent déjà**
+  (canonique `backend/schema/` : `ws_schema.sql` + `alter-bo-brand-comms.sql` +
+  `alter-product-brand-flags.sql`). Les endpoints lisent leurs **vraies colonnes**
+  (`ws_email_templates.tpl_key/lang/subject`, `bo_users.display_name/role`,
+  `bo_audit.action/entity/entity_id/user_id`). Aucun seed injecté dans ces tables
+  d'auth/templates : si vides en prod, les écrans Utilisateurs / Communications /
+  Audit s'affichent vides (honnête) jusqu'à peuplement réel.
 
 ## Pour activer côté serveur (config uniquement, pas de code)
 
