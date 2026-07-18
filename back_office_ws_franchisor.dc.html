@@ -406,27 +406,7 @@ class Component extends DCLogic {
         edit:this.editForm('shop',{nom:s.nom,ville:s.ville.replace(/\s\d+$/,''),contrat:s.contrat})}; });
 
     // Catalogue + gouvernance + prix — arbre catégories › produits
-    const CATALOG=[
-      {cat:'Boulangerie',prods:[
-        {nom:'Baguette tradition',prix:1.35,statut:'Publié',bw:true,bm:true,ad:96},
-        {nom:'Pain au chocolat',prix:1.60,statut:'Publié',bw:true,bm:false,ad:74},
-      ]},
-      {cat:'Pâtisserie fraîche',prods:[
-        {nom:'Éclair chocolat',prix:3.50,statut:'Publié',bw:true,bm:true,ad:88},
-        {nom:'Tarte aux fraises',prix:4.20,statut:'Saisonnier',saison:'Été',bw:true,bm:false,ad:52},
-        {nom:'Bûche signature',prix:24.00,statut:'Publié',saison:'Noël',bw:true,bm:true,ad:100},
-      ]},
-      {cat:'Chocolaterie',prods:[
-        {nom:'Macarons (boîte 24)',prix:19.90,statut:'Publié',bw:true,bm:false,ad:64},
-      ]},
-      {cat:'Traiteur',prods:[
-        {nom:'Quiche lorraine',prix:5.80,statut:'Brouillon',bw:false,bm:false,ad:22},
-        {nom:'Foie gras mi-cuit',prix:28.00,statut:'Publié',bw:true,bm:false,ad:41},
-      ]},
-      {cat:'Glaces',prods:[
-        {nom:'Glace artisanale',prix:6.50,statut:'Publié',saison:'Été',bw:false,bm:false,ad:30},
-      ]},
-    ];
+    const CATALOG=(function(){var d=(S.data&&S.data.catalog)||{};var cs=d.categories||[];var ps=d.products||[];return cs.map(function(c){return {cat:c.label,prods:ps.filter(function(p){return p.cat_id===c.id;}).map(function(p){return {nom:p.name,prix:+p.price,statut:p.active?'Publié':'Masqué',bw:!!p.brand_webshop,bm:!!p.brand_mandatory,ad:0,saison:p.badge||undefined};})};});})();;
     const stPill=s=>pill(s==='Publié'?'#eaf5ec':(s==='Brouillon'?'var(--color-background-secondary)':'#fbf1e3'),s==='Publié'?'#2d7a3e':(s==='Brouillon'?'var(--color-text-muted)':'#b26a00'));
     const catTree=[];
     CATALOG.forEach((c,ci)=>{ const ok='catO_'+ci; const open=S.flags[ok]!==undefined?S.flags[ok]:true;
