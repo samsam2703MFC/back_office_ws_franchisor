@@ -613,9 +613,17 @@ class Component extends DCLogic {
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   componentDidMount(){ import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
   pid(){ return this.state.menuProductId || Object.keys(this.state.menus||{}).filter(k=>k!=='_categories')[0] || ''; }
-  apply(db){ this.setState({menus:db}); }
-  addBundle(){ if(!this.api)return; const cur=this.state.menus&&this.state.menus[this.pid()]; if(cur&&cur.bundles.length>=3){ this.printJob('Maximum 3 formules par produit'); return; } const r=this.api.addBundle(this.pid()); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.printJob('✔ POST /admin/bundles · formule créée'); }
-  duplicateBundle(id){ if(!this.api)return; const r=this.api.duplicateBundle(this.pid(),id); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.printJob('✔ Formule dupliquée (étapes + choix)'); }
+  apply(db){ this.setState({menus:db}); this.saveMenu(db); }
+  // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
+  saveMenu(db){ const menus=db||this.state.menus, pid=this.pid(), m=menus&&menus[pid];
+    if(!m||!(window.__FR&&window.__FR.base))return;
+    const payload={ productId:pid, menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
+      bundles:(m.bundles||[]).map(bu=>({ name:bu.name, description:bu.description, price_modifier:bu.price_modifier, active:bu.active,
+        slots:(bu.slots||[]).map(s=>({ label:s.label, required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
+          choices:(s.choices||[]).map(c=>({ label:c.label, img:c.img, delta:c.delta, cost:c.cost, active:c.active })) })) })) };
+    clearTimeout(this._menuT); this._menuT=setTimeout(()=>this.frPost('/franchisor/menu',payload),700); }
+  addBundle(){ if(!this.api)return; const cur=this.state.menus&&this.state.menus[this.pid()]; if(cur&&cur.bundles.length>=3){ this.printJob('Maximum 3 formules par produit'); return; } const r=this.api.addBundle(this.pid()); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule créée'); }
+  duplicateBundle(id){ if(!this.api)return; const r=this.api.duplicateBundle(this.pid(),id); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule dupliquée (étapes + choix)'); }
   toggleBundleActive(id){ if(!this.api)return; this.apply(this.api.toggleBundle(this.pid(),id)); }
   moveBundle(id,d){ if(!this.api)return; this.apply(this.api.moveBundle(this.pid(),id,d)); this.printJob('↕ POST /admin/bundles · sort_order'); }
   setBundleField(id,f,v){ if(!this.api)return; this.apply(this.api.updateBundle(this.pid(),id,{[f]:v})); }
