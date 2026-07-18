@@ -63,11 +63,27 @@ jobs:
             -e "ssh -p ${{ vars.SSH_PORT || '22' }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             site/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ vars.DEPLOY_DIR || '/var/www/html/webshop/backoffice_franchisor' }}/"
 
-      - name: Verify the served page is the fresh build
+      - name: Verify the served page + assets (incl. fonts) on the server
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -e ssh -p ${{ vars.SSH_PORT || '22' }} \
             -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "curl -s http://localhost/webshop/backoffice_franchisor/ | grep -o './app.js' | head -1 || echo 'WARN: app.js reference not found in served page'"
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -s << 'REMOTE'
+          set -e
+          BASE="http://localhost/webshop/backoffice_franchisor"
+          echo "== served page references app.js =="
+          curl -fsS "$BASE/" | grep -o './app.js' | head -1 || echo "WARN: app.js ref not found"
+          echo "== asset status (code · type · bytes) =="
+          fail=0
+          for f in admin.css admin-app.css app.js data.json \
+                   fonts/GC_Vank.ttf fonts/Gotham_Regular.otf fonts/Gotham_Medium.otf \
+                   fonts/Gotham_Book.otf fonts/Gotham_Light.otf; do
+            read -r code type size < <(curl -s -o /dev/null -w "%{http_code} %{content_type} %{size_download}" "$BASE/$f")
+            echo "  $code  $type  ${size}b  $f"
+            case "$f" in
+              fonts/*) [ "$code" = "200" ] && [ "${size:-0}" -gt 1000 ] || { echo "  ^ FONT NOT OK"; fail=1; } ;;
+            esac
+          done
+          [ "$fail" = "0" ] && echo "ALL FONTS OK ✔" || { echo "FONT CHECK FAILED"; exit 1; }
+          REMOTE
