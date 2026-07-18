@@ -387,14 +387,7 @@ class Component extends DCLogic {
     const pencilStyle='background:transparent;border:.5px solid var(--color-border-tertiary);border-radius:7px;cursor:pointer;color:var(--color-text-muted);width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex:none';
 
     // KPIs réseau
-    const kpis=[
-      {label:'CA réseau (mois)',value:'428 k€',valColor:'var(--color-text)',delta:'▲ +6,4 %',deltaColor:'#2d7a3e'},
-      {label:'CA boutique',value:'306 k€',valColor:'var(--color-primary)',delta:'▲ +4,8 %',deltaColor:'#2d7a3e'},
-      {label:'CA livraison bureau',value:'122 k€',valColor:'#C87A3F',delta:'▲ +11 %',deltaColor:'#2d7a3e'},
-      {label:'Boutiques actives',value:'14 / 15',valColor:'var(--color-text)',delta:'▲ +1 ce trim.',deltaColor:'#2d7a3e'},
-      {label:'Commandes du jour',value:'512',valColor:'var(--color-text)',delta:'▲ +38 vs hier',deltaColor:'#2d7a3e'},
-      {label:'Adoption whitelist',value:'82 %',valColor:'var(--color-text)',delta:'▼ −3 pts',deltaColor:'var(--color-primary)'},
-    ];
+    const kpis=(function(){var d=(S.data&&S.data.dashboard)||{};var k=function(n){n=+n||0;return n>=1000?(Math.round(n/1000)+' k€'):(Math.round(n)+' €');};return [{label:'CA réseau (mois)',value:k(d.caMonth),valColor:'var(--color-text)',delta:'',deltaColor:'#2d7a3e'},{label:'CA boutique',value:k(d.caShopMonth),valColor:'var(--color-primary)',delta:'',deltaColor:'#2d7a3e'},{label:'CA livraison bureau',value:k(d.caOfficeMonth),valColor:'#C87A3F',delta:'',deltaColor:'#2d7a3e'},{label:'Boutiques actives',value:(d.shopsActive||0)+' / '+(d.shops||0),valColor:'var(--color-text)',delta:'',deltaColor:'#2d7a3e'},{label:'Commandes du jour',value:String(d.ordersToday||0),valColor:'var(--color-text)',delta:'',deltaColor:'#2d7a3e'},{label:'Adoption whitelist',value:(d.adoption||0)+' %',valColor:'var(--color-text)',delta:'',deltaColor:'var(--color-primary)'}];})();
 
     // Boutiques
     const shopsRaw=((S.data&&S.data.shops)||[]).map(s=>({id:s.id,nom:s.name,ville:s.city||'',web:!!s.active,contrat:'—',act:!!s.active,caShop:+s.ca_shop||0,caOffice:+s.ca_office||0,adoption:(s.mand_total>0?Math.round(s.mand_carried/s.mand_total*100):0),accent:'var(--color-primary)'}));
