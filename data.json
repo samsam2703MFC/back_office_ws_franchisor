@@ -33,7 +33,7 @@
     "logo": "img/logo.png",
     "logoAlt": "L'Atelier",
     "name": "L'Atelier By",
-    "mark": "A",
+    "mark": "L",
     "app": "Console marque",
     "consoleLabel": "Console marque · Siège",
     "backLink": "Retour à l'ERP",
@@ -43,16 +43,18 @@
   "defaultScreen": "dash",
   "nav": [
     { "label": "Pilotage", "collapsible": false, "items": [
-      { "screen": "dash", "label": "Tableau de bord réseau", "dot": "copper" },
-      { "screen": "boutiques", "label": "Boutiques", "dot": "apricot" },
-      { "screen": "audit", "label": "Journal d'audit", "dot": "muted" },
-      { "screen": "catalogue", "label": "Catalogue", "dot": "primary" },
-      { "screen": "promos", "label": "Promotions réseau", "dot": "apricot" }
+      { "screen": "dash", "label": "Tableau de bord réseau", "icon": "home" },
+      { "screen": "boutiques", "label": "Boutiques", "icon": "shop" },
+      { "screen": "audit", "label": "Journal d'audit", "icon": "clipboard" }
     ]},
-    { "label": "Paramétrage", "collapsible": true, "open": false, "items": [
-      { "screen": "config", "label": "Config marque", "dot": "primary" },
-      { "screen": "comms", "label": "Communications", "dot": "primary" },
-      { "screen": "users", "label": "Utilisateurs & rôles", "dot": "copper" }
+    { "label": "Catalogue", "collapsible": false, "items": [
+      { "screen": "catalogue", "label": "Catalogue", "icon": "product" },
+      { "screen": "promos", "label": "Promotions réseau", "icon": "campaign" }
+    ]},
+    { "label": "Paramétrage", "collapsible": false, "items": [
+      { "screen": "config", "label": "Config marque", "icon": "cog" },
+      { "screen": "comms", "label": "Communications", "icon": "mail" },
+      { "screen": "users", "label": "Utilisateurs & rôles", "icon": "user" }
     ]}
   ],
   "screens": {
