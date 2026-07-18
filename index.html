@@ -762,7 +762,7 @@ class Component extends DCLogic {
       if(activeOnly&&!cwOn) return;
       catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbWeb+' en ligne',open,caret:open?'▾':'▸',
         menuDefStyle:swS(menuDefOn),menuDefKnob:knS(menuDefOn),
-        catWebStyle:swS(cwOn),catWebKnob:knS(cwOn),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_whitelist:nv?1:0}); },
+        catWebStyle:swS(cwOn),catWebKnob:knS(cwOn),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
         catOblStyle:swS(cobOn),catOblKnob:knS(cobOn),catOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cobOn; this.setState(st=>{ const f={...st.flags,['catObl_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bm_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_mandatory:nv?1:0}); },
         menuDefToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(!this.api)return; const nv=menuDefOn?0:1; let db=this.api.setCategoryDefault(c.cat,nv); c.prods.forEach(pp=>{ const id=pp.id||('cat-'+slugId(pp.nom)); db=this.api.setProductOverride(id,null); }); this.setState({menus:db}); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,menu_default:nv}); },
         toggle:()=>this.setState(st=>({flags:{...st.flags,[ok]:!(st.flags[ok]!==undefined?st.flags[ok]:true)}}))});
@@ -781,7 +781,7 @@ class Component extends DCLogic {
           mnStyle:swS(mnOn),mnKnob:knS(mnOn),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swS(bw.on),bwKnob:knS(bw.on),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_whitelist:!bw.on?1:0}); }, bmStyle:swS(bm.on),bmKnob:knS(bm.on),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
+          bwStyle:swS(bw.on),bwKnob:knS(bw.on),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, bmStyle:swS(bm.on),bmKnob:knS(bm.on),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
