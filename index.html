@@ -432,6 +432,12 @@
 
               <div style="display:flex;align-items:center;gap:8px;margin-top:2px"><span style="width:20px;height:20px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font:700 11px var(--font-ui);flex:none">4</span><span style="font:600 12px var(--font-ui);color:var(--color-text)">Composition des formules</span><span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">étapes &amp; choix</span></div>
               <div style="display:flex;flex-direction:column;gap:12px;align-items:stretch">
+              <sc-if value="{{ catTriggerAuto }}" hint-placeholder-val="{{ false }}">
+                <div style="background:var(--color-background-secondary);border:.5px dashed var(--color-border-secondary);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+                  <div style="line-height:1.35"><div style="font:600 11.5px var(--font-ui);color:var(--color-text)">Étape 1 · Produit déclencheur — verrouillé</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">La {{ catTriggerLabel }} choisie par le client devient automatiquement l'étape 1. Configure ci-dessous les étapes suivantes.</div></div>
+                </div>
+              </sc-if>
               <sc-for list="{{ editSlots }}" as="s" hint-placeholder-count="3">
                 <sc-if value="{{ s.real }}" hint-placeholder-val="{{ true }}">
                 <div style="{{ s.cardStyle }}">
@@ -517,6 +523,15 @@
                 <sc-if value="{{ armedEmpty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:6px;font:500 10.5px var(--font-ui);color:#b26a00">⚠ Menu armé mais aucune formule active — rien ne s'affichera côté client</div></sc-if>
               </div>
               <div class="lz" style="max-height:52vh;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:16px">
+                <sc-if value="{{ catTriggerAuto }}" hint-placeholder-val="{{ false }}">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font:600 12.5px var(--font-ui);color:var(--color-text)">Votre {{ catTriggerLabel }}</span><span style="display:inline-flex;align-items:center;font:600 9px var(--font-ui);border-radius:20px;padding:3px 8px;background:var(--color-background-secondary);color:var(--color-text-muted)">Inclus · verrouillé</span></div>
+                    <div style="display:flex;align-items:center;gap:9px;border:.5px solid var(--color-primary);border-radius:10px;padding:9px 11px;background:#fbe9eb">
+                      <span style="width:16px;height:16px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px">✓</span>
+                      <span style="font:500 12px var(--font-ui);color:var(--color-text)">Le produit choisi ({{ catTriggerLabel }})</span>
+                    </div>
+                  </div>
+                </sc-if>
                 <sc-for list="{{ previewSlots }}" as="s" hint-placeholder-count="2">
                   <div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font:600 12.5px var(--font-ui);color:var(--color-text)">{{ s.label }}</span><span style="{{ s.tagStyle }}">{{ s.tag }}</span></div>
@@ -951,6 +966,7 @@ class Component extends DCLogic {
       abDup:AB?(()=>this.duplicateBundle(AB.id)):(()=>{}), abUp:AB?(()=>this.moveBundle(AB.id,-1)):(()=>{}), abDown:AB?(()=>this.moveBundle(AB.id,1)):(()=>{}),
       abDel:AB?(()=>{ if(!this.api)return; const db=this.api.deleteBundle(this.pid(),AB.id); const nb=(db[this.pid()]&&db[this.pid()].bundles[0])||{}; this.setState({menus:db,activeBundle:nb.id}); this.printJob('✖ Formule supprimée (étapes + choix)'); }):(()=>{}),
       editSlots:slotView, addSlot:AB?(()=>this.addSlot(AB.id)):(()=>{}),
+      catTriggerAuto:catCommitted, catTriggerLabel:(M.category||'sélection'),
       previewSlots, previewTotal:this.eur2(mtotal), previewProduct:M.productName, previewDisabled:!effYes, armedEmpty,
       isMenuList:menuMode==='list', isMenuEdit:menuMode==='edit', menuCreate:!!S.menuCreate,
       openCreate:()=>this.setState({menuCreate:true}), closeCreate:()=>this.setState({menuCreate:false}), backToList:()=>this.setState({menuMode:'list',menuCreate:false}),
