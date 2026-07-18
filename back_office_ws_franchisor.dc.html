@@ -657,7 +657,12 @@ class Component extends DCLogic {
   selectSingle(sid,cid){ this.setState(st=>({sel:{...st.sel,[sid]:cid}})); }
   toggleMulti(sid,cid,max){ this.setState(st=>{ const cur=Array.isArray(st.sel[sid])?st.sel[sid]:[]; let nx; if(cur.includes(cid))nx=cur.filter(x=>x!==cid); else if(cur.length>=max)nx=[...cur.slice(1),cid]; else nx=[...cur,cid]; return {sel:{...st.sel,[sid]:nx}}; }); }
   formDefs(){
-    const villes=['Bruxelles','Anderlecht','Uccle','Schaerbeek','Louvain','Waterloo'];
+    // Boutiques RÉELLES (hydratées depuis /franchisor/shops → SRV('shops') = {nom, ville, …}).
+    // Repli sur des libellés génériques uniquement si aucune donnée (dev/API absente).
+    const shopList=(window.BOServer?window.BOServer.table('shops'):[])||[];
+    const shopNames=shopList.map(s=>s.nom||s.name).filter(Boolean);
+    const shopVilles=[...new Set(shopList.map(s=>(s.ville||s.city||'').replace(/\s*\d{4,}\s*$/,'').trim()).filter(Boolean))];
+    const villes=shopVilles.length?shopVilles:['Bruxelles','Anderlecht','Uccle','Schaerbeek','Louvain','Waterloo'];
     const cats=['Boulangerie','Pâtisserie fraîche','Chocolaterie','Traiteur','Glaces'];
     const sel=a=>a.map(x=>({value:x,label:x}));
     return {
@@ -679,7 +684,7 @@ class Component extends DCLogic {
         {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
-        {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:['Bruxelles-Centre','Anderlecht','Uccle','Schaerbeek','Louvain']},
+        {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
         {k:'active',label:'Actif (active)',type:'bool',def:true},
       ]},
       pricing:{ title:'Règle de prix réseau', table:'ws_pricing_rules (shop_id NULL)', save:'Créer', fields:[
