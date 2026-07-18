@@ -1,0 +1,76 @@
+name: Deploy to server (SSH / rsync)
+
+# Pushes the static back-office (Console marque franchiseur) to the client's
+# server over SSH (rsync), exactly like the WebShop repo. This app is a static,
+# data-driven site (no build step): back_office_ws_franchisor.html + app.js +
+# data.json + img/. It is served at  http://<host>/webshop/backoffice_franchisor
+#
+# ─── One-time setup (GitHub → Settings → Secrets and variables → Actions) ─────
+#   Secrets (same names as WebShop):
+#     SSH_HOST       server IP/host, e.g. 185.180.206.46
+#     SSH_USER       ssh user (dedicated deploy user recommended)
+#     SSH_PASSWORD   that user's password
+#   Variables:
+#     DEPLOY_ENABLED set to  true  to turn this workflow on (dormant otherwise)
+#   Optional variables:
+#     SSH_PORT       ssh port (default 22)
+#     DEPLOY_DIR     absolute server dir mapped to the URL /webshop/backoffice_franchisor
+#                    (default /var/www/html/webshop/backoffice_franchisor)
+#
+#   Notes:
+#   • rsync runs WITHOUT --delete, so nothing else on the server is wiped.
+#   • An index.html (copy of back_office_ws_franchisor.html) is generated so the
+#     directory URL serves the app directly.
+#   • SECURITY: prefer a dedicated non-root deploy user + SSH key over the root
+#     password (replace the sshpass lines with an ssh-agent key, drop SSH_PASSWORD).
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    # Dormant until you set the repository variable DEPLOY_ENABLED = true.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble static site
+        run: |
+          rm -rf site && mkdir -p site/img
+          cp back_office_ws_franchisor.html app.js data.json site/
+          cp back_office_ws_franchisor.html site/index.html
+          cp img/logo.png site/img/
+          ls -R site
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Prepare remote directory (validates SSH login)
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -p ${{ vars.SSH_PORT || '22' }} \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "mkdir -p '${{ vars.DEPLOY_DIR || '/var/www/html/webshop/backoffice_franchisor' }}' && command -v rsync >/dev/null || (echo 'rsync manquant sur le serveur — apt-get install -y rsync'; exit 1)"
+
+      - name: Deploy → ${{ vars.DEPLOY_DIR || '/var/www/html/webshop/backoffice_franchisor' }}
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e rsync -rltDz --omit-dir-times \
+            -e "ssh -p ${{ vars.SSH_PORT || '22' }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            site/ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ vars.DEPLOY_DIR || '/var/www/html/webshop/backoffice_franchisor' }}/"
+
+      - name: Verify the served page is the fresh build
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e ssh -p ${{ vars.SSH_PORT || '22' }} \
+            -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "curl -s http://localhost/webshop/backoffice_franchisor/ | grep -o './app.js' | head -1 || echo 'WARN: app.js reference not found in served page'"
