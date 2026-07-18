@@ -435,7 +435,7 @@
               <sc-if value="{{ catTriggerAuto }}" hint-placeholder-val="{{ false }}">
                 <div style="background:var(--color-background-secondary);border:.5px dashed var(--color-border-secondary);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:10px">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
-                  <div style="line-height:1.35"><div style="font:600 11.5px var(--font-ui);color:var(--color-text)">Étape 1 · Produit déclencheur — verrouillé</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">La {{ catTriggerLabel }} choisie par le client devient automatiquement l'étape 1. Configure ci-dessous les étapes suivantes.</div></div>
+                  <div style="line-height:1.35"><div style="font:600 11.5px var(--font-ui);color:var(--color-text)">Étape 1 · Produit déclencheur — verrouillé</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">{{ catTriggerMsg }}</div></div>
                 </div>
               </sc-if>
               <sc-for list="{{ editSlots }}" as="s" hint-placeholder-count="3">
@@ -641,7 +641,7 @@ class Component extends DCLogic {
   toggleBundleActive(id){ if(!this.api)return; this.apply(this.api.toggleBundle(this.pid(),id)); }
   moveBundle(id,d){ if(!this.api)return; this.apply(this.api.moveBundle(this.pid(),id,d)); this.printJob('↕ POST /admin/bundles · sort_order'); }
   setBundleField(id,f,v){ if(!this.api)return; this.apply(this.api.updateBundle(this.pid(),id,{[f]:v})); }
-  addSlot(bid){ if(!this.api)return; const tl=this.state.trigLock; const catTrig=!!(tl&&tl.side==='cat'&&tl.id===this.pid()); const max=catTrig?2:3; const b=this.state.menus&&this.state.menus[this.pid()]&&this.state.menus[this.pid()].bundles.find(x=>x.id===bid); if(b&&b.slots.length>=max){ this.printJob(catTrig?'Max 2 étapes (l\'étape 1 = produit déclencheur)':'Maximum 3 étapes par formule'); return; } this.apply(this.api.addSlot(this.pid(),bid)); }
+  addSlot(bid){ if(!this.api)return; const tl=this.state.trigLock; const hasTrig=!!(tl&&tl.id===this.pid()); const max=hasTrig?2:3; const b=this.state.menus&&this.state.menus[this.pid()]&&this.state.menus[this.pid()].bundles.find(x=>x.id===bid); if(b&&b.slots.length>=max){ this.printJob(hasTrig?'Max 2 étapes (l\'étape 1 = produit déclencheur)':'Maximum 3 étapes par formule'); return; } this.apply(this.api.addSlot(this.pid(),bid)); }
   removeSlot(bid,sid){ if(!this.api)return; this.apply(this.api.removeSlot(this.pid(),bid,sid)); }
   moveSlot(bid,sid,d){ if(!this.api)return; this.apply(this.api.moveSlot(this.pid(),bid,sid,d)); }
   setSlotField(bid,sid,f,v){ if(!this.api)return; this.apply(this.api.updateSlot(this.pid(),bid,sid,{[f]:v})); }
@@ -901,9 +901,9 @@ class Component extends DCLogic {
           actStyle:switchS(c.active), actKnob:knobS(c.active), actToggle:()=>this.toggleChoiceActive(AB.id,s.id,c.id),
           up:()=>this.moveChoice(AB.id,s.id,c.id,-1), down:()=>this.moveChoice(AB.id,s.id,c.id,1), del:()=>this.removeChoice(AB.id,s.id,c.id), miniInput, sqBtn })) };
     }):[];
-    // Déclencheur catégorie : l'étape 1 est le produit déclencheur (auto/verrouillé),
-    // donc seulement 2 étapes éditables (2 & 3) ; sinon 3 (1,2,3).
-    const slotCap=catCommitted?2:3, stepOffset=catCommitted?1:0;
+    // Déclencheur (catégorie OU produit) : l'étape 1 = le produit déclencheur
+    // (auto/verrouillé), donc seulement 2 étapes éditables (2 & 3) ; sinon 3.
+    const slotCap=hasTrigger?2:3, stepOffset=hasTrigger?1:0;
     const slotView=editSlots.slice(0,slotCap); if(AB){ while(slotView.length<slotCap){ const idx=slotView.length+1+stepOffset; slotView.push({ph:true,real:false,name:'Étape '+idx,miniInput,phStyle:switchS(false),phKnob:knobS(false),addToggle:()=>this.addSlot(AB.id)}); } }
     const effSel={};
     const previewSlots=AB?AB.slots.filter(s=>s.active).map(s=>{ const acs=s.choices.filter(c=>c.active); const isSingle=s.kind==='single';
@@ -969,7 +969,9 @@ class Component extends DCLogic {
       abDup:AB?(()=>this.duplicateBundle(AB.id)):(()=>{}), abUp:AB?(()=>this.moveBundle(AB.id,-1)):(()=>{}), abDown:AB?(()=>this.moveBundle(AB.id,1)):(()=>{}),
       abDel:AB?(()=>{ if(!this.api)return; const db=this.api.deleteBundle(this.pid(),AB.id); const nb=(db[this.pid()]&&db[this.pid()].bundles[0])||{}; this.setState({menus:db,activeBundle:nb.id}); this.printJob('✖ Formule supprimée (étapes + choix)'); }):(()=>{}),
       editSlots:slotView, addSlot:AB?(()=>this.addSlot(AB.id)):(()=>{}),
-      catTriggerAuto:catCommitted, catTriggerLabel:(M.category||'sélection'),
+      catTriggerAuto:hasTrigger,
+      catTriggerLabel:(catCommitted?(M.category||'sélection'):(M.productName||'produit')),
+      catTriggerMsg:(catCommitted?('La '+(M.category||'sélection')+' choisie par le client devient automatiquement l\'étape 1. Configure ci-dessous les étapes suivantes.'):('Le produit déclencheur « '+(M.productName||'produit')+' » est l\'étape 1. Configure ci-dessous les étapes suivantes.')),
       previewSlots, previewTotal:this.eur2(mtotal), previewProduct:M.productName, previewDisabled:!effYes, armedEmpty,
       isMenuList:menuMode==='list', isMenuEdit:menuMode==='edit', menuCreate:!!S.menuCreate,
       openCreate:()=>this.setState({menuCreate:true}), closeCreate:()=>this.setState({menuCreate:false}), backToList:()=>this.setState({menuMode:'list',menuCreate:false}),
