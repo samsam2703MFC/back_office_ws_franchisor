@@ -149,7 +149,7 @@
           <sc-for list="{{ catTree }}" as="r" hint-placeholder-count="8">
             <sc-if value="{{ r.isCat }}" hint-placeholder-val="{{ true }}">
               <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:11px 6px;background:var(--color-background-secondary);border-radius:8px;margin-top:8px">
-                <div onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><span style="width:14px;color:var(--color-text-muted);flex:none;font-size:11px">{{ r.caret }}</span><span style="font:600 12px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text)">{{ r.cat }}</span></div>
+                <div onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><span style="width:14px;color:var(--color-text-muted);flex:none;font-size:11px">{{ r.caret }}</span><span style="font:600 13px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text)">{{ r.cat }}</span></div>
                 <span></span>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:16px;padding:4px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.catWebToggle }}" style="{{ r.catWebStyle }}"><span style="{{ r.catWebKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.catOffToggle }}" style="{{ r.catOffStyle }}"><span style="{{ r.catOffKnob }}"></span></button></div></div>
                 <div onClick="{{ r.catOblToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catOblStyle }}"><span style="{{ r.catOblKnob }}"></span></button></div>
@@ -159,11 +159,18 @@
               </div>
             </sc-if>
             <sc-if value="{{ r.isSub }}" hint-placeholder-val="{{ false }}">
-              <div onClick="{{ r.subToggle }}" style="display:flex;align-items:center;gap:8px;padding:8px 8px 8px 22px;cursor:pointer;border-bottom:.5px solid var(--color-border-tertiary);background:linear-gradient(var(--color-background-secondary),transparent)"><span style="width:11px;color:var(--color-text-muted);font-size:10px">{{ r.subCaret }}</span><span style="font:600 10.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)">{{ r.subLabel }}</span></div>
+              <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:7px 6px;border-bottom:.5px solid var(--color-border-tertiary);background:linear-gradient(var(--color-background-secondary),transparent)">
+                <div onClick="{{ r.subToggle }}" style="display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;padding-left:12px"><span style="width:10px;color:var(--color-text-muted);font-size:9px">{{ r.subCaret }}</span><span style="font:600 12px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)">{{ r.subLabel }}</span></div>
+                <span></span>
+                <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-surface);border-radius:14px;padding:3px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.subWebToggle }}" style="{{ r.subWebStyle }}"><span style="{{ r.subWebKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.subOffToggle }}" style="{{ r.subOffStyle }}"><span style="{{ r.subOffKnob }}"></span></button></div></div>
+                <div style="display:flex;justify-content:center"><button onClick="{{ r.subOblToggle }}" style="{{ r.subOblStyle }}"><span style="{{ r.subOblKnob }}"></span></button></div>
+                <div style="display:flex;justify-content:center"><button onClick="{{ r.subMenuToggle }}" style="{{ r.subMenuStyle }}"><span style="{{ r.subMenuKnob }}"></span></button></div>
+                <span></span><span></span>
+              </div>
             </sc-if>
             <sc-if value="{{ r.isProd }}" hint-placeholder-val="{{ false }}">
               <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:16px"><span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if></div>
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:24px"><span style="font:500 11px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if></div>
                 <div style="display:flex;justify-content:flex-end"><input type="number" step="0.01" value="{{ r.prix }}" onChange="{{ r.setPrix }}" style="width:70px;text-align:right;border:.5px solid var(--color-border-secondary);border-radius:7px;padding:6px 7px;font:600 12px var(--font-ui);color:var(--color-text);background:var(--color-surface)"/></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-background-secondary);border-radius:16px;padding:4px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBw }}" style="{{ r.bwStyle }}"><span style="{{ r.bwKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleOd }}" style="{{ r.odStyle }}"><span style="{{ r.odKnob }}"></span></button></div></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBm }}" style="{{ r.bmStyle }}"><span style="{{ r.bmKnob }}"></span></button></div>
@@ -842,6 +849,12 @@ class Component extends DCLogic {
     // Variante « apricot » — canal livraison bureau (ws_office).
     const swSa=(on)=>'position:relative;width:34px;height:19px;border-radius:20px;border:none;cursor:pointer;flex:none;background:'+(on?APRICOT:'var(--color-border-secondary)');
     const knS=(on)=>'position:absolute;top:2px;left:'+(on?'17px':'2px')+';width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)';
+    // Toggles à taille HIÉRARCHIQUE (Catégorie > Sous-catégorie > Produit) : seules
+    // la hauteur et la pastille décroissent selon le niveau ; la LARGEUR reste 34px
+    // à tous les niveaux → toggles alignés en colonne et de largeur identique.
+    const RUBY='var(--color-primary)', HCAT=19, HSUB=17, HPRD=15;
+    const swL=(on,color,h)=>'position:relative;width:34px;height:'+h+'px;border-radius:'+h+'px;border:none;cursor:pointer;flex:none;background:'+(on?color:'var(--color-border-secondary)');
+    const knL=(on,h)=>{ const k=h-4; return 'position:absolute;top:2px;left:'+(on?(32-k)+'px':'2px')+';width:'+k+'px;height:'+k+'px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)'; };
     // Paramètres du site (ws_param) pilotés depuis la modale profil. Valeur '0'/'1' -> toggle,
     // sinon champ texte. Persistance : POST /franchisor/param (upsert + audit). bo_show_source
     // est garanti présent même si le param n'existe pas encore.
@@ -860,10 +873,10 @@ class Component extends DCLogic {
       const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
       if(activeOnly&&!cwOn) return;
       catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbWeb+' en ligne',open,caret:open?'▾':'▸',
-        menuDefStyle:swS(menuDefOn),menuDefKnob:knS(menuDefOn),
-        catWebStyle:swS(cwOn),catWebKnob:knS(cwOn),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
-        catOffStyle:swSa(coffOn),catOffKnob:knS(coffOn),catOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!coffOn; this.setState(st=>{ const f={...st.flags,['catOff_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['od_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,office_delivery:nv?1:0}); },
-        catOblStyle:swS(cobOn),catOblKnob:knS(cobOn),catOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cobOn; this.setState(st=>{ const f={...st.flags,['catObl_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bm_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_mandatory:nv?1:0}); },
+        menuDefStyle:swL(menuDefOn,RUBY,HCAT),menuDefKnob:knL(menuDefOn,HCAT),
+        catWebStyle:swL(cwOn,RUBY,HCAT),catWebKnob:knL(cwOn,HCAT),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
+        catOffStyle:swL(coffOn,APRICOT,HCAT),catOffKnob:knL(coffOn,HCAT),catOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!coffOn; this.setState(st=>{ const f={...st.flags,['catOff_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['od_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,office_delivery:nv?1:0}); },
+        catOblStyle:swL(cobOn,RUBY,HCAT),catOblKnob:knL(cobOn,HCAT),catOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cobOn; this.setState(st=>{ const f={...st.flags,['catObl_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bm_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_mandatory:nv?1:0}); },
         menuDefToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(!this.api)return; const nv=menuDefOn?0:1; let db=this.api.setCategoryDefault(c.cat,nv); c.prods.forEach(pp=>{ const id=pp.id||('cat-'+slugId(pp.nom)); db=this.api.setProductOverride(id,null); }); this.setState({menus:db}); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,menu_default:nv}); },
         toggle:()=>this.setState(st=>({flags:{...st.flags,[ok]:!(st.flags[ok]!==undefined?st.flags[ok]:true)}}))});
       if(!open) return;
@@ -871,10 +884,24 @@ class Component extends DCLogic {
       c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
         if(activeOnly&&!bw.on) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
-        // Sous-catégorie : en-tête repliable groupant les produits (filtrage rapide).
+        // Sous-catégorie : en-tête repliable + toggles de pilotage (mêmes que la
+        // catégorie) qui cascadent aux produits de la sous-catégorie (sub_cat_id).
         const subId=(p.sub_id!=null?String(p.sub_id):'');
         const subOpenKey='subOpen_'+ci+'_'+subId, subOpen=(!p.sub)||(S.flags[subOpenKey]!==undefined?S.flags[subOpenKey]:true);
-        if(p.sub && subId!==lastSub){ lastSub=subId; catTree.push({isCat:false,isProd:false,isSub:true,subLabel:p.sub,subCaret:subOpen?'▾':'▸',subToggle:()=>this.setState(st=>({flags:{...st.flags,[subOpenKey]:!(st.flags[subOpenKey]!==undefined?st.flags[subOpenKey]:true)}}))}); }
+        if(p.sub && subId!==lastSub){ lastSub=subId;
+          const grp=c.prods.map((pp,ppi)=>({pp,ppi})).filter(x=>String(x.pp.sub_id!=null?x.pp.sub_id:'')===subId);
+          const gAll=(flag,field,dflt)=>grp.every(x=>{ const v=S.flags[flag+'_'+ci+'_'+x.ppi]; return v!==undefined?v:(x.pp[field]!==undefined?x.pp[field]:dflt); });
+          const sWeb=gAll('bw','bw',true), sOff=gAll('od','od',true), sObl=gAll('bm','bm',false);
+          const sMenu=grp.length>0&&grp.every(x=>{ const pmid=x.pp.id||('cat-'+slugId(x.pp.nom)); const _m=S.menus||{}; if(_m[pmid]){ const rm=this.api?this.api.resolveMenu(pmid):{effective:0}; return rm.effective===1; } return this.api?!!this.api.getCategoryDefault(c.cat):false; });
+          const sid=parseInt(subId,10)||null;
+          const subSet=(flag,key,val)=>{ this.setState(st=>{ const f={...st.flags}; grp.forEach(x=>{ f[flag+'_'+ci+'_'+x.ppi]=val; }); return {flags:f}; }); if(sid)this.frPost('/franchisor/subcategory',{id:sid,[key]:val?1:0}); };
+          const doSubMenu=()=>{ const nv=!sMenu; if(this.api){ let db=S.menus; grp.forEach(x=>{ const pmid=x.pp.id||('cat-'+slugId(x.pp.nom)); const pvv=S.flags['prix_'+ci+'_'+x.ppi]!==undefined?S.flags['prix_'+ci+'_'+x.ppi]:x.pp.prix; this.api.ensureProduct(pmid,x.pp.nom,pvv,c.cat); db=this.api.setProductOverride(pmid,nv?'on':'off'); }); this.setState({menus:db}); } if(sid)this.frPost('/franchisor/subcategory',{id:sid,menu_override:nv?'on':'off'}); };
+          catTree.push({isCat:false,isProd:false,isSub:true,subLabel:p.sub,subCaret:subOpen?'▾':'▸',
+            subToggle:()=>this.setState(st=>({flags:{...st.flags,[subOpenKey]:!(st.flags[subOpenKey]!==undefined?st.flags[subOpenKey]:true)}})),
+            subWebStyle:swL(sWeb,RUBY,HSUB),subWebKnob:knL(sWeb,HSUB),subWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('bw','active',!sWeb); },
+            subOffStyle:swL(sOff,APRICOT,HSUB),subOffKnob:knL(sOff,HSUB),subOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('od','office_delivery',!sOff); },
+            subOblStyle:swL(sObl,RUBY,HSUB),subOblKnob:knL(sObl,HSUB),subOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('bm','brand_mandatory',!sObl); },
+            subMenuStyle:swL(sMenu,RUBY,HSUB),subMenuKnob:knL(sMenu,HSUB),subMenuToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); doSubMenu(); }}); }
         if(p.sub && !subOpen) return;
         const pk='prix_'+ci+'_'+pi, pv=S.flags[pk]!==undefined?S.flags[pk]:p.prix;
         const adColor=p.ad>=80?'#2d7a3e':(p.ad>=50?'#b26a00':'var(--color-primary)');
@@ -884,10 +911,10 @@ class Component extends DCLogic {
         const mnOn=_inStore?(rm.effective===1):_catDef;
         catTree.push({isCat:false,isProd:true,nom:p.nom,
           hasSaison:!!p.saison, saison:p.saison||'', saisonPill:pill('#fbf1e3','#C87A3F'),
-          mnStyle:swS(mnOn),mnKnob:knS(mnOn),
+          mnStyle:swL(mnOn,RUBY,HPRD),mnKnob:knL(mnOn,HPRD),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swS(bw.on),bwKnob:knS(bw.on),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, odStyle:swSa(od.on),odKnob:knS(od.on),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}); }, bmStyle:swS(bm.on),bmKnob:knS(bm.on),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
+          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
