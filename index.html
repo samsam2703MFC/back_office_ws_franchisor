@@ -140,18 +140,19 @@
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_products · product_categories · ws_season ← ERP (lecture)</span><span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Prix réf. & gouvernance éditables · catalogue synchronisé ERP</span></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop marque</strong> = whitelist ⇩ · <strong>Obligatoire</strong> verrouille l'assortiment franchisé · adoption = % boutiques</div>
+          <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop</strong> = click &amp; collect (« ruby ») · <strong>Bureau</strong> = livraison bureau (« apricot »), canal indépendant · <strong>Obligatoire</strong> verrouille l'assortiment franchisé · adoption = % boutiques</div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Saison</span><sc-for list="{{ seasonChips }}" as="sc" hint-placeholder-count="3"><button onClick="{{ sc.pick }}" style="{{ sc.style }}">{{ sc.label }}</button></sc-for></div>
             <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs webshop uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
           </div>
-          <div style="display:grid;grid-template-columns:2.2fr .9fr .8fr .8fr .8fr 1fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Catégorie / produit</span><span class="t-admin-label" style="text-align:right">Prix réf.</span><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label" style="text-align:center">Oblig.</span><span class="t-admin-label" style="text-align:center">Menu</span><span class="t-admin-label">Adoption</span><span></span></div>
+          <div style="display:grid;grid-template-columns:2.2fr .9fr .78fr .78fr .78fr .78fr 1fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Catégorie / produit</span><span class="t-admin-label" style="text-align:right">Prix réf.</span><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label" style="text-align:center">Bureau</span><span class="t-admin-label" style="text-align:center">Oblig.</span><span class="t-admin-label" style="text-align:center">Menu</span><span class="t-admin-label">Adoption</span><span></span></div>
           <sc-for list="{{ catTree }}" as="r" hint-placeholder-count="8">
             <sc-if value="{{ r.isCat }}" hint-placeholder-val="{{ true }}">
-              <div style="display:grid;grid-template-columns:2.2fr .9fr .8fr .8fr .8fr 1fr 40px;align-items:center;padding:11px 8px;background:var(--color-background-secondary);border-radius:8px;margin-top:8px">
+              <div style="display:grid;grid-template-columns:2.2fr .9fr .78fr .78fr .78fr .78fr 1fr 40px;align-items:center;padding:11px 8px;background:var(--color-background-secondary);border-radius:8px;margin-top:8px">
                 <div onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><span style="width:14px;color:var(--color-text-muted);flex:none;font-size:11px">{{ r.caret }}</span><span style="font:600 12px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text)">{{ r.cat }}</span></div>
                 <span></span>
                 <div onClick="{{ r.catWebToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catWebStyle }}"><span style="{{ r.catWebKnob }}"></span></button></div>
+                <div onClick="{{ r.catOffToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catOffStyle }}"><span style="{{ r.catOffKnob }}"></span></button></div>
                 <div onClick="{{ r.catOblToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catOblStyle }}"><span style="{{ r.catOblKnob }}"></span></button></div>
                 <div onClick="{{ r.menuDefToggle }}" style="display:flex;justify-content:center"><button style="{{ r.menuDefStyle }}"><span style="{{ r.menuDefKnob }}"></span></button></div>
                 <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ r.count }}</span>
@@ -159,10 +160,11 @@
               </div>
             </sc-if>
             <sc-if value="{{ r.isProd }}" hint-placeholder-val="{{ false }}">
-              <div style="display:grid;grid-template-columns:2.2fr .9fr .8fr .8fr .8fr 1fr 40px;align-items:center;padding:10px 6px 10px 22px;border-bottom:.5px solid var(--color-border-tertiary)">
+              <div style="display:grid;grid-template-columns:2.2fr .9fr .78fr .78fr .78fr .78fr 1fr 40px;align-items:center;padding:10px 6px 10px 22px;border-bottom:.5px solid var(--color-border-tertiary)">
                 <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if></div>
                 <div style="display:flex;justify-content:flex-end"><input type="number" step="0.01" value="{{ r.prix }}" onChange="{{ r.setPrix }}" style="width:70px;text-align:right;border:.5px solid var(--color-border-secondary);border-radius:7px;padding:6px 7px;font:600 12px var(--font-ui);color:var(--color-text);background:var(--color-surface)"/></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBw }}" style="{{ r.bwStyle }}"><span style="{{ r.bwKnob }}"></span></button></div>
+                <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleOd }}" style="{{ r.odStyle }}"><span style="{{ r.odKnob }}"></span></button></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBm }}" style="{{ r.bmStyle }}"><span style="{{ r.bmKnob }}"></span></button></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.mnToggle }}" style="{{ r.mnStyle }}"><span style="{{ r.mnKnob }}"></span></button></div>
                 <div style="display:flex;align-items:center;gap:7px"><div style="flex:1;height:7px;background:var(--color-background-secondary);border-radius:5px;overflow:hidden"><div style="width:{{ r.adPct }};height:100%;background:{{ r.adColor }};border-radius:5px"></div></div><span style="font:600 10px var(--font-ui);color:var(--color-text-muted);width:30px;text-align:right">{{ r.adPct }}</span></div>
@@ -851,16 +853,18 @@ class Component extends DCLogic {
       const nbWeb=c.prods.filter((p,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:p.bw; }).length;
       const menuDefOn=this.api?!!this.api.getCategoryDefault(c.cat):false;
       const cwOn=S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true;
+      const coffOn=S.flags['catOff_'+ci]!==undefined?S.flags['catOff_'+ci]:true;
       const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
       if(activeOnly&&!cwOn) return;
       catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbWeb+' en ligne',open,caret:open?'▾':'▸',
         menuDefStyle:swS(menuDefOn),menuDefKnob:knS(menuDefOn),
         catWebStyle:swS(cwOn),catWebKnob:knS(cwOn),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
+        catOffStyle:swS(coffOn),catOffKnob:knS(coffOn),catOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!coffOn; this.setState(st=>{ const f={...st.flags,['catOff_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['od_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,office_delivery:nv?1:0}); },
         catOblStyle:swS(cobOn),catOblKnob:knS(cobOn),catOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cobOn; this.setState(st=>{ const f={...st.flags,['catObl_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bm_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_mandatory:nv?1:0}); },
         menuDefToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(!this.api)return; const nv=menuDefOn?0:1; let db=this.api.setCategoryDefault(c.cat,nv); c.prods.forEach(pp=>{ const id=pp.id||('cat-'+slugId(pp.nom)); db=this.api.setProductOverride(id,null); }); this.setState({menus:db}); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,menu_default:nv}); },
         toggle:()=>this.setState(st=>({flags:{...st.flags,[ok]:!(st.flags[ok]!==undefined?st.flags[ok]:true)}}))});
       if(!open) return;
-      c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm);
+      c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
         if(activeOnly&&!bw.on) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
         const pk='prix_'+ci+'_'+pi, pv=S.flags[pk]!==undefined?S.flags[pk]:p.prix;
@@ -874,7 +878,7 @@ class Component extends DCLogic {
           mnStyle:swS(mnOn),mnKnob:knS(mnOn),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swS(bw.on),bwKnob:knS(bw.on),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, bmStyle:swS(bm.on),bmKnob:knS(bm.on),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
+          bwStyle:swS(bw.on),bwKnob:knS(bw.on),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, odStyle:swS(od.on),odKnob:knS(od.on),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}); }, bmStyle:swS(bm.on),bmKnob:knS(bm.on),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
