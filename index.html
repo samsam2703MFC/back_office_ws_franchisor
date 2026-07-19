@@ -601,6 +601,27 @@
             <sc-if value="{{ f.isBool }}" hint-placeholder-val="{{ false }}"><button onClick="{{ f.boolToggle }}" style="{{ f.boolStyle }}"><span style="{{ f.boolKnob }}"></span></button></sc-if>
           </div>
         </sc-for>
+        <sc-if value="{{ isVoucherForm }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:.5px dashed var(--color-border-tertiary);padding-top:15px">
+          <label style="display:block;font:600 11px var(--font-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:8px">Bon dédié à</label>
+          <div style="display:flex;gap:7px;margin-bottom:11px">
+            <sc-for list="{{ vtModes }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.pick }}" style="{{ m.style }}">{{ m.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ vtNeedsSearch }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative">
+            <input type="text" value="{{ vtQ }}" onChange="{{ vtSearch }}" placeholder="{{ vtSearchPh }}" style="width:100%;padding:10px 12px;border:.5px solid var(--color-border-secondary);border-radius:9px;font:400 12.5px var(--font-ui);color:var(--color-text);background:var(--color-surface);box-sizing:border-box"/>
+            <sc-if value="{{ vtHasResults }}" hint-placeholder-val="{{ false }}">
+            <div class="lz" style="position:absolute;z-index:60;top:100%;left:0;right:0;margin-top:5px;max-height:200px;overflow-y:auto;background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.16)">
+              <sc-for list="{{ vtResults }}" as="r" hint-placeholder-count="4"><div onClick="{{ r.pick }}" style="padding:9px 12px;cursor:pointer;font:500 12px var(--font-ui);color:var(--color-text);border-bottom:.5px solid var(--color-border-tertiary)">{{ r.label }}</div></sc-for>
+            </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ vtSelDone }}" hint-placeholder-val="{{ false }}">
+            <div style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;background:#fdf3f4;border:.5px solid var(--color-primary);border-radius:20px;padding:6px 12px"><span style="font:600 11.5px var(--font-ui);color:var(--color-primary)">Ciblé : {{ vtSelLabel }}</span><button onClick="{{ vtClear }}" style="background:transparent;border:none;cursor:pointer;color:var(--color-primary);font-size:15px;line-height:1;padding:0">×</button></div>
+          </sc-if>
+          </sc-if>
+        </div>
+        </sc-if>
       </div>
       <div style="padding:14px 24px 20px;border-top:.5px solid var(--color-border-tertiary);display:flex;gap:10px">
         <button onClick="{{ formClose }}" class="btn-secondary" style="flex:1;font-size:13px">Annuler</button>
@@ -738,12 +759,21 @@ class Component extends DCLogic {
   openForm(key){ return ()=>{ const c=this.formDefs()[key]; const v={}; c.fields.forEach(f=>{ v[f.k]=f.type==='checks'?[]:(f.type==='bool'?(f.def!==undefined?f.def:false):(f.def!==undefined?f.def:'')); }); this.setState({formKey:key,formVals:v,formEdit:false}); }; }
   editForm(key,vals){ return ()=>{ const c=this.formDefs()[key]; const v={}; c.fields.forEach(f=>{ if(f.type==='checks'){ v[f.k]=Array.isArray(vals&&vals[f.k])?vals[f.k]:[]; } else if(f.type==='bool'){ v[f.k]=(vals&&vals[f.k]!==undefined)?vals[f.k]:(f.def!==undefined?f.def:false); } else { v[f.k]=(vals&&vals[f.k]!==undefined&&vals[f.k]!=='')?vals[f.k]:(f.def!==undefined?f.def:''); } }); if(vals&&vals.id!=null) v.id=vals.id; this.setState({formKey:key,formVals:v,formEdit:true}); }; }
   closeForm(){ this.setState({formKey:null}); }
-  submitForm(){ const key=this.state.formKey, c=this.formDefs()[key]; if(!c) return; const v=this.state.formVals||{}; this.setState({formKey:null});
+  setVtKind(k){ this.setState({vtKind:k, vtQ:'', vtResults:[], vtSel:null}); }
+  vtSearch(e){ const q=e.target.value; this.setState({vtQ:q}); const kind=this.state.vtKind; if(kind!=='CUSTOMER'&&kind!=='OFFICE')return;
+    clearTimeout(this._vt); this._vt=setTimeout(()=>{ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.setState({vtResults:[]}); return; }
+      const ep=kind==='CUSTOMER'?'/franchisor/clients':'/franchisor/offices';
+      fetch(fr.base+ep+'?q='+encodeURIComponent(q), {headers:fr.token?{'X-Admin-Token':fr.token}:{}}).then(r=>r.ok?r.json():[]).then(list=>{ if(Array.isArray(list))this.setState({vtResults:list}); }).catch(()=>{}); }, 300); }
+  vtPick(item){ this.setState({vtSel:item, vtResults:[]}); }
+  submitForm(){ const key=this.state.formKey, c=this.formDefs()[key]; if(!c) return; const v=this.state.formVals||{};
+    const tk=this.state.vtKind||'NETWORK'; const tsel=this.state.vtSel||null;
+    if(key==='voucher' && tk!=='NETWORK' && !tsel){ this.printJob('Sélectionne la cible du bon (personne ou entreprise)'); return; }
+    this.setState({formKey:null, vtKind:'NETWORK', vtQ:'', vtResults:[], vtSel:null});
     // Mappe le formulaire → endpoint d'écriture ; repli toast si non câblé.
     let path=null, payload=null;
     if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
     else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
-    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null}; }
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
@@ -1003,6 +1033,14 @@ class Component extends DCLogic {
     // Form modal view
     const fCfg=S.formKey?this.formDefs()[S.formKey]:null;
     const inputBase='width:100%;padding:11px 12px;border:.5px solid var(--color-border-secondary);border-radius:9px;font:400 13px var(--font-ui);color:var(--color-text);background:var(--color-surface);box-sizing:border-box';
+    // Ciblage du bon (modale voucher) : Réseau / Personne / Entreprise + recherche.
+    const _vtKind=S.vtKind||'NETWORK';
+    const _vtBtn=(on)=>'font:600 11px var(--font-ui);padding:7px 13px;border-radius:8px;cursor:pointer;border:.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'var(--color-surface)')+';color:'+(on?'#fff':'var(--color-text)');
+    const vtModes=[{k:'NETWORK',label:'Réseau'},{k:'CUSTOMER',label:'Personne'},{k:'OFFICE',label:'Entreprise'}].map(m=>({label:m.label,style:_vtBtn(_vtKind===m.k),pick:()=>this.setVtKind(m.k)}));
+    const vtNeedsSearch=(_vtKind==='CUSTOMER'||_vtKind==='OFFICE');
+    const vtSearchPh=_vtKind==='CUSTOMER'?'Rechercher un client (mail, nom, téléphone)…':'Rechercher une entreprise / bureau (nom, ville)…';
+    const vtResults=(S.vtResults||[]).map(r=>{ const label=(_vtKind==='CUSTOMER')?((r.name||'—')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
+    const _vtSel=S.vtSel||null;
     const formFields=fCfg?fCfg.fields.map(f=>{ const val=S.formVals[f.k]!==undefined?S.formVals[f.k]:'';
       const onInput=e=>{ const v=e.target.value; this.setState(st=>({formVals:{...st.formVals,[f.k]:v}})); };
       const arr=Array.isArray(S.formVals[f.k])?S.formVals[f.k]:[];
@@ -1070,6 +1108,8 @@ class Component extends DCLogic {
       marMarginColor, marFoodColor, marPctW:Math.max(0,Math.min(100,mar.marginPct))+'%', marRange:this.eur2(mRange.min)+'  →  '+this.eur2(mRange.max),
       schemaOpen, schemaItems, schemaDismiss:()=>{ if(window.BOServer){ window.BOServer.setParam('admin.schema_reports',0); this.forceUpdate(); } }, sqBtnGlobal:sqBtn, miniInput,
       formOpen:!!fCfg, formTitle:fCfg?fCfg.title:'', formTable:fCfg?fCfg.table:'', formSave:fCfg?fCfg.save:'', formFields,
+      isVoucherForm:(S.formKey==='voucher'), vtModes, vtNeedsSearch, vtSearchPh, vtQ:(S.vtQ||''), vtSearch:(e)=>this.vtSearch(e),
+      vtResults, vtHasResults:vtResults.length>0, vtSelDone:!!_vtSel, vtSelLabel:(_vtSel?_vtSel.label:''), vtClear:()=>this.setState({vtSel:null,vtResults:[]}),
       formClose:()=>this.closeForm(), formSubmit:()=>this.submitForm(), stop:e=>e.stopPropagation(),
       toast:S.toast, toastShow:!!S.toast,
     };
