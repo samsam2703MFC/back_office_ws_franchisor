@@ -158,6 +158,9 @@
                 <span></span>
               </div>
             </sc-if>
+            <sc-if value="{{ r.isSub }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ r.subToggle }}" style="display:flex;align-items:center;gap:8px;padding:8px 8px 8px 22px;cursor:pointer;border-bottom:.5px solid var(--color-border-tertiary);background:linear-gradient(var(--color-background-secondary),transparent)"><span style="width:11px;color:var(--color-text-muted);font-size:10px">{{ r.subCaret }}</span><span style="font:600 10.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)">{{ r.subLabel }}</span></div>
+            </sc-if>
             <sc-if value="{{ r.isProd }}" hint-placeholder-val="{{ false }}">
               <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
                 <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:16px"><span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if></div>
@@ -864,9 +867,15 @@ class Component extends DCLogic {
         menuDefToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(!this.api)return; const nv=menuDefOn?0:1; let db=this.api.setCategoryDefault(c.cat,nv); c.prods.forEach(pp=>{ const id=pp.id||('cat-'+slugId(pp.nom)); db=this.api.setProductOverride(id,null); }); this.setState({menus:db}); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,menu_default:nv}); },
         toggle:()=>this.setState(st=>({flags:{...st.flags,[ok]:!(st.flags[ok]!==undefined?st.flags[ok]:true)}}))});
       if(!open) return;
+      let lastSub=null;
       c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
         if(activeOnly&&!bw.on) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
+        // Sous-catégorie : en-tête repliable groupant les produits (filtrage rapide).
+        const subId=(p.sub_id!=null?String(p.sub_id):'');
+        const subOpenKey='subOpen_'+ci+'_'+subId, subOpen=(!p.sub)||(S.flags[subOpenKey]!==undefined?S.flags[subOpenKey]:true);
+        if(p.sub && subId!==lastSub){ lastSub=subId; catTree.push({isCat:false,isProd:false,isSub:true,subLabel:p.sub,subCaret:subOpen?'▾':'▸',subToggle:()=>this.setState(st=>({flags:{...st.flags,[subOpenKey]:!(st.flags[subOpenKey]!==undefined?st.flags[subOpenKey]:true)}}))}); }
+        if(p.sub && !subOpen) return;
         const pk='prix_'+ci+'_'+pi, pv=S.flags[pk]!==undefined?S.flags[pk]:p.prix;
         const adColor=p.ad>=80?'#2d7a3e':(p.ad>=50?'#b26a00':'var(--color-primary)');
         const pmid=p.id||('cat-'+slugId(p.nom));
