@@ -148,7 +148,10 @@
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Saison</span><sc-for list="{{ seasonChips }}" as="sc" hint-placeholder-count="3"><button onClick="{{ sc.pick }}" style="{{ sc.style }}">{{ sc.label }}</button></sc-for></div>
-            <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs webshop uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <button onClick="{{ toggleAllCats }}" title="Déplier ou replier toutes les catégories" style="border:none;background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:600 11px var(--font-ui);color:var(--color-text-muted);padding:4px 6px"><span style="font-size:10px;color:var(--color-primary);width:9px;text-align:center">{{ allCatsCaret }}</span>{{ allCatsLabel }}</button>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs webshop uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
+            </div>
           </div>
           <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Catégorie / produit</span><span class="t-admin-label" style="text-align:right">Prix réf.</span><div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 12px"><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label" style="text-align:center">Bureau</span></div><span class="t-admin-label" style="text-align:center">Oblig.</span><span class="t-admin-label" style="text-align:center">Menu</span><span class="t-admin-label">Adoption</span><span></span></div>
           <sc-for list="{{ catTree }}" as="r" hint-placeholder-count="8">
@@ -850,6 +853,9 @@ class Component extends DCLogic {
     const seasonFilter=S.seasonFilter||'';
     // Recherche catalogue — filtre par nom de produit, de sous-catégorie ou de catégorie.
     const catQuery=(S.catSearch||'').trim().toLowerCase();
+    // Toggle minimaliste « Tout déplier / Tout replier » — pilote tous les flags catO_/subOpen_.
+    const catAllOpen=CATALOG.length>0&&CATALOG.every((c,ci)=>{ const v=S.flags['catO_'+ci]; return v!==undefined?v:true; });
+    const toggleAllCats=()=>{ const nv=!catAllOpen; this.setState(st=>{ const f={...st.flags}; CATALOG.forEach((c,ci)=>{ f['catO_'+ci]=nv; c.prods.forEach((p)=>{ if(p.sub_id!=null) f['subOpen_'+ci+'_'+String(p.sub_id)]=nv; }); }); return {flags:f}; }); };
     const seasonsList=[...new Set([].concat(...CATALOG.map(c=>c.prods.map(p=>p.saison).filter(Boolean))))];
     const seasonChips=[{label:'Toutes saisons',value:''}].concat(seasonsList.map(sn=>({label:sn,value:sn}))).map(o=>({ label:o.label, active:o.value===seasonFilter, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(o.value===seasonFilter?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), pick:()=>this.setState({seasonFilter:o.value}) }));
     const swS=(on)=>'position:relative;width:34px;height:19px;border-radius:20px;border:none;cursor:pointer;flex:none;background:'+(on?'var(--color-primary)':'var(--color-border-secondary)');
@@ -1116,6 +1122,7 @@ class Component extends DCLogic {
       isBoutiques:S.screen==='boutiques',
       isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
+      allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
       isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
