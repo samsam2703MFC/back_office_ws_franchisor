@@ -141,6 +141,11 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_products · product_categories · ws_season ← ERP (lecture)</span><span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Prix réf. & gouvernance éditables · catalogue synchronisé ERP</span></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
           <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop</strong> = click &amp; collect (« ruby ») · <strong>Bureau</strong> = livraison bureau (« apricot »), canal indépendant · <strong>Obligatoire</strong> verrouille l'assortiment franchisé · adoption = % boutiques</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:9px 12px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
+            <input type="text" value="{{ catSearch }}" onChange="{{ setCatSearch }}" placeholder="Rechercher un produit ou une catégorie…" style="flex:1;min-width:0;border:none;background:transparent;outline:none;font:500 12.5px var(--font-ui);color:var(--color-text)"/>
+            <sc-if value="{{ catSearchActive }}" hint-placeholder-val="{{ false }}"><button onClick="{{ clearCatSearch }}" style="border:none;background:transparent;cursor:pointer;color:var(--color-text-muted);font:600 11px var(--font-ui);padding:2px 6px;flex:none">Effacer</button></sc-if>
+          </div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Saison</span><sc-for list="{{ seasonChips }}" as="sc" hint-placeholder-count="3"><button onClick="{{ sc.pick }}" style="{{ sc.style }}">{{ sc.label }}</button></sc-for></div>
             <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs webshop uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
@@ -843,6 +848,8 @@ class Component extends DCLogic {
     const catTree=[];
     const activeOnly=S.flags['catActiveOnly']!==undefined?S.flags['catActiveOnly']:true;
     const seasonFilter=S.seasonFilter||'';
+    // Recherche catalogue — filtre par nom de produit, de sous-catégorie ou de catégorie.
+    const catQuery=(S.catSearch||'').trim().toLowerCase();
     const seasonsList=[...new Set([].concat(...CATALOG.map(c=>c.prods.map(p=>p.saison).filter(Boolean))))];
     const seasonChips=[{label:'Toutes saisons',value:''}].concat(seasonsList.map(sn=>({label:sn,value:sn}))).map(o=>({ label:o.label, active:o.value===seasonFilter, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(o.value===seasonFilter?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), pick:()=>this.setState({seasonFilter:o.value}) }));
     const swS=(on)=>'position:relative;width:34px;height:19px;border-radius:20px;border:none;cursor:pointer;flex:none;background:'+(on?'var(--color-primary)':'var(--color-border-secondary)');
@@ -865,7 +872,11 @@ class Component extends DCLogic {
         : {cle,isBool:false,isText:true,value:cur,setVal:(e)=>{ const v=e.target.value; this.setState(st=>({paramOv:{...(st.paramOv||{}),[cle]:v}})); }, save:()=>{ this.frPost('/franchisor/param',{cle,val:(paramVal(cle)||'')}); this.printJob('✔ '+cle+' enregistré'); }};
     });
     const slugId=(s)=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-');
-    CATALOG.forEach((c,ci)=>{ const ok='catO_'+ci; const open=S.flags[ok]!==undefined?S.flags[ok]:true;
+    CATALOG.forEach((c,ci)=>{ const ok='catO_'+ci; const open=catQuery?true:(S.flags[ok]!==undefined?S.flags[ok]:true);
+      const catMatch=!catQuery||c.cat.toLowerCase().includes(catQuery);
+      // Un produit reste visible si la catégorie correspond, ou si son nom / sa sous-catégorie contient la recherche.
+      const prodVisible=(p)=>!catQuery||catMatch||(!!p.nom&&p.nom.toLowerCase().includes(catQuery))||(!!p.sub&&p.sub.toLowerCase().includes(catQuery));
+      if(catQuery){ const _bwOn=(pp,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:pp.bw; }; const _hit=c.prods.some((pp,pi)=>prodVisible(pp)&&(!activeOnly||_bwOn(pp,pi))&&(!seasonFilter||pp.saison===seasonFilter)); if(!_hit) return; }
       const nbWeb=c.prods.filter((p,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:p.bw; }).length;
       const menuDefOn=this.api?!!this.api.getCategoryDefault(c.cat):false;
       const cwOn=S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true;
@@ -884,10 +895,11 @@ class Component extends DCLogic {
       c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
         if(activeOnly&&!bw.on) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
+        if(catQuery&&!prodVisible(p)) return;
         // Sous-catégorie : en-tête repliable + toggles de pilotage (mêmes que la
         // catégorie) qui cascadent aux produits de la sous-catégorie (sub_cat_id).
         const subId=(p.sub_id!=null?String(p.sub_id):'');
-        const subOpenKey='subOpen_'+ci+'_'+subId, subOpen=(!p.sub)||(S.flags[subOpenKey]!==undefined?S.flags[subOpenKey]:true);
+        const subOpenKey='subOpen_'+ci+'_'+subId, subOpen=(!p.sub)||!!catQuery||(S.flags[subOpenKey]!==undefined?S.flags[subOpenKey]:true);
         if(p.sub && subId!==lastSub){ lastSub=subId;
           const grp=c.prods.map((pp,ppi)=>({pp,ppi})).filter(x=>String(x.pp.sub_id!=null?x.pp.sub_id:'')===subId);
           const gAll=(flag,field,dflt)=>grp.every(x=>{ const v=S.flags[flag+'_'+ci+'_'+x.ppi]; return v!==undefined?v:(x.pp[field]!==undefined?x.pp[field]:dflt); });
@@ -1102,7 +1114,9 @@ class Component extends DCLogic {
       profName:'Sophie Renard', profRole:'Admin réseau · Siège', profInit:'SR',
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
-      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})), addProduct:this.openForm('product'),
+      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
+      catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
+      addProduct:this.openForm('product'),
       isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', usersRows, addUser:this.openForm('user'),
