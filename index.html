@@ -285,13 +285,13 @@
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
                   <span class="t-admin-label">Codes postaux de la zone</span>
                   <div style="display:flex;gap:8px">
-                    <input value="{{ czDraft }}" onInput="{{ czSetDraftH }}" onKeyDown="{{ czKey }}" placeholder="1000, 1020 1030… puis Entrée" style="flex:1;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)">
+                    <input value="{{ czDraft }}" onInput="{{ czSetDraftH }}" onKeyDown="{{ czKey }}" placeholder="CP, commune, arrondissement… (ex. 1000 · Anderlecht · Brabant wallon)" style="flex:1;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)">
                     <button onClick="{{ czAdd }}" style="flex:none;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 16px;font:600 12px var(--font-ui);cursor:pointer">Ajouter</button>
                   </div>
                   <sc-if value="{{ czHasSug }}" hint-placeholder-val="{{ false }}">
                     <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:.5px solid var(--color-border-tertiary);border-radius:9px;background:var(--color-background-secondary)">
                       <sc-for list="{{ czSug }}" as="sg" hint-placeholder-count="3">
-                        <button onClick="{{ sg.pick }}" style="background:#fff;border:.5px solid var(--color-border-secondary);border-radius:999px;padding:5px 12px;font:600 11.5px var(--font-ui);cursor:pointer">{{ sg.label }}</button>
+                        <button onClick="{{ sg.pick }}" style="{{ sg.btnStyle }}">{{ sg.label }}</button>
                       </sc-for>
                     </div>
                   </sc-if>
@@ -756,8 +756,13 @@ class Component extends DCLogic {
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
-      fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).then(a=>{
-        if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; }); window.__CPGEO={list:a,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); }
+      Promise.all([
+        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
+        fetch(fr.base+'/geo/postcodes?groups=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null),
+      ]).then(([a,g])=>{
+        if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; });
+          const communes={}; a.forEach(e=>{ const c=String(e[1]); (communes[c]=communes[c]||[]).push(String(e[0])); });
+          window.__CPGEO={list:a,idx,communes,groups:Array.isArray(g)?g:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); }
       }).catch(()=>{}); }
     if(!window.L){ clearTimeout(this._zmT); this._zmT=setTimeout(()=>this.czEnsure(),160); return; }
     const el=document.getElementById('map-zones'); if(!el) return;
@@ -780,6 +785,10 @@ class Component extends DCLogic {
     if(pts.length) m.fitBounds(pts,{padding:[30,30],maxZoom:11});
   }
   czPick(cp){ return ()=>{ this.setState({czDraft:String(cp)},()=>this.czAddCp()); }; }
+  czPickGroup(cps,label){ return ()=>{ const cur=this.state.cz; const have=[...cur.cps]; let added=0,conflits=0,deja=0;
+    for(const cp of cps){ if(have.includes(cp)){ deja++; continue; } if(this.czConflict(cp)){ conflits++; continue; } have.push(cp); added++; }
+    this.setState(st=>({cz:{...st.cz,cps:have},czDraft:''}));
+    this.printJob('✔ '+label+' : '+added+' CP ajoutés'+(conflits?' · '+conflits+' refusés (déjà attribués ailleurs)':'')+(deja?' · '+deja+' déjà dans la zone':'')); }; }
   czSet(k){ return (e)=>{ const v=(k==='exclusive')?e.target.checked:e.target.value; this.setState(st=>({cz:{...st.cz,[k]:v}})); }; }
   czSetDraft(e){ this.setState({czDraft:e.target.value}); }
   czConflict(cp){ const cur=this.state.cz; const rows=(window.BOServer?window.BOServer.table('catchment'):[]);
@@ -1260,9 +1269,16 @@ class Component extends DCLogic {
           isExcl:!!z.exclusive,cpChips:cps.map(cp=>({cp})),cpCount:cps.length+' CP',edit:this.czEdit(z),del:this.czDel(z)};}),
       czEmpty:SRV('catchment').length===0,
       czSug:(function(self,S){ const q=(S.czDraft||'').trim(); if(!S.czOpen||!window.__CPGEO||q.length<2) return [];
-        const ql=q.toLowerCase();
-        return window.__CPGEO.list.filter(e=>String(e[0]).indexOf(q)===0||String(e[1]).toLowerCase().includes(ql)).slice(0,8)
-          .map(e=>({label:e[0]+' — '+e[1],pick:self.czPick(String(e[0]))})); })(this,S),
+        const ql=q.toLowerCase(); const G=window.__CPGEO; const out=[];
+        // 1) arrondissements / régions
+        (G.groups||[]).forEach(g=>{ if(g.name.toLowerCase().includes(ql)) out.push({label:'🗺 '+g.name+' — '+g.count+' CP',grp:true,pick:self.czPickGroup(g.cps,g.name)}); });
+        // 2) communes entières (plusieurs CP)
+        Object.keys(G.communes||{}).forEach(c=>{ const cps=G.communes[c]; if(cps.length>1&&c.toLowerCase().includes(ql)) out.push({label:'🏘 '+c+' — tous ses '+cps.length+' CP',grp:true,pick:self.czPickGroup(cps,c)}); });
+        const grpCount=out.length;
+        // 3) codes individuels
+        G.list.filter(e=>String(e[0]).indexOf(q)===0||String(e[1]).toLowerCase().includes(ql)).slice(0,Math.max(4,10-grpCount))
+          .forEach(e=>out.push({label:e[0]+' — '+e[1],grp:false,pick:self.czPick(String(e[0]))}));
+        return out.slice(0,12).map(o=>({...o,btnStyle:o.grp?'background:#fdf3e7;border:.5px solid #ead9c3;border-radius:999px;padding:5px 12px;font:700 11.5px var(--font-ui);cursor:pointer;color:#6b4420':'background:#fff;border:.5px solid var(--color-border-secondary);border-radius:999px;padding:5px 12px;font:600 11.5px var(--font-ui);cursor:pointer'})); })(this,S),
       czHasSug:!!(S.czOpen&&window.__CPGEO&&(S.czDraft||'').trim().length>=2),
       czF:S.cz, czChips:S.cz.cps.map(cp=>({cp,remove:this.czRemoveCp(cp)})), czDraft:S.czDraft||'',
       czOpen:S.czOpen, czNew:()=>this.czNew(), czClose:()=>this.czClose(), czSave:()=>this.czSave(),
