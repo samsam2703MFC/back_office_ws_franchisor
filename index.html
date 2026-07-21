@@ -244,15 +244,15 @@
       <!-- UTILISATEURS & RÔLES -->
       <sc-if value="{{ isZones }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;flex-direction:column;gap:14px">
-          <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fdf9f3;border-color:#eadfce">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fdf9f3;border-color:#eadfce">
             <div style="font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted);max-width:640px"><strong style="color:var(--color-text)">Découpez le territoire de la marque en zones primaires</strong> et affectez chacune à un point de vente. Un code postal ne peut appartenir qu'à une seule zone primaire — le franchisé bâtit ensuite ses zones secondaires à l'intérieur de ce cadre.</div>
             <button onClick="{{ czNew }}" style="flex:none;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:11px 18px;font:600 12.5px var(--font-ui);cursor:pointer;box-shadow:0 1px 3px rgba(141,29,44,.25)">+ Nouvelle zone</button>
           </div>
           <sc-if value="{{ czEmpty }}" hint-placeholder-val="{{ false }}">
-            <div class="card" style="text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone primaire pour l'instant — créez la première pour poser le cadre du réseau.</div>
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone primaire pour l'instant — créez la première pour poser le cadre du réseau.</div>
           </sc-if>
           <sc-for list="{{ czRows }}" as="z" hint-placeholder-count="2">
-            <div class="card" style="display:flex;flex-direction:column;gap:10px">
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px">
               <div style="display:flex;align-items:center;gap:12px">
                 <div class="t-section-title" style="font-size:17px;flex:none">{{ z.name }}</div>
                 <span style="{{ z.shopPill }}">{{ z.shopLabel }}</span>
@@ -270,7 +270,7 @@
           </sc-for>
           <sc-if value="{{ czOpen }}" hint-placeholder-val="{{ false }}">
             <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:300">
-              <div class="card" style="width:640px;max-width:92vw;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
+              <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:640px;max-width:92vw;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ czFormTitle }}</div><button onClick="{{ czClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                   <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Nom de la zone</span><input value="{{ czF.name }}" onInput="{{ czSetName }}" placeholder="Bruxelles Capitale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)"></label>
