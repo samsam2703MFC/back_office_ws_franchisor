@@ -256,13 +256,31 @@
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:0;overflow:hidden;position:relative">
             <div id="map-geo" style="width:100%;height:520px;background:var(--color-background-secondary)"></div>
             <div style="position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,.96);border:.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px 14px;font:11.5px var(--font-ui);display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.10)">
-              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#E8B84B;border:1.5px solid #b28a1f;flex:none"></span>Clients office (B2B)</div>
-              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#3B6BC9;border:1.5px solid #24488f;flex:none"></span>Clients particuliers</div>
+              <div style="font:700 11.5px var(--font-ui);padding-bottom:2px;border-bottom:.5px solid var(--color-border-tertiary)">{{ geoLegTot }}</div>
+              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#E8B84B;border:1.5px solid #b28a1f;flex:none"></span>Clients office (B2B)<span style="margin-left:auto;padding-left:10px;font-weight:700">{{ geoLegOff }}</span></div>
+              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#3B6BC9;border:1.5px solid #24488f;flex:none"></span>Clients particuliers<span style="margin-left:auto;padding-left:10px;font-weight:700">{{ geoLegPriv }}</span></div>
+              <div style="display:flex;align-items:center;gap:7px"><span style="width:14px;height:14px;border-radius:50%;background:conic-gradient(#E8B84B 0 140deg,#3B6BC9 0 360deg);border:1.5px solid #fff;box-shadow:0 0 0 1px #ccc;flex:none;display:flex;align-items:center;justify-content:center"><span style="background:#fff;border-radius:999px;font:700 7px sans-serif;padding:0 2px">n</span></span>Zone à n clients (clic = détail + %)</div>
               <div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--color-primary);border:1.5px solid #5e1220;flex:none"></span>Boutique (clic = isoler ses clients)</div>
             </div>
             <sc-if value="{{ geoHlTxt }}" hint-placeholder-val="{{ false }}">
               <div style="position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(255,255,255,.96);border:.5px solid var(--color-border-tertiary);border-radius:8px;padding:7px 12px;font:600 11.5px var(--font-ui);color:var(--color-primary)">{{ geoHlTxt }}</div>
             </sc-if>
+          </div>
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px">
+            <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px"><span class="t-section-title" style="font-size:14px">Répartition par arrondissement</span><span style="font:11.5px var(--font-ui);color:var(--color-text-muted)">clients affichés · % de la masse totale</span></div>
+            <div style="display:grid;grid-template-columns:minmax(220px,1fr) 80px 70px minmax(120px,1.2fr);row-gap:0;font:12.5px var(--font-ui);align-items:center">
+              <div style="font:600 10.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted);padding:6px 0;border-bottom:.5px solid var(--color-border-tertiary)">Arrondissement</div>
+              <div style="font:600 10.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted);padding:6px 0;border-bottom:.5px solid var(--color-border-tertiary);text-align:right">Clients</div>
+              <div style="font:600 10.5px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted);padding:6px 0 6px 14px;border-bottom:.5px solid var(--color-border-tertiary);text-align:right">%</div>
+              <div style="border-bottom:.5px solid var(--color-border-tertiary)"></div>
+              <sc-for list="{{ geoArr }}" as="r" hint-placeholder-count="4">
+                <div style="padding:8px 0;border-bottom:.5px solid var(--color-border-tertiary)">{{ r.name }}</div>
+                <div style="padding:8px 0;border-bottom:.5px solid var(--color-border-tertiary);text-align:right;font-weight:700">{{ r.n }}</div>
+                <div style="padding:8px 0 8px 14px;border-bottom:.5px solid var(--color-border-tertiary);text-align:right;color:var(--color-text-muted)">{{ r.pctTxt }}</div>
+                <div style="padding:8px 0 8px 16px;border-bottom:.5px solid var(--color-border-tertiary)"><div style="height:7px;border-radius:999px;background:var(--color-background-secondary);overflow:hidden"><div style="{{ r.barStyle }}"></div></div></div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ geoArrEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 0;font:12px var(--font-ui);color:var(--color-text-muted)">Aucun client localisé.</div></sc-if>
           </div>
         </div>
       </sc-if>
@@ -778,8 +796,13 @@ class Component extends DCLogic {
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
-      fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).then(a=>{
-        if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; }); window.__CPGEO=window.__CPGEO||{list:a,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); }
+      Promise.all([
+        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
+        fetch(fr.base+'/geo/postcodes?groups=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null),
+      ]).then(([a,gr])=>{
+        if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; });
+          const communes={}; a.forEach(e=>{ const c=String(e[1]); (communes[c]=communes[c]||[]).push(String(e[0])); });
+          window.__CPGEO=window.__CPGEO||{list:a,idx,communes,groups:Array.isArray(gr)?gr:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); }
       }).catch(()=>{}); }
     if(!this._geoData && !this._geoDataLoading && fr.base){ this._geoDataLoading=true;
       fetch(fr.base+'/franchisor/geo-clients',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
@@ -811,13 +834,35 @@ class Component extends DCLogic {
     const esc=(x)=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const shopName={}; (D.shops||[]).forEach(s2=>{ shopName[s2.id]=s2.name; });
     const {list,shopSet}=this.geoFiltered();
-    list.forEach(c=>{ const e=geo.idx[String(c.cp).trim()];
-      const jx=((this.geoHash(String(c.id))%100)/100-0.5)*0.008, jy=((this.geoHash(String(c.id)+'y')%100)/100-0.5)*0.008;
-      const lat=e.lat+jx, lng=e.lng+jy; pts.push([lat,lng]);
-      const dim=S.geoHl!=null && c.shop_id!==S.geoHl;
-      const col=c.type==='office'?'#E8B84B':'#3B6BC9', bord=c.type==='office'?'#b28a1f':'#24488f';
-      const mk=L.circleMarker([lat,lng],{radius:7,color:bord,weight:1.5,fillColor:col,fillOpacity:dim?0.12:0.8,opacity:dim?0.15:1});
-      mk.bindPopup('<div style="font:12.5px sans-serif;min-width:180px"><strong>'+esc(c.name)+'</strong><br>'+(c.type==='office'?'Client office (B2B)':'Client particulier')+'<br>Boutique : '+esc(shopName[c.shop_id]||'—')+'<br>CA total : '+(c.ca?c.ca.toLocaleString('fr-BE',{minimumFractionDigits:2})+' €':'—')+'</div>');
+    // Regroupement par CP : dès 2 clients dans la même zone, une PASTILLE les
+    // reprend tous (nombre affiché, couleur = répartition office/particuliers,
+    // popup avec le % de la masse totale affichée) ; 1 client = marqueur simple.
+    const totalMass=list.length||1;
+    const byCp={}; list.forEach(c=>{ const k=String(c.cp).trim(); (byCp[k]=byCp[k]||[]).push(c); });
+    Object.keys(byCp).forEach(cp=>{ const cl=byCp[cp], e=geo.idx[cp];
+      if(cl.length===1){ const c=cl[0];
+        const jx=((this.geoHash(String(c.id))%100)/100-0.5)*0.008, jy=((this.geoHash(String(c.id)+'y')%100)/100-0.5)*0.008;
+        const lat=e.lat+jx, lng=e.lng+jy; pts.push([lat,lng]);
+        const dim=S.geoHl!=null && c.shop_id!==S.geoHl;
+        const col=c.type==='office'?'#E8B84B':'#3B6BC9', bord=c.type==='office'?'#b28a1f':'#24488f';
+        const mk=L.circleMarker([lat,lng],{radius:7,color:bord,weight:1.5,fillColor:col,fillOpacity:dim?0.12:0.8,opacity:dim?0.15:1});
+        mk.bindPopup('<div style="font:12.5px sans-serif;min-width:180px"><strong>'+esc(c.name)+'</strong><br>'+(c.type==='office'?'Client office (B2B)':'Client particulier')+'<br>Boutique : '+esc(shopName[c.shop_id]||'—')+'<br>CA total : '+(c.ca?c.ca.toLocaleString('fr-BE',{minimumFractionDigits:2})+' €':'—')+'</div>');
+        g.addLayer(mk); return; }
+      pts.push([e.lat,e.lng]);
+      const off=cl.filter(c=>c.type==='office').length, priv=cl.length-off;
+      const dim=S.geoHl!=null && !cl.some(c=>c.shop_id===S.geoHl);
+      const pct=Math.round(cl.length*100/totalMass);
+      const ca=cl.reduce((t,c)=>t+(+c.ca||0),0);
+      const sz=Math.min(52,26+cl.length*2);
+      const bg=(off&&priv)?('conic-gradient(#E8B84B 0 '+Math.round(off*360/cl.length)+'deg, #3B6BC9 0 360deg)'):(off?'#E8B84B':'#3B6BC9');
+      const ic=L.divIcon({className:'',html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';opacity:'+(dim?0.22:1)+';border:2px solid #fff;box-shadow:0 1px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center"><span style="background:rgba(255,255,255,.94);border-radius:999px;padding:1px 7px;font:700 12px sans-serif;color:#1c1c1c">'+cl.length+'</span></div>',iconSize:[sz,sz],iconAnchor:[Math.round(sz/2),Math.round(sz/2)]});
+      const mk=L.marker([e.lat,e.lng],{icon:ic});
+      const names=cl.slice().sort((a,b)=>(+b.ca||0)-(+a.ca||0)).slice(0,8)
+        .map(c=>'<span style="color:'+(c.type==='office'?'#b28a1f':'#24488f')+'">●</span> '+esc(c.name)).join('<br>');
+      mk.bindPopup('<div style="font:12.5px sans-serif;min-width:210px"><strong>'+esc(cp)+' '+esc(e.city||'')+'</strong><br>'
+        +cl.length+' clients — <strong>'+pct+' %</strong> du total affiché<br>'
+        +off+' office · '+priv+' particuliers<br>CA cumulé : '+(ca?ca.toLocaleString('fr-BE',{minimumFractionDigits:2})+' €':'—')
+        +'<hr style="margin:6px 0;border:none;border-top:1px solid #ddd">'+names+(cl.length>8?'<br>… +'+(cl.length-8)+' autres':'')+'</div>');
       g.addLayer(mk); });
     (D.shops||[]).filter(s2=>shopSet?shopSet.includes(Number(s2.id)):true).forEach(s2=>{
       let e=s2.cp&&geo.idx[String(s2.cp).trim()];
@@ -1349,6 +1394,26 @@ class Component extends DCLogic {
       geoSetFr:(e)=>this.setState({geoFr:e.target.value,geoShop:'',geoHl:null}),
       geoCountTxt:(function(self){ const F=self.geoFiltered(); const off=F.list.filter(c=>c.type==='office').length;
         return F.list.length+' clients localisés ('+off+' office · '+(F.list.length-off)+' particuliers)'+(F.unloc?' · '+F.unloc+' clients non localisés':''); })(this),
+      geoLegTot:(function(self,S){ const F=self.geoFiltered(); const tot=F.list.length;
+        let t=tot+' client'+(tot>1?'s':'')+' affiché'+(tot>1?'s':'');
+        if(S.geoShop||S.geoFr){ const D=self._geoData,geo=window.__CPGEO; let all=0;
+          if(D&&geo)(D.clients||[]).forEach(c=>{ if(c.cp&&geo.idx[String(c.cp).trim()]) all++; });
+          if(all) t+=' · '+Math.round(tot*100/all)+' % du réseau'; }
+        return t; })(this,S),
+      geoLegOff:(function(self){ const F=self.geoFiltered(); const tot=F.list.length||1;
+        const off=F.list.filter(c=>c.type==='office').length; return off+' · '+Math.round(off*100/tot)+' %'; })(this),
+      geoLegPriv:(function(self){ const F=self.geoFiltered(); const tot=F.list.length||1;
+        const off=F.list.filter(c=>c.type==='office').length; return (F.list.length-off)+' · '+Math.round((F.list.length-off)*100/tot)+' %'; })(this),
+      geoArr:(function(self){ const F=self.geoFiltered(); const G=window.__CPGEO; const tot=F.list.length;
+        if(!G||!G.groups||!G.groups.length||!tot) return [];
+        const cnt={}; F.list.forEach(c=>{ const k=String(c.cp).trim(); cnt[k]=(cnt[k]||0)+1; });
+        return G.groups.map(gr=>{ let n=0; gr.cps.forEach(cp=>{ n+=cnt[cp]||0; });
+            const pct=Math.round(n*1000/tot)/10;
+            return {name:gr.name,n,pct,pctTxt:(pct+'').replace('.',',')+' %',
+              barStyle:'height:100%;width:'+Math.max(2,Math.round(pct))+'%;border-radius:999px;background:var(--color-primary)'};})
+          .filter(r=>r.n>0).sort((a,b)=>b.n-a.n); })(this),
+      geoArrEmpty:(function(self){ const F=self.geoFiltered(); const G=window.__CPGEO;
+        return !(G&&G.groups&&G.groups.length&&F.list.length); })(this),
       geoHlTxt:S.geoHl!=null?'Boutique isolée — cliquer à nouveau sur son marqueur pour tout réafficher':'',
       
       czRows:SRV('catchment').map(z=>{ const cps=String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean);
