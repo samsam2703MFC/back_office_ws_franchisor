@@ -244,6 +244,28 @@
       </sc-if>
 
       <!-- UTILISATEURS & RÔLES -->
+      <sc-if value="{{ isGeo }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <span class="t-admin-label">Boutique</span>
+            <select onChange="{{ geoSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:8px 11px;font:12.5px var(--font-ui);background:#fff"><option value="">Toutes les boutiques</option><sc-for list="{{ geoShopOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for></select>
+            <span class="t-admin-label">Franchisé</span>
+            <select onChange="{{ geoSetFr }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:8px 11px;font:12.5px var(--font-ui);background:#fff"><option value="">Vue franchiseur — tout le réseau</option><sc-for list="{{ geoFrOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for></select>
+            <span style="margin-left:auto;font:11.5px var(--font-ui);color:var(--color-text-muted)">{{ geoCountTxt }}</span>
+          </div>
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:0;overflow:hidden;position:relative">
+            <div id="map-geo" style="width:100%;height:520px;background:var(--color-background-secondary)"></div>
+            <div style="position:absolute;top:12px;right:12px;z-index:500;background:rgba(255,255,255,.96);border:.5px solid var(--color-border-tertiary);border-radius:10px;padding:10px 14px;font:11.5px var(--font-ui);display:flex;flex-direction:column;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.10)">
+              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#E8B84B;border:1.5px solid #b28a1f;flex:none"></span>Clients office (B2B)</div>
+              <div style="display:flex;align-items:center;gap:7px"><span style="width:11px;height:11px;border-radius:50%;background:#3B6BC9;border:1.5px solid #24488f;flex:none"></span>Clients particuliers</div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--color-primary);border:1.5px solid #5e1220;flex:none"></span>Boutique (clic = isoler ses clients)</div>
+            </div>
+            <sc-if value="{{ geoHlTxt }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;bottom:12px;left:12px;z-index:500;background:rgba(255,255,255,.96);border:.5px solid var(--color-border-tertiary);border-radius:8px;padding:7px 12px;font:600 11.5px var(--font-ui);color:var(--color-primary)">{{ geoHlTxt }}</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
       <sc-if value="{{ isZones }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;flex-direction:column;gap:14px">
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fdf9f3;border-color:#eadfce">
@@ -746,13 +768,69 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'',
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'',
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
-  componentDidMount(){ this.czEnsure(); }
-  componentDidUpdate(){ this.czEnsure(); }
+  componentDidMount(){ this.czEnsure(); this.geoEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); }
+  geoEnsure(){ if(this.state.screen!=='geo') return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
+      fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).then(a=>{
+        if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; }); window.__CPGEO=window.__CPGEO||{list:a,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); }
+      }).catch(()=>{}); }
+    if(!this._geoData && !this._geoDataLoading && fr.base){ this._geoDataLoading=true;
+      fetch(fr.base+'/franchisor/geo-clients',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
+        .then(r=>r.ok?r.json():null).then(d=>{ if(d&&Array.isArray(d.clients)){ this._geoData=d; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+    if(!window.L){ clearTimeout(this._gmT); this._gmT=setTimeout(()=>this.geoEnsure(),160); return; }
+    const el=document.getElementById('map-geo'); if(!el) return;
+    if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(m); this._geoMap=m; this._geoKey=null; }
+    this.geoDraw();
+  }
+  geoFiltered(){ const S=this.state, D=this._geoData; if(!D) return {list:[],unloc:0,shopSet:null};
+    let shopSet=null;
+    if(S.geoFr){ const f=(D.franchisees||[]).find(x=>String(x.id)===String(S.geoFr)); shopSet=f?f.shops.map(Number):[]; }
+    else if(S.geoShop){ shopSet=[parseInt(S.geoShop,10)]; }
+    const geo=window.__CPGEO; let unloc=0;
+    const list=(D.clients||[]).filter(c=>shopSet?shopSet.includes(c.shop_id):true)
+      .filter(c=>{ const ok=geo&&c.cp&&geo.idx[String(c.cp).trim()]; if(!ok) unloc++; return !!ok; });
+    return {list,unloc,shopSet};
+  }
+  geoHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return h; }
+  geoDraw(){ const L=window.L,m=this._geoMap,geo=window.__CPGEO,D=this._geoData; if(!L||!m||!geo||!D) return;
+    const S=this.state;
+    const fkey=JSON.stringify([S.geoShop,S.geoFr,D.clients.length]);
+    const key=fkey+'|'+String(S.geoHl);
+    if(this._geoKey===key) return;
+    const refit=this._geoFKey!==fkey; this._geoFKey=fkey; this._geoKey=key;
+    if(this._geoLayer) m.removeLayer(this._geoLayer);
+    const g=L.layerGroup(); const pts=[];
+    const esc=(x)=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const shopName={}; (D.shops||[]).forEach(s2=>{ shopName[s2.id]=s2.name; });
+    const {list,shopSet}=this.geoFiltered();
+    list.forEach(c=>{ const e=geo.idx[String(c.cp).trim()];
+      const jx=((this.geoHash(String(c.id))%100)/100-0.5)*0.008, jy=((this.geoHash(String(c.id)+'y')%100)/100-0.5)*0.008;
+      const lat=e.lat+jx, lng=e.lng+jy; pts.push([lat,lng]);
+      const dim=S.geoHl!=null && c.shop_id!==S.geoHl;
+      const col=c.type==='office'?'#E8B84B':'#3B6BC9', bord=c.type==='office'?'#b28a1f':'#24488f';
+      const mk=L.circleMarker([lat,lng],{radius:7,color:bord,weight:1.5,fillColor:col,fillOpacity:dim?0.12:0.8,opacity:dim?0.15:1});
+      mk.bindPopup('<div style="font:12.5px sans-serif;min-width:180px"><strong>'+esc(c.name)+'</strong><br>'+(c.type==='office'?'Client office (B2B)':'Client particulier')+'<br>Boutique : '+esc(shopName[c.shop_id]||'—')+'<br>CA total : '+(c.ca?c.ca.toLocaleString('fr-BE',{minimumFractionDigits:2})+' €':'—')+'</div>');
+      g.addLayer(mk); });
+    (D.shops||[]).filter(s2=>shopSet?shopSet.includes(Number(s2.id)):true).forEach(s2=>{
+      let e=s2.cp&&geo.idx[String(s2.cp).trim()];
+      if(!e&&s2.city){ const cl=String(s2.city).toLowerCase(); const hit=geo.list.find(x=>String(x[1]).toLowerCase()===cl); if(hit) e={lat:hit[2],lng:hit[3]}; }
+      if(!e) return; pts.push([e.lat,e.lng]);
+      const ic=L.divIcon({className:'',html:'<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--color-primary);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);color:#fff;font:700 12px sans-serif">A</span></div>',iconSize:[26,26],iconAnchor:[13,26]});
+      const mk=L.marker([e.lat,e.lng],{icon:ic});
+      mk.bindTooltip(s2.name+' — cliquer pour isoler ses clients');
+      mk.on('click',()=>this.setState(st=>({geoHl:st.geoHl===Number(s2.id)?null:Number(s2.id)})));
+      g.addLayer(mk); });
+    g.addTo(m); this._geoLayer=g;
+    if(refit&&pts.length) m.fitBounds(pts,{padding:[36,36],maxZoom:12});
+  }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -946,7 +1024,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT]]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER]]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -955,8 +1033,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1263,6 +1341,16 @@ class Component extends DCLogic {
       isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
+      isGeo:S.screen==='geo',
+      geoShopOpts:((this._geoData&&this._geoData.shops)||[]).map(s2=>({id:String(s2.id),label:s2.name,sel:String(s2.id)===String(S.geoShop)})),
+      geoFrOpts:((this._geoData&&this._geoData.franchisees)||[]).map(f=>({id:String(f.id),label:f.name+' ('+f.shops.length+' boutique'+(f.shops.length>1?'s':'')+')',sel:String(f.id)===String(S.geoFr)})),
+      geoHasFr:!!(this._geoData&&this._geoData.franchisees&&this._geoData.franchisees.length),
+      geoSetShop:(e)=>this.setState({geoShop:e.target.value,geoFr:'',geoHl:null}),
+      geoSetFr:(e)=>this.setState({geoFr:e.target.value,geoShop:'',geoHl:null}),
+      geoCountTxt:(function(self){ const F=self.geoFiltered(); const off=F.list.filter(c=>c.type==='office').length;
+        return F.list.length+' clients localisés ('+off+' office · '+(F.list.length-off)+' particuliers)'+(F.unloc?' · '+F.unloc+' clients non localisés':''); })(this),
+      geoHlTxt:S.geoHl!=null?'Boutique isolée — cliquer à nouveau sur son marqueur pour tout réafficher':'',
+      
       czRows:SRV('catchment').map(z=>{ const cps=String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean);
         return {...z,shopLabel:z.shop_name||(z.shop_id?('Shop #'+z.shop_id):'Réseau — non affectée'),assigned:!!(z.shop_name||z.shop_id),
           shopPill:'display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font:600 10.5px var(--font-ui);'+((z.shop_name||z.shop_id)?'background:#fdf3e7;color:#8C4A2F;border:.5px solid #ead9c3':'background:var(--color-background-secondary);color:var(--color-text-muted);border:.5px solid var(--color-border-tertiary)'),
