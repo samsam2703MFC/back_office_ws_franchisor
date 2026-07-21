@@ -12,6 +12,10 @@
       {label:'Commandes du jour',value:'512',valColor:'var(--color-text)',delta:'▲ +38 vs hier',deltaColor:'#2d7a3e'},
       {label:'Adoption whitelist',value:'82 %',valColor:'var(--color-text)',delta:'▼ −3 pts',deltaColor:'var(--color-primary)'},
     ],
+    "catchment": [
+      {id:1,name:'Bruxelles Capitale (19 communes)',postcodes:'1000 · 1020 · 1030 · 1040 · 1050',exclusive:true,active:true,shop_id:null,shop_name:''},
+      {id:2,name:'Brabant flamand — périphérie',postcodes:'1600 · 1700 · 1800 · 3000',exclusive:true,active:true,shop_id:null,shop_name:''},
+    ],
     "shops": [
       {id:'bxl',nom:'L\'Atelier — Bruxelles-Centre',ville:'Bruxelles 1000',web:true,contrat:'Succursale',act:true,caShop:29800,caOffice:8400,adoption:96,accent:'var(--color-primary)'},
       {id:'and',nom:'L\'Atelier — Anderlecht',ville:'Anderlecht 1070',web:true,contrat:'Franchise',act:true,caShop:18600,caOffice:6200,adoption:88,accent:'#E8A15C'},
@@ -147,7 +151,7 @@
       var fr = (typeof window !== 'undefined' && window.__FR) || {};
       if (!fr.base) return Promise.resolve(false);
       ensure();
-      var MAP = { kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
+      var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
                   pricing_rules:'pricing-rules', params:'params',
                   email_templates:'email-templates', users:'users', audit:'audit' };
       var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
