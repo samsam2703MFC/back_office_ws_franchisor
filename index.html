@@ -312,39 +312,6 @@
             <div style="padding:12px 18px;display:flex;align-items:center;gap:10px"><span class="t-admin-label">Carte du territoire</span><span style="font:11px var(--font-ui);color:var(--color-text-muted)">un point par code postal · une couleur par zone primaire</span></div>
             <div id="map-zones" style="width:100%;height:380px;background:var(--color-background-secondary)"></div>
           </div>
-          <sc-if value="{{ czOpen }}" hint-placeholder-val="{{ false }}">
-            <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:300">
-              <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:640px;max-width:92vw;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ czFormTitle }}</div><button onClick="{{ czClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-                  <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Nom de la zone</span><input value="{{ czF.name }}" onInput="{{ czSetName }}" placeholder="Bruxelles Capitale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)"></label>
-                  <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Point de vente affecté</span><select onChange="{{ czSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui);background:#fff"><option value="">— Réseau (non affectée) —</option><sc-for list="{{ czShopOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for></select></label>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
-                  <span class="t-admin-label">Codes postaux de la zone</span>
-                  <div style="display:flex;gap:8px">
-                    <input value="{{ czDraft }}" onInput="{{ czSetDraftH }}" onKeyDown="{{ czKey }}" placeholder="CP, commune, arrondissement… (ex. 1000 · Anderlecht · Brabant wallon)" style="flex:1;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)">
-                    <button onClick="{{ czAdd }}" style="flex:none;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 16px;font:600 12px var(--font-ui);cursor:pointer">Ajouter</button>
-                  </div>
-                  <sc-if value="{{ czHasSug }}" hint-placeholder-val="{{ false }}">
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:.5px solid var(--color-border-tertiary);border-radius:9px;background:var(--color-background-secondary)">
-                      <sc-for list="{{ czSug }}" as="sg" hint-placeholder-count="3">
-                        <button onClick="{{ sg.pick }}" style="{{ sg.btnStyle }}">{{ sg.label }}</button>
-                      </sc-for>
-                    </div>
-                  </sc-if>
-                  <div style="display:flex;flex-wrap:wrap;gap:6px;min-height:30px">
-                    <sc-for list="{{ czChips }}" as="c" hint-placeholder-count="4">
-                      <span style="display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:4px 6px 4px 10px;font:600 11.5px var(--font-mono,monospace);background:#fdf3e7;color:#6b4420;border:.5px solid #ead9c3">{{ c.cp }}<button onClick="{{ c.remove }}" style="background:transparent;border:none;cursor:pointer;font:700 11px var(--font-ui);color:#8C4A2F;padding:0 2px">✕</button></span>
-                    </sc-for>
-                  </div>
-                  <div style="font:11px var(--font-ui);color:var(--color-text-muted)">Chaque code est vérifié à l'ajout : s'il appartient déjà à une autre zone primaire, il est refusé avec le nom de la zone en conflit.</div>
-                </div>
-                <label style="display:flex;align-items:center;gap:9px;font:12.5px var(--font-ui);margin-top:14px"><input type="checkbox" checked="{{ czF.exclusive }}" onChange="{{ czSetExcl }}">Territoire exclusif — aucune zone secondaire d'un autre point de vente ne peut y opérer</label>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px"><button onClick="{{ czClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button><button onClick="{{ czSave }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 22px;font:600 12.5px var(--font-ui);cursor:pointer">Enregistrer la zone</button></div>
-              </div>
-            </div>
-          </sc-if>
         </div>
       </sc-if>
       <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
@@ -780,6 +747,41 @@
   </div>
   </sc-if>
 
+
+  <!-- MODALE ZONE DE CHALANDISE (au niveau racine, hors <main>, pour ne pas entrer en conflit d'empilement avec la carte Leaflet) -->
+  <sc-if value="{{ czOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:2100">
+      <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:640px;max-width:92vw;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ czFormTitle }}</div><button onClick="{{ czClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Nom de la zone</span><input value="{{ czF.name }}" onInput="{{ czSetName }}" placeholder="Bruxelles Capitale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)"></label>
+          <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Point de vente affecté</span><select onChange="{{ czSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui);background:#fff"><option value="">— Réseau (non affectée) —</option><sc-for list="{{ czShopOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for></select></label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+          <span class="t-admin-label">Codes postaux de la zone</span>
+          <div style="display:flex;gap:8px">
+            <input value="{{ czDraft }}" onInput="{{ czSetDraftH }}" onKeyDown="{{ czKey }}" placeholder="CP, commune, arrondissement… (ex. 1000 · Anderlecht · Brabant wallon)" style="flex:1;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)">
+            <button onClick="{{ czAdd }}" style="flex:none;background:var(--color-background-secondary);border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 16px;font:600 12px var(--font-ui);cursor:pointer">Ajouter</button>
+          </div>
+          <sc-if value="{{ czHasSug }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:.5px solid var(--color-border-tertiary);border-radius:9px;background:var(--color-background-secondary)">
+              <sc-for list="{{ czSug }}" as="sg" hint-placeholder-count="3">
+                <button onClick="{{ sg.pick }}" style="{{ sg.btnStyle }}">{{ sg.label }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;min-height:30px">
+            <sc-for list="{{ czChips }}" as="c" hint-placeholder-count="4">
+              <span style="display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:4px 6px 4px 10px;font:600 11.5px var(--font-mono,monospace);background:#fdf3e7;color:#6b4420;border:.5px solid #ead9c3">{{ c.cp }}<button onClick="{{ c.remove }}" style="background:transparent;border:none;cursor:pointer;font:700 11px var(--font-ui);color:#8C4A2F;padding:0 2px">✕</button></span>
+            </sc-for>
+          </div>
+          <div style="font:11px var(--font-ui);color:var(--color-text-muted)">Chaque code est vérifié à l'ajout : s'il appartient déjà à une autre zone primaire, il est refusé avec le nom de la zone en conflit.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:9px;font:12.5px var(--font-ui);margin-top:14px"><input type="checkbox" checked="{{ czF.exclusive }}" onChange="{{ czSetExcl }}">Territoire exclusif — aucune zone secondaire d'un autre point de vente ne peut y opérer</label>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px"><button onClick="{{ czClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button><button onClick="{{ czSave }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 22px;font:600 12.5px var(--font-ui);cursor:pointer">Enregistrer la zone</button></div>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
