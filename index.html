@@ -394,6 +394,27 @@
       </div>
       </sc-if>
 
+      <!-- TRAÇABILITÉ CLIENT ↔ MAGASIN -->
+      <sc-if value="{{ isTrace }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#fdf9f3;border:.5px solid #eadfce;border-radius:12px;padding:16px 18px;font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted)"><strong style="color:var(--color-text)">Traçabilité des flux clients.</strong> Chaque client est coloré selon le <strong>magasin où il achète</strong> (même couleur que la zone de ce magasin). Un point d'une couleur « étrangère » dans une zone révèle un flux — ex. un client de Corbais qui va acheter à Sombreffe.</div>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px">
+          <label style="display:flex;flex-direction:column;gap:5px;min-width:230px"><span class="t-admin-label">Filtre par code postal</span><input value="{{ traceCp }}" onInput="{{ setTraceCp }}" placeholder="ex. 1435 · ou 1435,5140 · vide = tout" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:13px var(--font-ui)"></label>
+          <div style="display:flex;flex-direction:column;gap:5px;flex:1"><span class="t-admin-label">Magasins (cliquer pour isoler)</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ traceLegend }}" as="s" hint-placeholder-count="3">
+                <div onClick="{{ s.toggle }}" style="{{ s.rowStyle }}"><span style="{{ s.dotStyle }}"></span><span style="font:600 12px var(--font-ui);color:var(--color-text)">{{ s.name }}</span><span style="font:600 11px var(--font-mono,monospace);color:var(--color-text-muted)">{{ s.count }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:0;overflow:hidden">
+          <div style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px"><span class="t-admin-label">Carte des flux</span><span style="font:11.5px var(--font-ui);color:var(--color-text-muted)">{{ traceStat }}</span></div>
+          <div id="map-trace" style="width:100%;height:520px;background:var(--color-background-secondary)"></div>
+        </div>
+      </div>
+      </sc-if>
+
       <!-- JOURNAL D'AUDIT -->
       <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -868,13 +889,13 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{},
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
-  componentDidMount(){ this.czEnsure(); this.geoEnsure(); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); }
+  componentDidMount(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -1099,6 +1120,46 @@ class Component extends DCLogic {
         .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?('✔ Prospect transféré à '+shopName+' · statut À valider'):'✔ Transfert enregistré en local'); }); }
     else { this.prPersist({id:this.state.prId,action:'hold',locality:loc,postcode:cp,status:'attente_franchise',email_template:'prospect_attente'},{locality:loc,postcode:cp,status:'attente_franchise',mailed:true})
         .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?'✉ E-mail envoyé · prospect conservé pour future franchise':'✉ Mail simulé (local) · prospect conservé'); }); } }
+  // ===== Traçabilité client ↔ magasin (vue Marque) =====
+  shopColor(sid){ if(sid==null||sid===''||sid==='__none') return '#9a9a9a'; const palette=['#8D1D2C','#3B3468','#2d7a3e','#C87A3F','#1f6f78','#7a2d5a','#b26a00','#2e5a8c','#8C4A2F','#4a6b1f']; return palette[Math.abs(this.geoHash(String(sid)))%palette.length]; }
+  _traceCps(){ return String(this.state.traceCp||'').split(/[^0-9]+/).filter(Boolean); }
+  traceOwner(){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]); const owner={}; rows.forEach(z=>{ String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{ owner[cp]={sid:z.shop_id,name:z.shop_name||z.name||''}; }); }); return owner; }
+  traceEnsure(){ if(this.state.screen!=='trace') return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
+      fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).then(a=>{ if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; }); window.__CPGEO=window.__CPGEO||{list:a,idx,communes:{},groups:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+    if(!this._geoData && !this._geoDataLoading && fr.base){ this._geoDataLoading=true;
+      fetch(fr.base+'/franchisor/geo-clients',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'}).then(r=>r.ok?r.json():null).then(d=>{ if(d&&Array.isArray(d.clients)){ this._geoData=d; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+    if(!window.__CPPOLY && !this._polyLoading){ this._polyLoading=true;
+      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+    if(!window.L){ clearTimeout(this._tmT); this._tmT=setTimeout(()=>this.traceEnsure(),160); return; }
+    const el=document.getElementById('map-trace'); if(!el) return;
+    if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(m); this._traceMap=m; this._traceKey=null; this._traceFitKey=null; }
+    this.traceDraw();
+  }
+  traceDraw(){ const L=window.L,m=this._traceMap,geo=window.__CPGEO,poly=window.__CPPOLY,D=this._geoData; if(!L||!m) return;
+    const S=this.state; const rows=(window.BOServer?window.BOServer.table('catchment'):[]); const owner=this.traceOwner();
+    const filter=this._traceCps(); const hidden=S.traceHidden||{};
+    const esc=(x)=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const key=JSON.stringify([rows.map(z=>[z.id,z.postcodes,z.shop_id]), D?D.clients.length:0, filter, hidden, poly?1:0, geo?1:0]);
+    if(this._traceKey===key) return; this._traceKey=key;
+    if(this._traceLayer) m.removeLayer(this._traceLayer);
+    const g=L.layerGroup(); const pts=[];
+    rows.forEach(z=>{ const sid=z.shop_id; if(sid!=null&&hidden[String(sid)]) return; const col=this.shopColor(sid);
+      String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{ if(filter.length&&!filter.includes(cp)) return; const feats=poly&&poly.idx[cp]; if(!feats) return;
+        feats.forEach(f=>{ const gj=L.geoJSON(f,{style:{color:col,weight:1,fillColor:col,fillOpacity:.16}}); gj.bindTooltip(cp+' · zone '+(z.shop_name||z.name||('#'+sid))); g.addLayer(gj);
+          try{ const b=gj.getBounds(); pts.push([b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]); }catch(_){} }); }); });
+    if(D&&geo){ const shopName={}; (D.shops||[]).forEach(s2=>{ shopName[String(s2.id)]=s2.name; });
+      (D.clients||[]).forEach(c=>{ const cp=String(c.cp||'').trim(); const e=geo.idx[cp]; if(!e) return; if(filter.length&&!filter.includes(cp)) return; const sid=c.shop_id; if(sid!=null&&hidden[String(sid)]) return;
+        const col=this.shopColor(sid); const ow=owner[cp]; const flux=ow&&ow.sid!=null&&String(ow.sid)!==String(sid);
+        const jx=((this.geoHash(String(c.id))%100)/100-0.5)*0.01, jy=((this.geoHash(String(c.id)+'y')%100)/100-0.5)*0.01;
+        const lat=e.lat+jx, lng=e.lng+jy; pts.push([lat,lng]);
+        const mk=L.circleMarker([lat,lng],{radius:5,color:'#fff',weight:1.4,fillColor:col,fillOpacity:.95});
+        mk.bindPopup('<div style="font:12.5px sans-serif;min-width:190px"><strong>'+esc(c.name)+'</strong><br>'+esc(e.city||'')+' ('+esc(cp)+')<br>Achète chez : <strong style="color:'+col+'">'+esc(shopName[String(sid)]||('#'+sid))+'</strong>'+(flux?'<br><span style="color:#8D1D2C">⚠ flux hors zone — zone locale : '+esc(ow.name||shopName[String(ow.sid)]||('#'+ow.sid))+'</span>':'')+'</div>');
+        g.addLayer(mk); }); }
+    g.addTo(m); this._traceLayer=g;
+    const fk=JSON.stringify(filter); if(pts.length && this._traceFitKey!==fk){ this._traceFitKey=fk; m.fitBounds(pts,{padding:[30,30],maxZoom:12}); }
+  }
   frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
@@ -1225,7 +1286,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER],['prospects','Prospects','var(--color-primary)']]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)']]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -1234,8 +1295,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1543,6 +1604,22 @@ class Component extends DCLogic {
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isProspects:S.screen==='prospects',
+      isTrace:S.screen==='trace',
+      traceCp:S.traceCp||'', setTraceCp:(e)=>this.setState({traceCp:e.target.value}),
+      ...(function(self,S){
+        const rows=(window.BOServer?window.BOServer.table('catchment'):[]); const D=self._geoData; const owner=self.traceOwner();
+        const hidden=S.traceHidden||{}; const filter=self._traceCps();
+        const shopMap={};
+        rows.forEach(z=>{ if(z.shop_id!=null&&!(String(z.shop_id) in shopMap)) shopMap[String(z.shop_id)]=z.shop_name||z.name||('Point de vente #'+z.shop_id); });
+        if(D)(D.shops||[]).forEach(s2=>{ shopMap[String(s2.id)]=s2.name||shopMap[String(s2.id)]||('#'+s2.id); });
+        const counts={}; let shown=0, flux=0;
+        if(D)(D.clients||[]).forEach(c=>{ const cp=String(c.cp||'').trim(); if(filter.length&&!filter.includes(cp))return; const sid=String(c.shop_id); if(hidden[sid])return; counts[sid]=(counts[sid]||0)+1; shown++; const ow=owner[cp]; if(ow&&ow.sid!=null&&String(ow.sid)!==sid)flux++; });
+        const legend=Object.keys(shopMap).map(id=>({ id, name:shopMap[id], count:counts[id]||0, hidden:!!hidden[id],
+          dotStyle:'width:12px;height:12px;border-radius:50%;flex:none;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.12);background:'+self.shopColor(id)+(hidden[id]?';opacity:.25':''),
+          rowStyle:'display:inline-flex;align-items:center;gap:7px;cursor:pointer;padding:5px 9px;border-radius:8px;border:.5px solid var(--color-border-tertiary);'+(hidden[id]?'opacity:.5;background:var(--color-background-secondary)':'background:#fff'),
+          toggle:()=>self.setState(st=>({traceHidden:{...(st.traceHidden||{}),[id]:!(st.traceHidden||{})[id]}})) }));
+        return { traceLegend:legend, traceStat:(D?(shown+' clients affichés · '+flux+' en flux hors zone'):'Points clients indisponibles hors ligne — zones affichées seules') };
+      })(this,S),
       prRows:(function(){ const stMap={nouveau:{t:'Nouveau',c:'var(--color-text-muted)',bg:'var(--color-background-secondary)',bd:'var(--color-border-tertiary)'},a_valider:{t:'À valider',c:'#8a5a00',bg:'#fdf3e7',bd:'#ead9c3'},attente_franchise:{t:'Attente franchise',c:'#2a5a9e',bg:'#eef3fb',bd:'#cfe0f5'}};
         return (window.BOServer?window.BOServer.table('prospects'):[]).map(p=>{ const s=stMap[p.status]||stMap.nouveau;
           return {...p, contact:(p.email||'—')+(p.phone?(' · '+p.phone):''), localityTxt:p.locality||'—', statusTxt:s.t,
