@@ -17,7 +17,7 @@
 //    WSM_SQLITE_PATH=<file>  (default: php-api/data/webshop_mrszoko.sqlite)
 // ============================================================================
 
-return [
+$cfg = [
     'engine'      => getenv('WSM_DB_ENGINE') ?: 'sqlite',
     'mysql'       => [
         'host'    => getenv('WSM_DB_HOST') ?: '127.0.0.1',
@@ -33,3 +33,14 @@ return [
     // Allow the front-end (served from a different path/origin during dev) to call us.
     'cors_origin' => getenv('WSM_CORS_ORIGIN') ?: '*',
 ];
+
+// Optional local override (untracked, gitignored): drop a config.local.php on the
+// server that `return`s an array of keys to override — e.g. real MySQL creds and
+// the admin token — without editing this file or setting env vars.
+//   <?php return ['engine'=>'mysql','mysql'=>[...],'admin_token'=>'...'];
+if (is_file(__DIR__ . '/config.local.php')) {
+    $local = require __DIR__ . '/config.local.php';
+    if (is_array($local)) $cfg = array_replace_recursive($cfg, $local);
+}
+
+return $cfg;

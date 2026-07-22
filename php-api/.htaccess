@@ -1,0 +1,24 @@
+# Route every /webshop/mrszoko/api/* request that isn't a real file to the
+# router (index.php), which dispatches /franchisor/* endpoints. Apache + mod_rewrite.
+# Requires the vhost/dir to allow overrides (AllowOverride FileInfo, or All).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /webshop/mrszoko/api/
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Fallback for servers without mod_rewrite (Apache 2.2.16+).
+<IfModule !mod_rewrite.c>
+  FallbackResource /webshop/mrszoko/api/index.php
+</IfModule>
+
+# Don't expose the SQLite DB, schema dumps, tests or config to the web.
+<FilesMatch "\.(sqlite|sqlite-journal)$">
+  Require all denied
+</FilesMatch>
+<FilesMatch "^(config\.local\.php)$">
+  Require all denied
+</FilesMatch>
+RedirectMatch 404 /webshop/mrszoko/api/(data|tests|schema)/
