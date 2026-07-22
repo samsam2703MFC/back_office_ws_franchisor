@@ -14,11 +14,21 @@
   FallbackResource /webshop/mrszoko/api/index.php
 </IfModule>
 
-# Don't expose the SQLite DB, schema dumps, tests or config to the web.
+# Only index.php may be reached over HTTP. Every other PHP file (migrate.php,
+# seed.php, db.php, delivery.php, config*.php) is include-only — deny direct
+# web access so nobody can trigger a migrate/seed or read config over the web.
+# (Denying HTTP access does NOT stop index.php from include()'ing them.)
+<FilesMatch "\.php$">
+  Require all denied
+</FilesMatch>
+<Files "index.php">
+  Require all granted
+</Files>
+
+# Don't expose the SQLite DB or its journal to the web.
 <FilesMatch "\.(sqlite|sqlite-journal)$">
   Require all denied
 </FilesMatch>
-<FilesMatch "^(config\.local\.php)$">
-  Require all denied
-</FilesMatch>
+
+# Belt-and-suspenders: no listing/serving of the data, tests or schema dirs.
 RedirectMatch 404 /webshop/mrszoko/api/(data|tests|schema)/
