@@ -944,20 +944,24 @@ class Component extends DCLogic {
     if(!fr.base){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]).filter(r=>r.id!==z.id); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify({delete:z.id}),credentials:'omit'})
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
-  // Clic sur un point de la carte : retire ce code postal de sa zone primaire
-  // et persiste la suppression (upsert de l'enregistrement de zone en base ; repli local).
+  // Clic sur un point de la carte : retire ce code postal de sa zone primaire.
+  // Mise à jour optimiste (le point disparaît aussitôt de la carte ET de la liste),
+  // puis persistance en base (upsert de l'enregistrement de zone) ; en cas d'échec, on restaure.
   czRemovePointCp(zoneId,cp){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]);
     const z=rows.find(r=>String(r.id)===String(zoneId)); if(!z) return;
-    const cps=String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean); if(!cps.includes(String(cp))) return;
+    const all=String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean); if(!all.includes(String(cp))) return;
     const e=(window.__CPGEO&&window.__CPGEO.idx&&window.__CPGEO.idx[String(cp)])||null;
     if(!confirm('Retirer le code postal '+cp+(e?' ('+e.city+')':'')+' de la zone « '+z.name+' » ?')) return;
-    const postcodes=cps.filter(x=>x!==String(cp)).join(' · ');
+    const oldPostcodes=z.postcodes; const postcodes=all.filter(x=>x!==String(cp)).join(' · ');
+    const applyPostcodes=(val)=>{ const rr=(window.BOServer?window.BOServer.table('catchment'):[]); const k=rr.findIndex(r=>String(r.id)===String(zoneId)); if(k>=0){ rr[k]={...rr[k],postcodes:val}; if(window.BOServer) window.BOServer.save('catchment',rr); } this.setState(st=>({_rev:(st._rev||0)+1})); };
+    // Optimiste : on retire le CP tout de suite côté UI/local.
+    applyPostcodes(postcodes);
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
-    const payload={id:z.id,name:z.name,shop_id:(z.shop_id===''||z.shop_id==null)?null:parseInt(z.shop_id,10),postcodes,exclusive:!!z.exclusive,active:1};
-    if(!fr.base){ const i=rows.findIndex(r=>String(r.id)===String(zoneId)); if(i>=0) rows[i]={...rows[i],postcodes}; if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); this.printJob('✖ CP '+cp+' retiré de « '+z.name+' » (local)'); return; }
+    if(!fr.base){ this.printJob('✖ CP '+cp+' retiré de « '+z.name+' » (local)'); return; }
+    const payload={id:z.id,name:z.name,shop_id:(z.shop_id===''||z.shop_id==null)?null:z.shop_id,postcodes,exclusive:!!z.exclusive,active:1};
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'})
-      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.printJob('✖ CP '+cp+' retiré de « '+z.name+' »'); this.czReload(); })
-      .catch(()=>this.printJob('⚠ Réseau indisponible'));
+      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ applyPostcodes(oldPostcodes); this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.printJob('✖ CP '+cp+' retiré de « '+z.name+' »'); })
+      .catch(()=>{ applyPostcodes(oldPostcodes); this.printJob('⚠ Réseau indisponible — suppression annulée'); });
   }
   frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
