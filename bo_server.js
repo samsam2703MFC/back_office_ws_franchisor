@@ -152,7 +152,7 @@
       if (!fr.base) return Promise.resolve(false);
       ensure();
       var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
-                  pricing_rules:'pricing-rules', params:'params',
+                  pricing_rules:'pricing-rules', params:'params', prospects:'prospects',
                   email_templates:'email-templates', users:'users', audit:'audit' };
       var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
       var jobs = Object.keys(MAP).map(function(key){
