@@ -13,7 +13,7 @@
       {label:'Adoption whitelist',value:'82 %',valColor:'var(--color-text)',delta:'▼ −3 pts',deltaColor:'var(--color-primary)'},
     ],
     "catchment": [
-      {id:1,name:'Bruxelles Capitale (19 communes)',postcodes:'1000 · 1020 · 1030 · 1040 · 1050',exclusive:true,active:true,shop_id:null,shop_name:''},
+      {id:1,name:'Bruxelles Capitale (19 communes)',postcodes:'1000 · 1020 · 1030 · 1040 · 1050',exclusive:true,active:true,shop_id:'bxl',shop_name:'L\'Atelier — Bruxelles-Centre'},
       {id:2,name:'Brabant flamand — périphérie',postcodes:'1600 · 1700 · 1800 · 3000',exclusive:true,active:true,shop_id:null,shop_name:''},
     ],
     "shops": [
@@ -68,6 +68,7 @@
       {cle:'invoice',langue:'FR',sujet:'Facture {{commande_ref}}'},
       {cle:'office_onboarding',langue:'FR',sujet:'Bienvenue — votre compte {{bureau}}'},
       {cle:'office_reject',langue:'FR',sujet:'Votre demande de rattachement'},
+      {cle:'prospect_attente',langue:'FR',sujet:'Votre demande — L\'Atelier By arrive bientôt près de chez vous'},
     ],
     "users": [
       {nom:'Sophie Renard',email:'sophie.renard@latelierby.be',role:'Siège',portee:'Réseau complet',act:true},
@@ -112,6 +113,13 @@
         {libelle:'Château — accès traiteur',adresse:'Chaussée de Bruxelles 100, 1410 Waterloo',fenetre:'11:00–13:00',jours:'S D',validation:'Dépôt libre',marge:-78},
       ]},
     ],
+    "prospects": [
+      {id:1,name:'Camille Dubois',email:'camille.dubois@gmail.com',phone:'+32 478 12 34 56',postcode:'1000',locality:'',status:'nouveau',franchisee_id:null,franchisee_name:'',created_at:'2026-07-20'},
+      {id:2,name:'Restaurant Le Nord',email:'contact@lenord.be',phone:'+32 2 555 44 33',postcode:'1410',locality:'Waterloo',status:'nouveau',franchisee_id:null,franchisee_name:'',created_at:'2026-07-19'},
+      {id:3,name:'Sophie Martin',email:'s.martin@outlook.com',phone:'+32 495 88 77 66',postcode:'3000',locality:'',status:'nouveau',franchisee_id:null,franchisee_name:'',created_at:'2026-07-18'},
+      {id:4,name:'Boulangerie Rive',email:'rive@bakery.be',phone:'',postcode:'1050',locality:'Ixelles',status:'a_valider',franchisee_id:'bxl',franchisee_name:'L\'Atelier — Bruxelles-Centre',created_at:'2026-07-15'},
+      {id:5,name:'Traiteur Delcourt',email:'info@delcourt.be',phone:'+32 471 22 33 44',postcode:'1180',locality:'',status:'nouveau',franchisee_id:null,franchisee_name:'',created_at:'2026-07-14'},
+    ],
     "fr_incidents": [
       {type:'Colis endommagé',point:'Café Belga · Ixelles',heure:'aujourd\'hui 09:12',statut:'À traiter',icon:'!',iconBg:'#fbe9eb',iconColor:'var(--color-primary)',ref:'INC-2026-0412',geo:'50.8275, 4.3705',horodatage:'17 juil. 2026 09:12',chauffeur:'Marek Kowalski',impact:'24 €',impactRef:'avoir estimé',description:'Bac isotherme percuté au déchargement. 2 pots de confiture cassés. Photo prise sur place, réception a refusé la ligne.',statutColor:'var(--color-primary)'},
       {type:'Colis manquant',point:'Hôtel Amigo · Sablon',heure:'aujourd\'hui 08:40',statut:'À traiter',icon:'?',iconBg:'var(--color-background-secondary)',iconColor:'var(--color-text-muted)',ref:'INC-2026-0411',geo:'50.8451, 4.3520',horodatage:'17 juil. 2026 08:40',chauffeur:'Marek Kowalski',impact:'46 €',impactRef:'relivraison',description:'1 colis attendu absent au scan de dépôt. Écart détecté sur le bon de chargement.',statutColor:'var(--color-text-muted)'},
@@ -153,7 +161,7 @@
       ensure();
       var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
                   pricing_rules:'pricing-rules', params:'params',
-                  email_templates:'email-templates', users:'users', audit:'audit' };
+                  email_templates:'email-templates', users:'users', audit:'audit', prospects:'prospects' };
       var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
       var jobs = Object.keys(MAP).map(function(key){
         return fetch(fr.base + '/franchisor/' + MAP[key], { headers: headers, credentials: 'omit' })
