@@ -903,7 +903,8 @@ class Component extends DCLogic {
     rows.forEach((z,i)=>{ const col=palette[i%palette.length];
       String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{ const e=geo.idx[cp]; if(!e) return; pts.push([e.lat,e.lng]);
         const mk=L.circleMarker([e.lat,e.lng],{radius:7,color:col,weight:2,fillColor:col,fillOpacity:.55});
-        mk.bindTooltip(cp+' '+e.city+' — '+z.name); g.addLayer(mk); }); });
+        mk.bindTooltip(cp+' '+e.city+' — '+z.name+' · clic pour retirer');
+        mk.on('click',()=>this.czRemovePointCp(z.id,cp)); g.addLayer(mk); }); });
     g.addTo(m); this._zLayer=g;
     if(pts.length) m.fitBounds(pts,{padding:[30,30],maxZoom:11});
   }
@@ -943,6 +944,21 @@ class Component extends DCLogic {
     if(!fr.base){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]).filter(r=>r.id!==z.id); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify({delete:z.id}),credentials:'omit'})
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
+  // Clic sur un point de la carte : retire ce code postal de sa zone primaire
+  // et persiste la suppression (upsert de l'enregistrement de zone en base ; repli local).
+  czRemovePointCp(zoneId,cp){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]);
+    const z=rows.find(r=>String(r.id)===String(zoneId)); if(!z) return;
+    const cps=String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean); if(!cps.includes(String(cp))) return;
+    const e=(window.__CPGEO&&window.__CPGEO.idx&&window.__CPGEO.idx[String(cp)])||null;
+    if(!confirm('Retirer le code postal '+cp+(e?' ('+e.city+')':'')+' de la zone « '+z.name+' » ?')) return;
+    const postcodes=cps.filter(x=>x!==String(cp)).join(' · ');
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    const payload={id:z.id,name:z.name,shop_id:(z.shop_id===''||z.shop_id==null)?null:parseInt(z.shop_id,10),postcodes,exclusive:!!z.exclusive,active:1};
+    if(!fr.base){ const i=rows.findIndex(r=>String(r.id)===String(zoneId)); if(i>=0) rows[i]={...rows[i],postcodes}; if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); this.printJob('✖ CP '+cp+' retiré de « '+z.name+' » (local)'); return; }
+    fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'})
+      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.printJob('✖ CP '+cp+' retiré de « '+z.name+' »'); this.czReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible'));
+  }
   frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
