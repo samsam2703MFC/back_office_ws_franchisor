@@ -878,6 +878,9 @@ class Component extends DCLogic {
   }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    // Contours des codes postaux (asset statique servi à côté de la page) — indépendant du backend.
+    if(!window.__CPPOLY && !this._polyLoading){ this._polyLoading=true;
+      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
       Promise.all([
         fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
@@ -893,20 +896,32 @@ class Component extends DCLogic {
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(m); this._zonesMap=m; this._zKey=null; }
     this.czDraw();
   }
-  czDraw(){ const L=window.L,m=this._zonesMap,geo=window.__CPGEO; if(!L||!m||!geo) return;
+  // Dessine chaque code postal d'une zone : en CONTOUR (polygone du geojson) si dispo,
+  // sinon en point (repli). Clic = retrait du CP. Couleur = zone primaire.
+  czDraw(){ const L=window.L,m=this._zonesMap,geo=window.__CPGEO,poly=window.__CPPOLY; if(!L||!m||(!geo&&!poly)) return;
     const rows=(window.BOServer?window.BOServer.table('catchment'):[]);
-    const key=JSON.stringify(rows.map(z=>[z.id,z.postcodes,z.shop_id]));
+    const key=JSON.stringify(rows.map(z=>[z.id,z.postcodes,z.shop_id]))+'|'+(poly?'P':'')+(geo?'G':'');
     if(this._zKey===key) return; this._zKey=key;
     if(this._zLayer) m.removeLayer(this._zLayer);
     const g=L.layerGroup(); const pts=[];
     const palette=['#8D1D2C','#C87A3F','#3B3468','#2d7a3e','#8C4A2F','#b26a00'];
     rows.forEach((z,i)=>{ const col=palette[i%palette.length];
-      String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{ const e=geo.idx[cp]; if(!e) return; pts.push([e.lat,e.lng]);
-        const mk=L.circleMarker([e.lat,e.lng],{radius:7,color:col,weight:2,fillColor:col,fillOpacity:.55});
-        mk.bindTooltip(cp+' '+e.city+' — '+z.name+' · clic pour retirer');
-        mk.on('click',()=>this.czRemovePointCp(z.id,cp)); g.addLayer(mk); }); });
+      String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{
+        const feats=poly&&poly.idx[cp]; const e=geo&&geo.idx[cp];
+        if(feats&&feats.length){
+          feats.forEach(f=>{ const gj=L.geoJSON(f,{style:{color:col,weight:1,fillColor:col,fillOpacity:.35}});
+            gj.bindTooltip(cp+(e&&e.city?' '+e.city:'')+' — '+z.name+' · clic pour retirer');
+            gj.on('mouseover',()=>gj.setStyle({weight:2.5,fillOpacity:.6}));
+            gj.on('mouseout',()=>gj.setStyle({weight:1,fillOpacity:.35}));
+            gj.on('click',()=>this.czRemovePointCp(z.id,cp)); g.addLayer(gj);
+            try{ const b=gj.getBounds(); pts.push([b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]); }catch(_){} });
+        } else if(e){ pts.push([e.lat,e.lng]);
+          const mk=L.circleMarker([e.lat,e.lng],{radius:7,color:col,weight:2,fillColor:col,fillOpacity:.55});
+          mk.bindTooltip(cp+(e.city?' '+e.city:'')+' — '+z.name+' · clic pour retirer');
+          mk.on('click',()=>this.czRemovePointCp(z.id,cp)); g.addLayer(mk);
+        } }); });
     g.addTo(m); this._zLayer=g;
-    if(pts.length) m.fitBounds(pts,{padding:[30,30],maxZoom:11});
+    if(pts.length) m.fitBounds(pts,{padding:[30,30],maxZoom:12});
   }
   czPick(cp){ return ()=>{ this.setState({czDraft:String(cp)},()=>this.czAddCp()); }; }
   czPickGroup(cps,label){ return ()=>{ const cur=this.state.cz; const have=[...cur.cps]; let added=0,conflits=0,deja=0;
