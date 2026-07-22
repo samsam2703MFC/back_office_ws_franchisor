@@ -285,11 +285,11 @@
       <sc-if value="{{ isZones }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;flex-direction:column;gap:14px">
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fdf9f3;border-color:#eadfce">
-            <div style="font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted);max-width:640px"><strong style="color:var(--color-text)">Découpez le territoire de la marque en zones primaires</strong> et affectez chacune à un point de vente. Un code postal ne peut appartenir qu'à une seule zone primaire — le franchisé bâtit ensuite ses zones secondaires à l'intérieur de ce cadre.</div>
+            <div style="font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted);max-width:640px"><strong style="color:var(--color-text)">Découpez le territoire de la marque en zones de chalandise</strong> et affectez chacune à un point de vente. Un code postal ne peut appartenir qu'à une seule zone de chalandise — le franchisé bâtit ensuite ses tournées à l'intérieur de ce cadre.</div>
             <button onClick="{{ czNew }}" style="flex:none;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:11px 18px;font:600 12.5px var(--font-ui);cursor:pointer;box-shadow:0 1px 3px rgba(141,29,44,.25)">+ Nouvelle zone</button>
           </div>
           <sc-if value="{{ czEmpty }}" hint-placeholder-val="{{ false }}">
-            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone primaire pour l'instant — créez la première pour poser le cadre du réseau.</div>
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone de chalandise pour l'instant — créez la première pour poser le cadre du réseau.</div>
           </sc-if>
           <sc-for list="{{ czRows }}" as="z" hint-placeholder-count="2">
             <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px">
@@ -309,7 +309,7 @@
             </div>
           </sc-for>
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:0;overflow:hidden">
-            <div style="padding:12px 18px;display:flex;align-items:center;gap:10px"><span class="t-admin-label">Carte du territoire</span><span style="font:11px var(--font-ui);color:var(--color-text-muted)">un point par code postal · une couleur par zone primaire</span></div>
+            <div style="padding:12px 18px;display:flex;align-items:center;gap:10px"><span class="t-admin-label">Carte du territoire</span><span style="font:11px var(--font-ui);color:var(--color-text-muted)">un point par code postal · une couleur par zone de chalandise</span></div>
             <div id="map-zones" style="width:100%;height:380px;background:var(--color-background-secondary)"></div>
           </div>
           <sc-if value="{{ czOpen }}" hint-placeholder-val="{{ false }}">
@@ -338,9 +338,9 @@
                       <span style="display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:4px 6px 4px 10px;font:600 11.5px var(--font-mono,monospace);background:#fdf3e7;color:#6b4420;border:.5px solid #ead9c3">{{ c.cp }}<button onClick="{{ c.remove }}" style="background:transparent;border:none;cursor:pointer;font:700 11px var(--font-ui);color:#8C4A2F;padding:0 2px">✕</button></span>
                     </sc-for>
                   </div>
-                  <div style="font:11px var(--font-ui);color:var(--color-text-muted)">Chaque code est vérifié à l'ajout : s'il appartient déjà à une autre zone primaire, il est refusé avec le nom de la zone en conflit.</div>
+                  <div style="font:11px var(--font-ui);color:var(--color-text-muted)">Chaque code est vérifié à l'ajout : s'il appartient déjà à une autre zone de chalandise, il est refusé avec le nom de la zone en conflit.</div>
                 </div>
-                <label style="display:flex;align-items:center;gap:9px;font:12.5px var(--font-ui);margin-top:14px"><input type="checkbox" checked="{{ czF.exclusive }}" onChange="{{ czSetExcl }}">Territoire exclusif — aucune zone secondaire d'un autre point de vente ne peut y opérer</label>
+                <label style="display:flex;align-items:center;gap:9px;font:12.5px var(--font-ui);margin-top:14px"><input type="checkbox" checked="{{ czF.exclusive }}" onChange="{{ czSetExcl }}">Territoire exclusif — aucune tournée d'un autre point de vente ne peut y opérer</label>
                 <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px"><button onClick="{{ czClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button><button onClick="{{ czSave }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 22px;font:600 12.5px var(--font-ui);cursor:pointer">Enregistrer la zone</button></div>
               </div>
             </div>
@@ -934,10 +934,10 @@ class Component extends DCLogic {
     const payload={id:c2.id||undefined,name:c2.name,shop_id:c2.shop_id===''?null:parseInt(c2.shop_id,10),postcodes,exclusive:c2.exclusive,active:1};
     if(!fr.base){ const rows=window.BOServer?window.BOServer.table('catchment'):[]; if(c2.id){ const i=rows.findIndex(r=>r.id===c2.id); if(i>=0) rows[i]={...rows[i],...payload}; } else rows.push({...payload,id:Date.now()}); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({czOpen:false,_rev:(st._rev||0)+1})); this.printJob('✔ Zone enregistrée (local)'); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'})
-      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.setState({czOpen:false}); this.printJob('✔ Zone primaire enregistrée : '+c2.name); this.czReload(); })
+      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.setState({czOpen:false}); this.printJob('✔ Zone de chalandise enregistrée : '+c2.name); this.czReload(); })
       .catch(()=>this.printJob('⚠ Réseau indisponible'));
   }
-  czDel(z){ return ()=>{ if(!confirm('Supprimer la zone primaire « '+z.name+' » ?')) return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
+  czDel(z){ return ()=>{ if(!confirm('Supprimer la zone de chalandise « '+z.name+' » ?')) return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!fr.base){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]).filter(r=>r.id!==z.id); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify({delete:z.id}),credentials:'omit'})
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
@@ -1077,7 +1077,7 @@ class Component extends DCLogic {
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
     const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones de chalandise par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1436,7 +1436,7 @@ class Component extends DCLogic {
       czAdd:()=>this.czAddCp(), czKey:(e)=>this.czKeyCp(e), czSetDraftH:(e)=>this.czSetDraft(e),
       czSetName:this.czSet('name'), czSetShop:this.czSet('shop_id'), czSetExcl:this.czSet('exclusive'),
       czShopOpts:SRV('shops').map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:String(sh.id)===String(S.cz.shop_id)})),
-      czFormTitle:S.cz.id?'Modifier la zone primaire':'Nouvelle zone primaire', usersRows, addUser:this.openForm('user'),
+      czFormTitle:S.cz.id?'Modifier la zone de chalandise':'Nouvelle zone de chalandise', usersRows, addUser:this.openForm('user'),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
       menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,
