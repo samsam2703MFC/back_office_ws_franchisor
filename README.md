@@ -54,13 +54,28 @@ No build step.
 | | Utilisateurs & rôles | bo_users · bo_user_shops (RBAC) |
 | | Journal d'audit | bo_audit |
 
-Interactions: sidebar nav, live toggles, whitelist/gouvernance switches,
-create/edit modal forms, and a full menu builder (bundles, steps, choices,
-server-resolved pricing & margin).
+| **Livraisons** | Livraisons bureau (module livraison) | wsm_deliveries · wsm_clients · wsm_client_points · wsm_drivers · wsm_rounds · wsm_delivery_events · wsm_incidents |
 
-> Data is mock/seed data (localStorage), not a live DB — the goal at this
-> stage is to validate the reworked design online. Wiring real endpoints is a
-> later step.
+Interactions: sidebar nav, live toggles, whitelist/gouvernance switches,
+create/edit modal forms, a full menu builder (bundles, steps, choices,
+server-resolved pricing & margin), and a **delivery module** — create a test
+delivery, assign a driver/round, confirm by QR/PIN, with a full status +
+event trail.
+
+## Database — `webshop_mrszoko` (tables `wsm_`)
+
+Every table is now backed by a real database, **`webshop_mrszoko`**, whose tables
+are all prefixed **`wsm_`**, served by **`php-api/`**. Nothing is hardcoded in the
+UI: each screen reads its `wsm_` table(s) through the `/franchisor/*` API and
+falls back to an in-memory seed only when no API/token is present (dev/GitHub
+Pages). See **`php-api/README.md`** to run it (SQLite locally, MySQL in prod) and
+**`MIGRATION_NOTES.md`** for the endpoint/table map. The end-to-end delivery flow
+is verified by `php-api/tests/e2e_delivery.php` (23 assertions, all green).
+
+## Brand — `mrszoko/` (Mister Szoko design system)
+
+`mrszoko/` holds the Mister Szoko design system imported from claude.ai/design
+(tokens + `thumbnail.html` brand tile). See `mrszoko/README.md`.
 
 ## Deployment
 
@@ -80,3 +95,6 @@ return `200`.
 - `_ds/l-atelier-by-…/` — L'Atelier design system (global.css, fonts, bundle)
 - `vendor/` — React 18.3.1 (UMD), vendored
 - `img/logo.png` — L'Atelier By wordmark
+- `php-api/` — `webshop_mrszoko` backend: PHP router, `wsm_` schema (MySQL +
+  SQLite mirror), seed, migrate CLI, delivery module, end-to-end test
+- `mrszoko/` — Mister Szoko design system (tokens + `thumbnail.html`)

@@ -43,6 +43,11 @@ jobs:
           cp back_office_ws_franchisor.dc.html site/index.html
           cp -r _ds site/
           cp -r vendor site/
+          # Mister Szoko design system (tokens + brand tile) imported under mrszoko/
+          cp -r mrszoko site/
+          # webshop_mrszoko API (php-api/) — DB layer + wsm_ schema + delivery module.
+          # The local SQLite database (data/) is regenerated on the server, never shipped.
+          rsync -a --exclude 'data' --exclude '*.sqlite' php-api site/
           mkdir -p site/img && cp img/logo.png site/img/
           ls -R site
 

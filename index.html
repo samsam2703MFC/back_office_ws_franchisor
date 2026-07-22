@@ -223,6 +223,36 @@
       </div>
       </sc-if>
 
+      <!-- LIVRAISONS (module livraison · wsm_deliveries) -->
+      <sc-if value="{{ isLivraisons }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <sc-for list="{{ livKpis }}" as="k" hint-placeholder-count="4">
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px"><div class="t-admin-label">{{ k.label }}</div><div style="font:700 24px/1 var(--font-ui);color:var(--color-text);margin:9px 0 4px">{{ k.value }}</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ k.sub }}</div></div>
+          </sc-for>
+        </div>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Livraisons bureau</div><div style="{{ srcHint }}">wsm_deliveries ← wsm_clients · wsm_client_points · wsm_drivers · confirmation QR/PIN</div></div><button onClick="{{ createTestDelivery }}" class="btn-primary" style="font-size:12px;flex:none">+ Livraison test</button></div>
+          <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr .85fr .65fr .65fr 160px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Réf.</span><span class="t-admin-label">Client · point</span><span class="t-admin-label">Chauffeur</span><span class="t-admin-label">Statut</span><span class="t-admin-label" style="text-align:right">CA</span><span class="t-admin-label" style="text-align:right">Marge</span><span></span></div>
+          <sc-for list="{{ livRows }}" as="d" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1fr 1.5fr 1fr .85fr .65fr .65fr 160px;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
+              <span style="font:700 11.5px var(--font-mono,monospace);color:var(--color-text)">{{ d.ref }}</span>
+              <div style="min-width:0"><div style="font:600 12.5px var(--font-ui);color:var(--color-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.client }}</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.point }}</div></div>
+              <span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.driverTxt }}</span>
+              <div><span style="{{ d.statusPill }}">{{ d.statusLabel }}</span></div>
+              <span style="font:600 12px var(--font-ui);color:var(--color-text);text-align:right">{{ d.caTxt }}</span>
+              <span style="font:600 12px var(--font-ui);color:{{ d.margeColor }};text-align:right">{{ d.margeTxt }}</span>
+              <div style="display:flex;gap:6px;justify-content:flex-end;align-items:center">
+                <sc-if value="{{ d.canAssign }}" hint-placeholder-val="{{ true }}"><button onClick="{{ d.assign }}" style="{{ d.assignStyle }}">Assigner</button></sc-if>
+                <sc-if value="{{ d.canConfirm }}" hint-placeholder-val="{{ false }}"><button onClick="{{ d.confirm }}" style="{{ d.confirmStyle }}">Confirmer</button></sc-if>
+                <sc-if value="{{ d.done }}" hint-placeholder-val="{{ false }}"><span style="font:600 11px var(--font-ui);color:#2d7a3e">✓ Livrée</span></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
       <!-- CONFIG MARQUE (ws_param) -->
       <!-- COMMUNICATIONS -->
       <sc-if value="{{ isComms }}" hint-placeholder-val="{{ false }}">
@@ -790,7 +820,7 @@ class Component extends DCLogic {
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
   componentDidMount(){ this.czEnsure(); this.geoEnsure(); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.livEnsure(); }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -946,6 +976,41 @@ class Component extends DCLogic {
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
       .then(r=>r.ok?r.json():Promise.reject(r.status)).then(()=>{ this.printJob('✔ Enregistré en base'); return true; })
       .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
+  // Lecture API (GET) — null si pas d'API/jeton (mode seed).
+  frGet(path){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base) return Promise.resolve(null);
+    return fetch(fr.base+path,{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null); }
+  // POST renvoyant le corps JSON + statut (pour la logique livraison).
+  frPostR(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base) return Promise.resolve(null);
+    const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
+    return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
+      .then(r=>r.json().catch(()=>({})).then(j=>({ok:r.ok,status:r.status,body:j}))).catch(()=>null); }
+  // Livraisons : (re)charge deliveries/drivers/clients depuis l'API vers BOServer.
+  livEnsure(){ if(this.state.screen!=='livraisons') return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base || this._livLoaded || this._livLoading) return; this._livLoading=true;
+    Promise.all([this.frGet('/franchisor/deliveries'),this.frGet('/franchisor/drivers'),this.frGet('/franchisor/delivery-clients')])
+      .then(a=>{ if(window.BOServer){ if(Array.isArray(a[0]))window.BOServer.save('deliveries',a[0]); if(Array.isArray(a[1]))window.BOServer.save('drivers',a[1]); if(Array.isArray(a[2]))window.BOServer.save('delivery_clients',a[2]); }
+        this._livLoaded=true; this._livLoading=false; this.setState(st=>({_rev:(st._rev||0)+1})); })
+      .catch(()=>{ this._livLoading=false; }); }
+  livReload(){ this._livLoaded=false; this.livEnsure(); }
+  createTestDelivery(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    const clients=(window.BOServer?window.BOServer.table('delivery_clients'):[])||[];
+    let pointId=null; for(let i=0;i<clients.length;i++){ if(clients[i].points&&clients[i].points.length){ pointId=clients[i].points[0].id; break; } }
+    if(!fr.base){ // mode seed : ajoute la livraison localement
+      const rows=(window.BOServer?window.BOServer.table('deliveries'):[])||[]; const cli=clients[0]||{raison:'—',points:[{}]}; const pt=(cli.points&&cli.points[0])||{};
+      const yr=new Date().getFullYear(); const code=((pt.validation==='PIN')?'PIN':'QR')+'-'+Math.floor(1000+Math.random()*9000);
+      rows.unshift({id:Date.now(),ref:'LIV-'+yr+'-'+String(rows.length+1).padStart(4,'0'),client:cli.raison,point:pt.libelle||'—',driver:'',driver_color:'#8D1D2C',round:'',status:'planifiée',window:pt.fenetre||'',validation:pt.validation||'QR',confirm_code:code,confirmed:0,ca:420,couts:180,marge:240});
+      if(window.BOServer)window.BOServer.save('deliveries',rows); this.setState(st=>({_rev:(st._rev||0)+1})); this.printJob('✔ Livraison test '+rows[0].ref+' · code '+code+' (local)'); return; }
+    if(!pointId){ this.printJob('⚠ Aucun point de livraison disponible'); return; }
+    this.frPostR('/franchisor/deliveries',{point_id:pointId,ca:420,couts:180,notes:'Livraison test'})
+      .then(res=>{ if(res&&res.ok&&res.body&&res.body.ref){ this.printJob('✔ Livraison test '+res.body.ref+' · code '+res.body.confirm_code); this.livReload(); }
+        else this.printJob('⚠ '+((res&&res.body&&res.body.error)||'Échec création')); }); }
+  livAssign(d){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; const drivers=(window.BOServer?window.BOServer.table('drivers'):[])||[]; const drv=drivers[0];
+    if(!fr.base){ this._livMutate(d.id,{status:'assignée',driver:(drv&&drv.nom)||'Chauffeur',driver_color:(drv&&drv.color)||'#8D1D2C'}); this.printJob('✔ '+d.ref+' assignée à '+((drv&&drv.nom)||'—')); return; }
+    this.frPostR('/franchisor/deliveries/'+d.id+'/assign',{driver_id:drv?drv.id:null}).then(res=>{ if(res&&res.ok){ this.printJob('✔ '+d.ref+' assignée'); this.livReload(); } else this.printJob('⚠ Échec assignation'); }); }
+  livConfirm(d){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this._livMutate(d.id,{status:'livrée',confirmed:1}); this.printJob('✔ '+d.ref+' livrée ('+d.validation+')'); return; }
+    this.frPostR('/franchisor/deliveries/'+d.id+'/confirm',{code:d.confirm_code||''}).then(res=>{ if(res&&res.ok){ this.printJob('✔ '+d.ref+' livrée · confirmée '+d.validation); this.livReload(); } else this.printJob('⚠ '+((res&&res.body&&res.body.error)||'Échec confirmation')); }); }
+  _livMutate(id,patch){ const rows=((window.BOServer?window.BOServer.table('deliveries'):[])||[]).map(r=>r.id===id?Object.assign({},r,patch):r); if(window.BOServer)window.BOServer.save('deliveries',rows); this.setState(st=>({_rev:(st._rev||0)+1})); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   componentDidMount(){ import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
@@ -1067,7 +1132,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER]]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['livraisons','Livraisons',APRICOT],['geo','Analyse géographique',COPPER]]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -1076,8 +1141,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',livraisons:'Livraisons',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',livraisons:'Livraisons bureau · tournées · confirmation QR/PIN · wsm_deliveries',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1370,6 +1435,25 @@ class Component extends DCLogic {
       return { label:f.label, ph:f.ph||'', value:val, onInput, options:f.options||[], inputStyle:inputBase, areaStyle:inputBase+';min-height:96px;resize:vertical;font-family:var(--font-ui)',
         isSelect:f.type==='select', isNumber:f.type==='number', isArea:f.type==='area', isChecks:f.type==='checks', isBool:f.type==='bool', checkOpts, boolStyle, boolKnob, boolToggle, isText:f.type!=='select'&&f.type!=='number'&&f.type!=='area'&&f.type!=='checks'&&f.type!=='bool' }; }):[];
 
+    // --- Livraisons (module livraison · wsm_deliveries) ---
+    const DELIV=SRV('deliveries')||[];
+    const livStatus={'brouillon':['#8a8f98','Brouillon'],'planifiée':['#C87A3F','Planifiée'],'assignée':['#3B3468','Assignée'],'en_cours':['#2563eb','En cours'],'livrée':['#2d7a3e','Livrée'],'échouée':['var(--color-primary)','Échouée']};
+    const eur0=(n)=>Math.round(+n||0).toLocaleString('fr-BE')+' €';
+    const livRows=DELIV.map(d=>{ const sm=livStatus[d.status]||['#8a8f98',d.status]; const done=d.status==='livrée'||!!d.confirmed;
+      return {ref:d.ref,client:d.client,point:d.point,driverTxt:d.driver||'— non assigné',statusLabel:sm[1],
+        statusPill:'display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font:600 10.5px var(--font-ui);background:'+sm[0]+'22;color:'+sm[0],
+        caTxt:eur0(d.ca),margeTxt:eur0(d.marge),margeColor:(+d.marge<0)?'var(--color-primary)':'#2d7a3e',
+        canAssign:d.status==='planifiée',canConfirm:!done&&d.status!=='planifiée',done,
+        assign:()=>this.livAssign(d),confirm:()=>this.livConfirm(d),
+        assignStyle:'border:none;cursor:pointer;border-radius:7px;padding:6px 11px;font:600 11px var(--font-ui);background:var(--color-background-secondary);color:var(--color-text)',
+        confirmStyle:'border:none;cursor:pointer;border-radius:7px;padding:6px 11px;font:600 11px var(--font-ui);background:var(--color-primary);color:#fff'}; });
+    const livDone=DELIV.filter(d=>d.status==='livrée'||d.confirmed).length;
+    const livCa=DELIV.reduce((a,d)=>a+(+d.ca||0),0), livMarge=DELIV.reduce((a,d)=>a+(+d.marge||0),0);
+    const livKpis=[{label:'Livraisons',value:String(DELIV.length),sub:livDone+' livrées'},
+      {label:'CA livraison',value:eur0(livCa),sub:'cumulé'},
+      {label:'Marge',value:eur0(livMarge),sub:'CA − coûts'},
+      {label:'Taux de complétion',value:(DELIV.length?Math.round(livDone*100/DELIV.length):0)+' %',sub:livDone+'/'+DELIV.length}];
+
     return {
       navBlocks, pageTitle:titles[S.screen], pageSub:subs[S.screen],
       tableBadge, srcHint, pencilStyle, porteeBadge, langBadge,
@@ -1382,6 +1466,7 @@ class Component extends DCLogic {
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
       isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
+      isLivraisons:S.screen==='livraisons', livRows, livKpis, livEmpty:DELIV.length===0, createTestDelivery:()=>this.createTestDelivery(),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isGeo:S.screen==='geo',

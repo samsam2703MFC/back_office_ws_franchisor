@@ -131,6 +131,30 @@
         {nom:'Traiteur Piotrowski',offices:[{nom:'Atelier',ca:740,couts:360}]},
       ]},
     ],
+    // --- Delivery module (mirror of the API shape: SRV('deliveries') etc.) ---
+    // Dev fallback only — when the API is live these come from wsm_deliveries.
+    "deliveries": [
+      {id:1,ref:'LIV-2026-0001',client:'Le Cirio SA',point:'Brasserie — entrée arrière',driver:'Marek Kowalski',driver_color:'#8D1D2C',round:'Tournée Bruxelles-Centre',status:'livrée',window:'08:00–11:00',validation:'QR',confirm_code:'QR-8842',confirmed:1,ca:520,couts:210,marge:310},
+      {id:2,ref:'LIV-2026-0002',client:'Rocco Forte',point:'Cuisine — quai de service',driver:'Marek Kowalski',driver_color:'#8D1D2C',round:'Tournée Bruxelles-Centre',status:'en_cours',window:'07:30–10:00',validation:'PIN',confirm_code:'',confirmed:0,ca:300,couts:150,marge:150},
+      {id:3,ref:'LIV-2026-0003',client:'Dandoy',point:'Boutique Sablon — arrière',driver:'Julien Dubois',driver_color:'#3B3468',round:'Tournée Sud',status:'assignée',window:'08:00–10:30',validation:'QR',confirm_code:'',confirmed:0,ca:415,couts:260,marge:155},
+      {id:4,ref:'LIV-2026-0004',client:'KBC Group',point:'Cafétéria HQ — hall livraison',driver:'',driver_color:'#8D1D2C',round:'',status:'planifiée',window:'07:00–09:00',validation:'PIN',confirm_code:'',confirmed:0,ca:580,couts:312,marge:268},
+    ],
+    "drivers": [
+      {id:1,nom:'Marek Kowalski',info:'BXL-Centre · Renault frigo',color:'#8D1D2C'},
+      {id:2,nom:'Julien Dubois',info:'Sud · Iveco Daily',color:'#3B3468'},
+      {id:3,nom:'Sofie Peeters',info:'Est · Renault Kangoo',color:'#2d7a3e'},
+    ],
+    "delivery_clients": [
+      {id:1,code:'CL-0021',raison:'Le Cirio SA',seg:'horeca',statut:'actif',points:[{id:1,libelle:'Brasserie — entrée arrière',adresse:'Rue de la Bourse 18, 1000 Bruxelles',fenetre:'08:00–11:00',validation:'QR'}]},
+      {id:2,code:'CL-0044',raison:'Rocco Forte',seg:'horeca',statut:'actif',points:[{id:2,libelle:'Cuisine — quai de service',adresse:'Rue de l\'Amigo 1-3, 1000 Bruxelles',fenetre:'07:30–10:00',validation:'PIN'}]},
+      {id:4,code:'CL-0060',raison:'Dandoy',seg:'retail',statut:'actif',points:[{id:4,libelle:'Boutique Sablon — arrière',adresse:'Rue Charles Buls 14, 1000 Bruxelles',fenetre:'08:00–10:30',validation:'QR'}]},
+    ],
+    "incidents": [
+      {id:1,ref:'INC-2026-0412',type:'Colis endommagé',point:'Café Belga · Ixelles',statut:'À traiter',impact:'24 €',delivery_ref:'LIV-2026-0002'},
+      {id:2,ref:'INC-2026-0411',type:'Colis manquant',point:'Hôtel Amigo · Sablon',statut:'À traiter',impact:'46 €',delivery_ref:null},
+      {id:3,ref:'INC-2026-0407',type:'Livraison refusée',point:'Event Château · Waterloo',statut:'En cours',impact:'40 €',delivery_ref:null},
+      {id:4,ref:'INC-2026-0403',type:'Retour consigne',point:'Maison Dandoy · Sablon',statut:'Résolu',impact:'0 €',delivery_ref:'LIV-2026-0001'},
+    ],
   };
   var DB = null;
   function read(){ try { var r = localStorage.getItem(LS); if (r) return JSON.parse(r); } catch(e){} return null; }
@@ -153,7 +177,9 @@
       ensure();
       var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
                   pricing_rules:'pricing-rules', params:'params',
-                  email_templates:'email-templates', users:'users', audit:'audit' };
+                  email_templates:'email-templates', users:'users', audit:'audit',
+                  // Delivery module (wsm_deliveries / wsm_drivers / wsm_clients / wsm_incidents)
+                  deliveries:'deliveries', drivers:'drivers', delivery_clients:'delivery-clients', incidents:'incidents' };
       var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
       var jobs = Object.keys(MAP).map(function(key){
         return fetch(fr.base + '/franchisor/' + MAP[key], { headers: headers, credentials: 'omit' })

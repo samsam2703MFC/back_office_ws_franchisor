@@ -1,5 +1,16 @@
 # MIGRATION_NOTES — `backoffice_franchisor` → vraie DB
 
+> **État actuel — base `webshop_mrszoko`, tables préfixées `wsm_`.** Le backend
+> vit désormais **dans ce repo** sous `php-api/` : routeur PHP + schéma
+> `wsm_*` (MySQL canonique `php-api/schema/webshop_mrszoko.mysql.sql` + miroir
+> SQLite pour tourner/tester sans serveur) + seed + CLI `migrate.php` + **module
+> livraison** (create → assigner → confirmer QR/PIN, piste d'audit) + test
+> end-to-end (`php-api/tests/e2e_delivery.php`, 23 assertions vertes). Le tableau
+> ci-dessous décrit la génération précédente (`ws_*`) ; la correspondance est
+> 1:1 avec les tables `wsm_*` (mêmes colonnes, préfixe `wsm_`). Voir
+> `php-api/README.md` pour la liste d'endpoints à jour et les variables d'env.
+
+
 Comment le back-office franchisor est branché sur la vraie base, et ce qu'il
 faut côté serveur pour l'activer. **Aucun changement de design / UX / logique** :
 seule la *source* de la donnée passe du seed à l'API PHP partagée.
