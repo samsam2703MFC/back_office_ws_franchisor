@@ -39,7 +39,7 @@ jobs:
       - name: Assemble static site
         run: |
           rm -rf site && mkdir -p site
-          cp back_office_ws_franchisor.dc.html api-config.js support.js bo_server.js menu_api.js menu_seed.js site/
+          cp back_office_ws_franchisor.dc.html api-config.js support.js bo_server.js menu_api.js menu_seed.js codes_postaux.geojson site/
           cp back_office_ws_franchisor.dc.html site/index.html
           cp -r _ds site/
           cp -r vendor site/
