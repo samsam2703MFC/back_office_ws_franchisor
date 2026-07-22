@@ -29,7 +29,12 @@
   try {
     var q = new URLSearchParams(location.search);
     if (q.get('api')) base = q.get('api');
-    if (q.get('token')) { token = q.get('token'); try { localStorage.setItem('adminToken', token); } catch (e) {} }
+    if (q.get('token')) { token = q.get('token'); try { localStorage.setItem('adminToken', token); } catch (e) {}
+      // Le jeton ne doit pas rester dans l'URL (historique navigateur, logs
+      // serveur, copier-coller de lien) : on le retire une fois mémorisé.
+      try { q.delete('token'); var qs = q.toString();
+        history.replaceState({}, '', location.pathname + (qs ? '?' + qs : '') + location.hash); } catch (e) {}
+    }
   } catch (e) {}
 
   window.__FR = { base: base, token: token };
