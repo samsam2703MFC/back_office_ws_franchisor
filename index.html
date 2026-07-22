@@ -120,7 +120,7 @@
       <!-- BOUTIQUES (CRUD) -->
       <sc-if value="{{ isBoutiques }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_shops ← franchise_shops · synchronisé</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">shops ← franchise_shops · synchronisé</span></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
           <div style="display:grid;grid-template-columns:1.6fr 1fr .8fr .9fr .7fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Boutique</span><span class="t-admin-label">Ville</span><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label">Contrat</span><span class="t-admin-label" style="text-align:center">Actif</span><span></span></div>
           <sc-for list="{{ shopsRows }}" as="s" hint-placeholder-count="5">
@@ -991,7 +991,7 @@ class Component extends DCLogic {
     const cats=['Boulangerie','Pâtisserie fraîche','Chocolaterie','Traiteur','Glaces'];
     const sel=a=>a.map(x=>({value:x,label:x}));
     return {
-      shop:{ title:'Boutique', table:'shops (+ ws_shops)', save:'Enregistrer', fields:[
+      shop:{ title:'Boutique', table:'shops', save:'Enregistrer', fields:[
         {k:'nom',label:'Enseigne',type:'text',ph:'L\'Atelier — …'},
         {k:'ville',label:'Ville',type:'select',options:sel(villes),def:villes[0]},
         {k:'contrat',label:'Contrat',type:'select',options:sel(['Franchise','Succursale','Master']),def:'Franchise'},
