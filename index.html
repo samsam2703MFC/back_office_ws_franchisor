@@ -220,6 +220,21 @@
             </div>
           </sc-for>
         </div>
+
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="t-section-title" style="font-size:15px">Portions — produits portionnables (ERP)</div><span style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font:600 10.5px var(--font-ui);background:var(--color-background-secondary);color:var(--color-text-muted)">👁 Lecture seule</span></div>
+          <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">product_portion × shop_product_portion_price — quelles portions sont actives par produit et les prix posés par boutique</div>
+          <div style="display:grid;grid-template-columns:1.8fr 1.2fr 2fr;gap:12px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Produit</span><span class="t-admin-label">Portions disponibles</span><span class="t-admin-label">Prix par boutique</span></div>
+          <sc-for list="{{ erpPortions }}" as="ep" hint-placeholder-count="4">
+            <sc-if value="{{ ep.hasCat }}" hint-placeholder-val="{{ false }}"><div style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);background:var(--color-background-secondary);padding:6px 8px;margin-top:6px;border-radius:6px">{{ ep.cat }}</div></sc-if>
+            <div style="display:grid;grid-template-columns:1.8fr 1.2fr 2fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
+              <span style="font:500 12.5px var(--font-ui);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ ep.produit }}">◔ {{ ep.produit }}</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ ep.badges }}" as="b" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font:600 10.5px var(--font-ui);background:#eef3fb;color:#2a5a9e">{{ b.label }}</span></sc-for></div>
+              <span style="font:500 11px var(--font-ui);color:var(--color-text)">{{ ep.prix }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ erpPortionsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:18px;text-align:center;font:400 12px var(--font-ui);color:var(--color-text-muted)">Aucun produit portionnable dans l'ERP (product_portion).</div></sc-if>
+        </div>
       </div>
       </sc-if>
 
@@ -1222,6 +1237,13 @@ class Component extends DCLogic {
     const porteeBadge=pill('#eef3fb','#2a5a9e');
     const vouchersM=SRV('vouchers');
     const pricingR=SRV('pricing_rules');
+    // Portions réseau (ERP product_portion × shop_product_portion_price),
+    // groupées par catégorie — lecture seule.
+    let _epCat=null;
+    const erpPortions=SRV('erp_portions').map(r=>{ const cat=r.cat||'Autres';
+      const hasCat=cat!==_epCat; _epCat=cat;
+      return {produit:r.produit,cat,hasCat,badges:(r.portions||[]).map(t=>({label:t})),prix:r.prix||'—'}; });
+    const erpPortionsEmpty=erpPortions.length===0;
 
     // Config marque (ws_param)
     const paramRaw=SRV('params');
@@ -1404,7 +1426,7 @@ class Component extends DCLogic {
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
-      isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
+      isPromos:S.screen==='promos', vouchersM, pricingR, erpPortions, erpPortionsEmpty, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isProspects:S.screen==='prospects', prospectsCount:SRV('prospects').length, prospectsEmpty:SRV('prospects').length===0,

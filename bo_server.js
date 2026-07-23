@@ -4,6 +4,7 @@
 (function(){
   var LS = 'ws_bo_store_v2';
   var SEED = {
+    "erp_portions": [],
     "kpis": [
       {label:'CA réseau (mois)',value:'428 k€',valColor:'var(--color-text)',delta:'▲ +6,4 %',deltaColor:'#2d7a3e'},
       {label:'CA boutique',value:'306 k€',valColor:'var(--color-primary)',delta:'▲ +4,8 %',deltaColor:'#2d7a3e'},
@@ -152,7 +153,7 @@
       if (!fr.base) return Promise.resolve(false);
       ensure();
       var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
-                  pricing_rules:'pricing-rules', params:'params', prospects:'prospects',
+                  pricing_rules:'pricing-rules', erp_portions:'erp-portion-rules', params:'params', prospects:'prospects',
                   email_templates:'email-templates', users:'users', audit:'audit' };
       var headers = fr.token ? { 'X-Admin-Token': fr.token } : {};
       var jobs = Object.keys(MAP).map(function(key){
