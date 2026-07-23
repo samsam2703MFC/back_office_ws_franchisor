@@ -1180,7 +1180,10 @@ class Component extends DCLogic {
       if(catQuery){ const _bwOn=(pp,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:pp.bw; }; const _hit=c.prods.some((pp,pi)=>prodVisible(pp)&&(!activeOnly||_bwOn(pp,pi))&&(!seasonFilter||pp.saison===seasonFilter)); if(!_hit) return; }
       const nbWeb=c.prods.filter((p,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:p.bw; }).length;
       const menuDefOn=this.api?!!this.api.getCategoryDefault(c.cat):false;
-      const cwOn=S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true;
+      // RÈGLE : l'état webshop de la CATÉGORIE est DÉRIVÉ de ses produits —
+      // active dès qu'UN produit est en ligne, désactivée quand plus aucun.
+      const cwOn=c.prods.length?c.prods.some((pp,ppi)=>{ const v=S.flags['bw_'+ci+'_'+ppi]; return v!==undefined?v:pp.bw; })
+        :(S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true);
       const coffOn=S.flags['catOff_'+ci]!==undefined?S.flags['catOff_'+ci]:true;
       const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
       if(activeOnly&&!cwOn) return;
