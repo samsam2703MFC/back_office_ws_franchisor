@@ -1050,6 +1050,7 @@ class Component extends DCLogic {
         {k:'value',label:'Valeur (value)',type:'number',def:10},
         {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
+        {k:'per_customer',label:'Limite par client (vide = illimité · 1 = une fois par travailleur)',type:'number',def:''},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
         {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
         {k:'scope_product',label:'Limiter à un produit (vide = panier entier)',type:'select',options:sel(['— panier entier —'].concat(prodOpts)),def:'— panier entier —'},
@@ -1094,7 +1095,7 @@ class Component extends DCLogic {
     let path=null, payload=null;
     if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
     else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
-    else if(key==='voucher'){ path='/franchisor/voucher'; const spm=String(v.scope_product||'').match(/^(\d+)/); payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, scope_product_id:spm?parseInt(spm[1],10):null, scope_max_qty:(spm&&v.scope_max_qty)?parseInt(v.scope_max_qty,10):null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; const spm=String(v.scope_product||'').match(/^(\d+)/); payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, scope_product_id:spm?parseInt(spm[1],10):null, scope_max_qty:(spm&&v.scope_max_qty)?parseInt(v.scope_max_qty,10):null, per_customer:(v.per_customer!==''&&v.per_customer!=null)?parseInt(v.per_customer,10):null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
@@ -1421,8 +1422,8 @@ class Component extends DCLogic {
     const _vtBtn=(on)=>'font:600 11px var(--font-ui);padding:7px 13px;border-radius:8px;cursor:pointer;border:.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'var(--color-surface)')+';color:'+(on?'#fff':'var(--color-text)');
     const vtModes=[{k:'NETWORK',label:'Réseau'},{k:'CUSTOMER',label:'Personne'},{k:'OFFICE',label:'Entreprise'}].map(m=>({label:m.label,style:_vtBtn(_vtKind===m.k),pick:()=>this.setVtKind(m.k)}));
     const vtNeedsSearch=(_vtKind==='CUSTOMER'||_vtKind==='OFFICE');
-    const vtSearchPh=_vtKind==='CUSTOMER'?'Rechercher un client (mail, nom, téléphone)…':'Rechercher une entreprise / bureau (nom, ville)…';
-    const vtResults=(S.vtResults||[]).map(r=>{ const label=(_vtKind==='CUSTOMER')?((r.name||'—')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
+    const vtSearchPh=_vtKind==='CUSTOMER'?'Rechercher un client (nom, prénom, société, mail, téléphone)…':'Rechercher une entreprise / bureau (nom, ville) — le bon vaudra pour tous ses travailleurs…';
+    const vtResults=(S.vtResults||[]).map(r=>{ const nomFull=((r.name||'')+' '+(r.surname||'')).trim()||'—'; const label=(_vtKind==='CUSTOMER')?(nomFull+(r.soc?(' — '+r.soc):'')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
     const _vtSel=S.vtSel||null;
     const formFields=fCfg?fCfg.fields.map(f=>{ const val=S.formVals[f.k]!==undefined?S.formVals[f.k]:'';
       const onInput=e=>{ const v=e.target.value; this.setState(st=>({formVals:{...st.formVals,[f.k]:v}})); };
