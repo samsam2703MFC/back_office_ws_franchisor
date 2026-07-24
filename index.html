@@ -1024,6 +1024,9 @@ class Component extends DCLogic {
     // Boutiques RÉELLES (hydratées depuis /franchisor/shops → SRV('shops') = {nom, ville, …}).
     // Repli sur des libellés génériques uniquement si aucune donnée (dev/API absente).
     const shopList=(window.BOServer?window.BOServer.table('shops'):[])||[];
+    // Produits du catalogue (droplist « périmètre produit » des bons) — 'id — nom'.
+    const prodOpts=((window.BOServer?window.BOServer.table('catalog'):[])||[])
+      .flatMap(c=>(c.prods||[])).map(pr=>pr.id+' — '+(pr.nom||pr.name||'')).filter(x=>!/^undefined/.test(x));
     const shopNames=shopList.map(s=>s.nom||s.name).filter(Boolean);
     const shopVilles=[...new Set(shopList.map(s=>(s.ville||s.city||'').replace(/\s*\d{4,}\s*$/,'').trim()).filter(Boolean))];
     const villes=shopVilles.length?shopVilles:['Bruxelles','Anderlecht','Uccle','Schaerbeek','Louvain','Waterloo'];
@@ -1049,6 +1052,8 @@ class Component extends DCLogic {
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
         {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
+        {k:'scope_product',label:'Limiter à un produit (vide = panier entier)',type:'select',options:sel(['— panier entier —'].concat(prodOpts)),def:'— panier entier —'},
+        {k:'scope_max_qty',label:'Pièces max remisées (avec périmètre · 1 = produit offert)',type:'number',def:''},
         {k:'reason_kind',label:'Motif',type:'select',options:sel(['MARKETING','FIDELITE','GESTE_CO','RECLAMATION']),def:'MARKETING'},
         {k:'reason_note',label:'Note motif (libre)',type:'text',ph:'ex. campagne rentrée'},
         {k:'active',label:'Actif (active)',type:'bool',def:true},
@@ -1089,7 +1094,7 @@ class Component extends DCLogic {
     let path=null, payload=null;
     if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
     else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
-    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; const spm=String(v.scope_product||'').match(/^(\d+)/); payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, scope_product_id:spm?parseInt(spm[1],10):null, scope_max_qty:(spm&&v.scope_max_qty)?parseInt(v.scope_max_qty,10):null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
