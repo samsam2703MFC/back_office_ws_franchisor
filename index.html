@@ -983,7 +983,7 @@ class Component extends DCLogic {
   frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
-      .then(r=>r.ok?r.json():Promise.reject(r.status)).then(()=>{ this.printJob('✔ Enregistré en base'); return true; })
+      .then(r=>r.ok?r.json():Promise.reject(r.status)).then(j=>{ this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true; })
       .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
@@ -1045,7 +1045,7 @@ class Component extends DCLogic {
         {k:'prix',label:'Prix de référence (€)',type:'number',def:3.5},
       ]},
       voucher:{ title:'Bon', table:'ws_vouchers', save:'Créer le bon', fields:[
-        {k:'code',label:'Code',type:'text',ph:'ex. BIENVENUE10'},
+        {k:'code',label:'Code (vide = généré automatiquement)',type:'text',ph:'Laisser vide pour générer'},
         {k:'type',label:'Type (type)',type:'select',options:sel(['percent','fixed','free_delivery']),def:'percent'},
         {k:'value',label:'Valeur (value)',type:'number',def:10},
         {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
