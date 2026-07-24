@@ -198,13 +198,15 @@
       <sc-if value="{{ isPromos }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons marque</div><div style="{{ srcHint }}">ws_vouchers · shop_id NULL = tout le réseau ⇩</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons réseau & boutiques</div><div style="{{ srcHint }}">voucher_campaign / voucher_code · Marque = tout le réseau ⇩ · les bons émis par une boutique n’agissent que chez elle</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
             <sc-for list="{{ vouchersM }}" as="v" hint-placeholder-count="3">
               <div style="border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font:700 14px var(--font-mono,monospace);color:var(--color-primary);letter-spacing:.05em">{{ v.code }}</span><span style="{{ porteeBadge }}">Réseau</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font:700 14px var(--font-mono,monospace);color:var(--color-primary);letter-spacing:.05em">{{ v.code }}</span><span style="{{ v.badgeStyle }}">{{ v.emetteur }}</span></div>
                 <div style="font:500 13px var(--font-ui);color:var(--color-text)">{{ v.valeur }}</div>
-                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">{{ v.type }} · {{ v.validite }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:4px">Cible : {{ v.cible }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">Motif : {{ v.motif }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">{{ v.usages }} usage(s) · {{ v.validite }} · <span style="color:{{ v.etatColor }}">{{ v.etat }}</span></div>
               </div>
             </sc-for>
           </div>
@@ -1041,12 +1043,14 @@ class Component extends DCLogic {
       ]},
       voucher:{ title:'Bon', table:'ws_vouchers', save:'Créer le bon', fields:[
         {k:'code',label:'Code',type:'text',ph:'ex. BIENVENUE10'},
-        {k:'type',label:'Type (type)',type:'select',options:sel(['percent','amount','free_delivery','add_office']),def:'percent'},
+        {k:'type',label:'Type (type)',type:'select',options:sel(['percent','fixed','free_delivery']),def:'percent'},
         {k:'value',label:'Valeur (value)',type:'number',def:10},
         {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
         {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
+        {k:'reason_kind',label:'Motif',type:'select',options:sel(['MARKETING','FIDELITE','GESTE_CO','RECLAMATION']),def:'MARKETING'},
+        {k:'reason_note',label:'Note motif (libre)',type:'text',ph:'ex. campagne rentrée'},
         {k:'active',label:'Actif (active)',type:'bool',def:true},
       ]},
       pricing:{ title:'Règle de prix réseau', table:'ws_pricing_rules (shop_id NULL)', save:'Créer', fields:[
@@ -1085,7 +1089,7 @@ class Component extends DCLogic {
     let path=null, payload=null;
     if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
     else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
-    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
@@ -1241,7 +1245,14 @@ class Component extends DCLogic {
 
     // Promotions
     const porteeBadge=pill('#eef3fb','#2a5a9e');
-    const vouchersM=SRV('vouchers');
+    // Bons UNIFIÉS : émetteur (Marque / boutique), cible, motif, usages — servis
+    // par GET /franchisor/vouchers (modèle voucher_campaign/voucher_code + 0041).
+    const vouchersM=SRV('vouchers').map(v=>({...v,
+      emetteur:v.emetteur||'Marque',
+      badgeStyle:(v.emetteur&&v.emetteur!=='Marque')?pill('#eaf5ec','#2d7a3e'):pill('#eef3fb','#2a5a9e'),
+      cible:v.cible||'Réseau',motif:v.motif||'—',usages:v.usages||'0',
+      etat:(v.act===false)?'Inactif':'Actif',
+      etatColor:(v.act===false)?'var(--color-text-muted)':'#2d7a3e'}));
     const pricingR=SRV('pricing_rules');
     // Portions réseau (ERP product_portion × shop_product_portion_price),
     // groupées par catégorie — lecture seule.

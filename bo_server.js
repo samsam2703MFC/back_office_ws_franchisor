@@ -45,11 +45,7 @@
         {nom:'Glace artisanale',prix:6.50,statut:'Publié',saison:'Été',bw:false,bm:false,ad:30},
       ]},
     ],
-    "vouchers": [
-      {code:'MARQUE15',valeur:'−15 % sur la pâtisserie',type:'Panier',validite:'campagne été'},
-      {code:'BIENVENUE',valeur:'Onboarding B2B',type:'add_office',validite:'permanent'},
-      {code:'RENTREE10',valeur:'−10 € dès 50 €',type:'Montant',validite:'sept.'},
-    ],
+    "vouchers": [],
     "pricing_rules": [
       {nom:'Menu marque printemps',cible:'Menus',effet:'19,90 €'},
       {nom:'Tarif réseau pâtisserie',cible:'Pâtisserie fraîche',effet:'prix fixe'},
