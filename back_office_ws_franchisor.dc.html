@@ -983,7 +983,8 @@ class Component extends DCLogic {
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     // Contours des codes postaux (asset statique servi à côté de la page) — indépendant du backend.
     if(!window.__CPPOLY && !this._polyLoading){ this._polyLoading=true;
-      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+      const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
+      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
       Promise.all([
         fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
@@ -1131,7 +1132,8 @@ class Component extends DCLogic {
     if(!this._geoData && !this._geoDataLoading && fr.base){ this._geoDataLoading=true;
       fetch(fr.base+'/franchisor/geo-clients',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'}).then(r=>r.ok?r.json():null).then(d=>{ if(d&&Array.isArray(d.clients)){ this._geoData=d; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
     if(!window.__CPPOLY && !this._polyLoading){ this._polyLoading=true;
-      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } }).catch(()=>{}); }
+      const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
+      fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
     if(!window.L){ clearTimeout(this._tmT); this._tmT=setTimeout(()=>this.traceEnsure(),160); return; }
     const el=document.getElementById('map-trace'); if(!el) return;
     if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(m); this._traceMap=m; this._traceKey=null; this._traceFitKey=null; }

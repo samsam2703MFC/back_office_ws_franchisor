@@ -40,6 +40,7 @@ jobs:
         run: |
           rm -rf site && mkdir -p site
           cp back_office_ws_franchisor.dc.html api-config.js support.js bo_server.js menu_api.js menu_seed.js codes_postaux.geojson site/
+          cp codes_postaux.geojson site/codes_postaux.json
           cp back_office_ws_franchisor.dc.html site/index.html
           cp -r _ds site/
           cp -r vendor site/
@@ -80,6 +81,7 @@ jobs:
           echo "== asset status (code type bytes) =="
           fail=0
           for f in api-config.js support.js bo_server.js menu_api.js menu_seed.js \
+                   codes_postaux.geojson codes_postaux.json \
                    vendor/react.js vendor/react-dom.js \
                    "$DS/global.css" "$DS/_ds_bundle.js" \
                    "$DS/fonts/Gotham_Book.otf" "$DS/fonts/Gotham_Medium.otf" \
