@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/react.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/react-dom.js"};</script>
-<script src="api-config.js?v=2026073011"></script>
-<script src="bo_server.js?v=2026073011"></script>
+<script src="api-config.js?v=2026073013"></script>
+<script src="bo_server.js?v=2026073013"></script>
 <script>
 /* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime.
    RÈGLE GO-LIVE : aucune donnée de secours — si l'API ne répond pas ou que le
@@ -41,7 +41,7 @@
     } catch(e){}
   };
   function boot(){
-    var s=document.createElement('script'); s.src='./support.js?v=2026073011'; document.head.appendChild(s);
+    var s=document.createElement('script'); s.src='./support.js?v=2026073013'; document.head.appendChild(s);
     try { var E = window.BOServer && window.BOServer.loadErrors; if (E && E.length) setTimeout(function(){ window.__BO_RENDER_ERRORS(E); }, 800); } catch(e){}
   }
   var fr = window.__FR || {}, jobs = [];
@@ -70,8 +70,8 @@
 <body>
 <x-dc>
 <helmet>
-<link rel="stylesheet" href="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/global.css?v=2026073011">
-<script src="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/_ds_bundle.js?v=2026073011"></script>
+<link rel="stylesheet" href="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/global.css?v=2026073013">
+<script src="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/_ds_bundle.js?v=2026073013"></script>
 <style>
   html,body{height:100%}
   a{color:var(--color-primary);text-decoration:none}
@@ -438,7 +438,85 @@
             </div>
           </sc-for>
         </div>
+
+        <!-- COMPTES TABLETTE BOUTIQUE : PIN 4 chiffres + droits par section.
+             Créés ici (structure identique partout), consommés par le back-office
+             franchisé. Un PIN ne donne jamais les droits admin. -->
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px">
+          <div>
+            <span style="{{ tableBadge }}">bo_users · sections · PIN (tablette boutique)</span>
+            <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:6px">Connexion par PIN à 4 chiffres sur la tablette du magasin · accès limité aux sections cochées · l'accès admin complet reste le jeton ERP</div>
+          </div>
+          <button onClick="{{ suNew }}" class="btn-primary" style="font-size:12px;flex:none">+ Compte tablette</button>
+        </div>
+        <sc-if value="{{ suHasErr }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#8d1d2c;color:#fff;border-radius:10px;padding:10px 14px;font:600 12px var(--font-ui)">⚠ {{ suErr }}</div>
+        </sc-if>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:grid;grid-template-columns:1.3fr 1.2fr 1fr .6fr .6fr .6fr 70px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Nom</span><span class="t-admin-label">Boutique</span><span class="t-admin-label">Rôle</span><span class="t-admin-label">Sections</span><span class="t-admin-label">PIN</span><span class="t-admin-label">État</span><span></span></div>
+          <sc-for list="{{ suRows }}" as="u" hint-placeholder-count="2">
+            <div style="{{ u.rowStyle }}">
+              <span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ u.nom }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.boutiques }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.roleTxt }}</span>
+              <span style="font:600 11.5px var(--font-ui);color:var(--color-text)">{{ u.secTxt }}</span>
+              <span style="font:600 11.5px var(--font-ui);color:{{ u.pinColor }}">{{ u.pinTxt }}</span>
+              <span style="font:600 11.5px var(--font-ui);color:{{ u.actColor }}">{{ u.actTxt }}</span>
+              <div style="display:flex;justify-content:flex-end;gap:6px">
+                <button onClick="{{ u.edit }}" style="{{ pencilStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h3l11-11-3-3L4 17z"/><path d="M14 5l3 3"/></svg></button>
+                <button onClick="{{ u.del }}" style="{{ pencilStyle }}" title="Supprimer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
       </div>
+
+      <!-- Formulaire compte tablette -->
+      <sc-if value="{{ suOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:320">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:760px;max-width:94vw;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ suTitle }}</div><button onClick="{{ suClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Nom de l'employé</span>
+                <input value="{{ suF.nom }}" onInput="{{ suSetNom }}" placeholder="ex. Julie D." style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Email (facultatif)</span>
+                <input value="{{ suF.email }}" onInput="{{ suSetEmail }}" placeholder="laisser vide si l'employé n'en a pas" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Boutique de rattachement</span>
+                <select onChange="{{ suSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)">
+                  <option value="">— choisir —</option>
+                  <sc-for list="{{ suShopOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for>
+                </select></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Rôle (pré-coche les sections)</span>
+                <select onChange="{{ suSetRole }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)">
+                  <option value="">— sur mesure —</option>
+                  <sc-for list="{{ suRoleOpts }}" as="r" hint-placeholder-count="4"><option value="{{ r.key }}" selected="{{ r.sel }}">{{ r.label }}</option></sc-for>
+                </select></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">PIN à 4 chiffres</span>
+                <input value="{{ suF.pin }}" onInput="{{ suSetPin }}" inputmode="numeric" maxlength="4" placeholder="••••" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:700 15px var(--font-ui);letter-spacing:.25em"/>
+                <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">{{ suPinHelp }}</span></label>
+              <label style="display:flex;align-items:center;gap:8px;align-self:end"><input type="checkbox" checked="{{ suF.active }}" onChange="{{ suSetActive }}"/><span style="font:500 12.5px var(--font-ui)">Compte actif</span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span class="t-admin-label">Sections autorisées</span>
+              <span style="font:600 11.5px var(--font-ui);color:var(--color-primary)">{{ suNbSel }} / {{ suTotal }} sélectionnée(s)</span>
+            </div>
+            <sc-for list="{{ suGroupes }}" as="g" hint-placeholder-count="6">
+              <div style="margin-bottom:10px">
+                <div style="font:600 11px var(--font-ui);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">{{ g.groupe }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ g.items }}" as="sc" hint-placeholder-count="5">
+                    <button onClick="{{ sc.toggle }}" style="{{ sc.boxStyle }}">{{ sc.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+              <button onClick="{{ suClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 16px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button>
+              <button onClick="{{ suSave }}" class="btn-primary" style="font-size:12.5px">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
       </sc-if>
 
       <sc-if value="{{ isComms }}" hint-placeholder-val="{{ false }}">
@@ -873,12 +951,13 @@ class Component extends DCLogic {
     this.loadPoly();          // contours CP : une fois, tôt, quel que soit l'écran
     this.czEnsure();
     this.geoEnsure();
+    this.suEnsure();
     // Menu Builder (ex-second componentDidMount).
-    import('./menu_api.js?v=2026073011').then(api=>{ this.api=api; const db=api.initDB();
+    import('./menu_api.js?v=2026073013').then(api=>{ this.api=api; const db=api.initDB();
       this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); })
       .catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
   }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.suEnsure(); }
   // Contours des codes postaux — chargement CENTRALISÉ, une seule fois, tôt et
   // indépendamment de l'écran affiché (plus de course avec le dessin de la
   // carte). Ré-essai borné en cas d'échec réseau ; aucune géométrie inventée.
@@ -984,6 +1063,72 @@ class Component extends DCLogic {
       g.addLayer(mk); });
     g.addTo(m); this._geoLayer=g;
     if(refit&&pts.length) m.fitBounds(pts,{padding:[36,36],maxZoom:12});
+  }
+  // ===== COMPTES TABLETTE (PIN + sections) — chargement et écriture réels =====
+  // Le référentiel des sections et la liste des comptes viennent de l'API ;
+  // aucun échec n'est avalé (message explicite, jamais d'écran muet).
+  suEnsure(){ if(this.state.screen!=='users' || this._suLoading) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ if(!this.state.suErr) this.setState({suErr:'API ou jeton admin absent — comptes tablette indisponibles (please debug)'}); return; }
+    if(this.state.suRef && this.state.suList) return;
+    this._suLoading=true;
+    const H={'X-Admin-Token':fr.token};
+    Promise.all([
+      fetch(fr.base+'/franchisor/bo-sections',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('sections HTTP '+r.status); return r.json(); }),
+      fetch(fr.base+'/franchisor/shop-users',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('comptes HTTP '+r.status); return r.json(); }),
+    ]).then(([ref,list])=>{ this._suLoading=false;
+      this.setState({suRef:ref, suList:Array.isArray(list)?list:[], suErr:null}); })
+      .catch(e=>{ this._suLoading=false;
+        this.setState({suErr:'Chargement des comptes tablette en échec — please debug : '+(e&&e.message||e)}); });
+  }
+  suReload(){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base||!fr.token) return;
+    fetch(fr.base+'/franchisor/shop-users',{headers:{'X-Admin-Token':fr.token},credentials:'omit'})
+      .then(r=>r.ok?r.json():null)
+      .then(l=>{ if(Array.isArray(l)) this.setState({suList:l}); })
+      .catch(()=>this.printJob('⚠ Rechargement des comptes en échec'));
+  }
+  suNew(){ this.setState({su:{id:0,nom:'',email:'',shopId:'',rolePreset:'',sections:[],pin:'',active:true}}); }
+  suEdit(u){ this.setState({su:{id:u.id,nom:u.nom==='(sans nom)'?'':u.nom,email:u.email||'',
+    shopId:(u.shopIds&&u.shopIds[0])?String(u.shopIds[0]):'',rolePreset:u.rolePreset||'',
+    sections:(u.sections||[]).slice(),pin:'',active:!!u.active}}); }
+  suClose(){ this.setState({su:null}); }
+  suSet(k){ return (e)=>{ const v=(k==='active')?e.target.checked:e.target.value;
+    this.setState(st=>({su:{...st.su,[k]:v}})); }; }
+  // Choisir un rôle PRÉ-COCHE ses sections ; l'admin peut ensuite ajuster.
+  suSetRole(){ return (e)=>{ const key=e.target.value; const ref=this.state.suRef;
+    const r=(ref&&(ref.roles||[]).find(x=>x.key===key))||null;
+    this.setState(st=>({su:{...st.su,rolePreset:key,sections:r?r.sections.slice():st.su.sections}})); }; }
+  suToggleSection(key){ this.setState(st=>{ const cur=(st.su.sections||[]).slice();
+    const i=cur.indexOf(key); if(i>=0) cur.splice(i,1); else cur.push(key);
+    return {su:{...st.su,sections:cur}}; }); }
+  suSave(){ const u=this.state.su; if(!u) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : compte NON enregistré (please debug)'); return; }
+    if(!String(u.nom||'').trim()){ this.printJob('⚠ Nom requis'); return; }
+    if(!u.shopId){ this.printJob('⚠ Boutique de rattachement requise'); return; }
+    if(!(u.sections||[]).length){ this.printJob('⚠ Au moins une section doit être autorisée'); return; }
+    const pin=String(u.pin||'').replace(/\D/g,'');
+    if(pin && pin.length!==4){ this.printJob('⚠ Le PIN doit comporter exactement 4 chiffres'); return; }
+    if(!u.id && !pin){ this.printJob('⚠ Un PIN à 4 chiffres est requis pour un nouveau compte'); return; }
+    fetch(fr.base+'/franchisor/shop-user',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
+      body:JSON.stringify({id:u.id||undefined,nom:u.nom,email:u.email||'',shopId:parseInt(u.shopId,10),
+        rolePreset:u.rolePreset||'',sections:u.sections,pin:pin,active:u.active?1:0})})
+      .then(r=>r.json().then(j=>({ok:r.ok,j})))
+      .then(({ok,j})=>{ if(!ok||!j.ok){ this.printJob('⚠ '+((j&&j.error)||'Enregistrement refusé')); return; }
+        this.printJob('✔ Compte « '+u.nom+' » enregistré · '+j.sections+' section(s)'+(j.pinPose?' · PIN posé':''));
+        this.setState({su:null}); this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — compte non enregistré'));
+  }
+  suDelete(u){ if(!confirm('Supprimer le compte « '+u.nom+' » ? Sa session tablette sera révoquée.')) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : suppression impossible'); return; }
+    fetch(fr.base+'/franchisor/shop-user-delete',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
+      body:JSON.stringify({id:u.id})})
+      .then(r=>r.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Suppression refusée')); return; }
+        this.printJob('✖ Compte supprimé'); this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — suppression non effectuée'));
   }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
@@ -1421,6 +1566,31 @@ class Component extends DCLogic {
       return {...u, rolePill:pill(u.role==='Siège'?'#fbe9eb':'var(--color-background-secondary)',u.role==='Siège'?'var(--color-primary)':'var(--color-text-muted)'),
         actStyle:a.style,actKnob:a.knob,toggleAct:a.toggle, edit:this.editForm('user',{nom:u.nom,email:u.email,role:u.role,portee:u.portee})}; });
 
+    // ===== COMPTES TABLETTE BOUTIQUE (PIN 4 chiffres + droits par section) =====
+    // Créés ICI (structure identique partout) et consommés par le BO franchisé :
+    // un PIN ouvre une session limitée aux sections cochées. Le référentiel des
+    // 37 sections vient de l'API (/franchisor/bo-sections) — jamais dupliqué ici.
+    const suRef=S.suRef||null, suList=S.suList||[], su=S.su||null;
+    const suRows=suList.map(u=>({
+      id:u.id, nom:u.nom, boutiques:u.boutiques||'—',
+      roleTxt:(suRef&&(suRef.roles||[]).find(r=>r.key===u.rolePreset)||{}).label||'— sur mesure',
+      secTxt:u.nbSections+' / '+((suRef&&suRef.total)||37),
+      pinTxt:u.pinPose?'✓ posé':'— aucun',
+      pinColor:u.pinPose?'#2d7a3e':'var(--color-primary)',
+      actTxt:u.active?'Actif':'Inactif',
+      actColor:u.active?'#2d7a3e':'var(--color-text-muted)',
+      rowStyle:'display:grid;grid-template-columns:1.3fr 1.2fr 1fr .6fr .6fr .6fr 70px;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)'+(u.active?'':';opacity:.55'),
+      edit:()=>this.suEdit(u), del:()=>this.suDelete(u)}));
+    // Cases à cocher groupées, cochées d'après su.sections.
+    const suGroupes=(suRef?(suRef.groupes||[]):[]).map(g=>({
+      groupe:g.groupe,
+      items:(g.sections||[]).map(sc=>({ key:sc.key, label:sc.label,
+        on:!!(su&&(su.sections||[]).includes(sc.key)),
+        boxStyle:'display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font:500 11.5px var(--font-ui);border:.5px solid '+((su&&(su.sections||[]).includes(sc.key))?'var(--color-primary);background:#fbe9eb;color:var(--color-primary)':'var(--color-border-secondary);background:var(--color-surface);color:var(--color-text)'),
+        toggle:()=>this.suToggleSection(sc.key) }))}));
+    const suRoleOpts=(suRef?(suRef.roles||[]):[]).map(r=>({key:r.key,label:r.label+' ('+r.sections.length+' sections)',sel:!!(su&&su.rolePreset===r.key)}));
+    const suShopOpts=(SRV('shops')||[]).map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:!!(su&&String(su.shopId)===String(sh.id))}));
+
     // Audit
     const vPill=v=>pill(v==='Création'?'#eaf5ec':(v==='Suppression'?'#fbe9eb':'#fbf1e3'),v==='Création'?'#2d7a3e':(v==='Suppression'?'var(--color-primary)':'#b26a00'));
     const auditRows=SRV('audit').map(a=>({...a,actPill:vPill(a.verb)}));
@@ -1645,6 +1815,14 @@ class Component extends DCLogic {
       czSetName:this.czSet('name'), czSetShop:this.czSet('shop_id'), czSetExcl:this.czSet('exclusive'),
       czShopOpts:SRV('shops').map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:String(sh.id)===String(S.cz.shop_id)})),
       czFormTitle:S.cz.id?'Modifier la zone de chalandise':'Nouvelle zone de chalandise', usersRows, addUser:this.openForm('user'),
+      suRows, suGroupes, suRoleOpts, suShopOpts, suErr:S.suErr||'', suHasErr:!!S.suErr,
+      suOpen:!!su, suF:su||{nom:'',email:'',shopId:'',rolePreset:'',pin:'',active:true},
+      suNbSel:su?(su.sections||[]).length:0, suTotal:(suRef&&suRef.total)||37,
+      suTitle:(su&&su.id)?'Modifier le compte tablette':'Nouveau compte tablette',
+      suPinHelp:(su&&su.id)?'Laisser vide pour conserver le PIN actuel':'4 chiffres — requis pour un nouveau compte',
+      suNew:()=>this.suNew(), suClose:()=>this.suClose(), suSave:()=>this.suSave(),
+      suSetNom:this.suSet('nom'), suSetEmail:this.suSet('email'), suSetShop:this.suSet('shopId'),
+      suSetPin:this.suSet('pin'), suSetActive:this.suSet('active'), suSetRole:this.suSetRole(),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
       menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,
