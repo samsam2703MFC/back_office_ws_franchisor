@@ -864,8 +864,44 @@ class Component extends DCLogic {
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
-  componentDidMount(){ this.czEnsure(); this.geoEnsure(); }
+  // ⚠ UN SEUL componentDidMount par classe : il y en avait DEUX (celui-ci et
+  // celui du Menu Builder plus bas), et le second ÉCRASAIT silencieusement le
+  // premier — czEnsure()/geoEnsure() n'étaient donc JAMAIS appelés au montage,
+  // d'où la carte des zones vide (contours chargés trop tard / jamais).
+  // Les deux sont désormais FUSIONNÉS ici.
+  componentDidMount(){
+    this.loadPoly();          // contours CP : une fois, tôt, quel que soit l'écran
+    this.czEnsure();
+    this.geoEnsure();
+    // Menu Builder (ex-second componentDidMount).
+    import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB();
+      this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); })
+      .catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+  }
   componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); }
+  // Contours des codes postaux — chargement CENTRALISÉ, une seule fois, tôt et
+  // indépendamment de l'écran affiché (plus de course avec le dessin de la
+  // carte). Ré-essai borné en cas d'échec réseau ; aucune géométrie inventée.
+  loadPoly(attempt){
+    if(this._cpPolys || this._cpPolysP) return this._cpPolysP||Promise.resolve(this._cpPolys);
+    const n=attempt||1;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this._cpPolysErr=new Error('API non configurée'); return Promise.reject(this._cpPolysErr); }
+    this._cpPolysP=fetch(fr.base+'/geo/postcode-polygons',{credentials:'omit'})
+      .then(r=>r.json().then(j=>{ if(!r.ok) throw new Error((j&&(j.detail||j.error))||('HTTP '+r.status)); return j; }))
+      .then(j=>{ this._cpPolys=j; this._cpPolysP=null; this._cpPolysErr=null;
+        if(typeof window!=='undefined') window.__CPPOLY=j;
+        this._zKey=null;                                  // force le redessin
+        this.setState(s=>({_rev:(s._rev||0)+1}));
+        return j; })
+      .catch(e=>{ this._cpPolysP=null; this._cpPolysErr=e;
+        // Ré-essai (2 tentatives supplémentaires) : couvre un échec réseau
+        // transitoire sans masquer une absence réelle de données.
+        if(n<3){ clearTimeout(this._polyT); this._polyT=setTimeout(()=>this.loadPoly(n+1), 400*n); }
+        else if(this.state.screen==='zones') this.czMapMsg('⚠ ERREUR — contours des codes postaux indisponibles : '+(e&&e.message||e)+' — please debug');
+        throw e; });
+    return this._cpPolysP;
+  }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -951,34 +987,80 @@ class Component extends DCLogic {
   }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    // Référentiel CP (libellés de communes + recherche). L'échec n'est plus
+    // avalé : le verrou _geoLoading est RELÂCHÉ (avant : bloqué à true pour
+    // toujours => plus aucune tentative, écran muet) et l'erreur est affichée.
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
       Promise.all([
-        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
+        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }),
         fetch(fr.base+'/geo/postcodes?groups=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null),
       ]).then(([a,g])=>{
+        this._geoLoading=false;
         if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; });
           const communes={}; a.forEach(e=>{ const c=String(e[1]); (communes[c]=communes[c]||[]).push(String(e[0])); });
           window.__CPGEO={list:a,idx,communes,groups:Array.isArray(g)?g:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); }
-      }).catch(()=>{}); }
+        else { this.czMapMsg('⚠ ERREUR — référentiel des codes postaux vide (api/data/zipcodes_be.json) — please debug'); }
+      }).catch(e=>{ this._geoLoading=false;
+        this.czMapMsg('⚠ ERREUR — référentiel des codes postaux indisponible : '+(e&&e.message||e)+' — please debug'); }); }
     if(!window.L){ clearTimeout(this._zmT); this._zmT=setTimeout(()=>this.czEnsure(),160); return; }
     const el=document.getElementById('map-zones'); if(!el) return;
     if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:18}).addTo(m); this._zonesMap=m; this._zKey=null; }
     this.czDraw();
   }
-  czDraw(){ const L=window.L,m=this._zonesMap,geo=window.__CPGEO; if(!L||!m||!geo) return;
+  // Message d'erreur SUR la carte (pas de repli visuel silencieux).
+  czMapMsg(txt){ const el=document.getElementById('map-zones'); if(!el) return;
+    let b=document.getElementById('map-zones-msg');
+    if(!txt){ if(b) b.remove(); return; }
+    if(!b){ b=document.createElement('div'); b.id='map-zones-msg';
+      b.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;'+
+        'padding:18px;background:rgba(141,29,44,.92);color:#fff;font:600 12.5px/1.5 var(--font-ui);z-index:400';
+      if(getComputedStyle(el).position==='static') el.style.position='relative';
+      el.appendChild(b); }
+    b.textContent=txt;
+  }
+  // Contours RÉELS des codes postaux (GeoJSON servi par /geo/postcode-polygons).
+  // AUCUN REPLI : sans polygones on affiche l'erreur — plus de pastilles au
+  // centre du CP, qui faisaient passer un point pour un territoire.
+  czPolys(){ if(this._cpPolys) return Promise.resolve(this._cpPolys);
+    if(this._cpPolysP) return this._cpPolysP;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ return Promise.reject(new Error('API non configurée')); }
+    this._cpPolysP=fetch(fr.base+'/geo/postcode-polygons',{credentials:'omit'})
+      .then(r=>r.json().then(j=>{ if(!r.ok) throw new Error((j&&(j.detail||j.error))||('HTTP '+r.status)); return j; }))
+      .then(j=>{ this._cpPolys=j; this._cpPolysP=null; return j; })
+      .catch(e=>{ this._cpPolysP=null; this._cpPolysErr=e; throw e; });
+    return this._cpPolysP;
+  }
+  czDraw(){ const L=window.L,m=this._zonesMap; if(!L||!m) return;
     const rows=(window.BOServer?window.BOServer.table('catchment'):[]);
     const key=JSON.stringify(rows.map(z=>[z.id,z.postcodes,z.shop_id]));
-    if(this._zKey===key) return; this._zKey=key;
-    if(this._zLayer) m.removeLayer(this._zLayer);
-    const g=L.layerGroup(); const pts=[];
-    const palette=['#8D1D2C','#C87A3F','#3B3468','#2d7a3e','#8C4A2F','#b26a00'];
-    rows.forEach((z,i)=>{ const col=palette[i%palette.length];
-      String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{ const e=geo.idx[cp]; if(!e) return; pts.push([e.lat,e.lng]);
-        const mk=L.circleMarker([e.lat,e.lng],{radius:7,color:col,weight:2,fillColor:col,fillOpacity:.55});
-        mk.bindTooltip(cp+' '+e.city+' — '+z.name); g.addLayer(mk); }); });
-    g.addTo(m); this._zLayer=g;
-    if(pts.length) m.fitBounds(pts,{padding:[30,30],maxZoom:11});
+    if(this._zKey===key) return;
+    this.czPolys().then(polys=>{
+      this._zKey=key; this.czMapMsg(null);
+      if(this._zLayer) m.removeLayer(this._zLayer);
+      const g=L.layerGroup(); let bounds=null; const manquants=[];
+      const palette=['#8D1D2C','#C87A3F','#3B3468','#2d7a3e','#8C4A2F','#b26a00'];
+      rows.forEach((z,i)=>{ const col=palette[i%palette.length];
+        String(z.postcodes||'').split(/[^0-9]+/).filter(Boolean).forEach(cp=>{
+          const geom=polys[cp];
+          if(!geom){ manquants.push(cp); return; }              // pas de contour => rien, et on le DIT
+          const lyr=L.geoJSON({type:'Feature',geometry:geom,properties:{}},
+            {style:{color:col,weight:1.6,fillColor:col,fillOpacity:.35}});
+          const city=(window.__CPGEO&&window.__CPGEO.idx&&window.__CPGEO.idx[cp]&&window.__CPGEO.idx[cp].city)||'';
+          lyr.bindTooltip(cp+(city?' '+city:'')+' — '+z.name);
+          lyr.addTo(g);
+          const b=lyr.getBounds(); bounds = bounds ? bounds.extend(b) : b;
+        }); });
+      g.addTo(m); this._zLayer=g;
+      if(bounds) m.fitBounds(bounds,{padding:[30,30],maxZoom:11});
+      if(manquants.length) this.czMapMsg('⚠ '+manquants.length+' code(s) postal(aux) sans contour dans le GeoJSON : '+
+        manquants.slice(0,12).join(' · ')+(manquants.length>12?' …':'')+' — please debug');
+    }).catch(e=>{
+      if(this._zLayer){ m.removeLayer(this._zLayer); this._zLayer=null; }
+      this._zKey=null;   // permet une nouvelle tentative
+      this.czMapMsg('⚠ ERREUR — contours des codes postaux indisponibles : '+(e&&e.message||e)+' — please debug');
+    });
   }
   czPick(cp){ return ()=>{ this.setState({czDraft:String(cp)},()=>this.czAddCp()); }; }
   czPickGroup(cps,label){ return ()=>{ const cur=this.state.cz; const have=[...cur.cps]; let added=0,conflits=0,deja=0;
@@ -1023,7 +1105,8 @@ class Component extends DCLogic {
       .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
+  // (Ex-componentDidMount du Menu Builder — FUSIONNÉ dans l'unique
+  //  componentDidMount de la classe : un second écrasait le premier.)
   pid(){ return this.state.menuProductId || Object.keys(this.state.menus||{}).filter(k=>k!=='_categories')[0] || ''; }
   apply(db){ this.setState({menus:db}); this.saveMenu(db); }
   // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
