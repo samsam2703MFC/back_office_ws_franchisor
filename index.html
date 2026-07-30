@@ -1019,6 +1019,21 @@ class Component extends DCLogic {
       el.appendChild(b); }
     b.textContent=txt;
   }
+  // Bandeau discret SOUS la carte : granularité du jeu de contours. Affiché
+  // seulement si elle n'est pas le code postal (donc si c'est une
+  // approximation) — pour qu'aucun contour approché ne passe pour exact.
+  czGranMsg(meta){ const el=document.getElementById('map-zones'); if(!el||!el.parentNode) return;
+    let b=document.getElementById('map-zones-gran');
+    const gran=meta&&meta.granularite;
+    if(!gran||gran==='postcode'){ if(b) b.remove(); return; }
+    if(!b){ b=document.createElement('div'); b.id='map-zones-gran';
+      b.style.cssText='padding:8px 18px;font:500 11px/1.45 var(--font-ui);color:#6b4420;background:#fdf3e7;'+
+        'border-top:.5px solid #ead9c3';
+      el.parentNode.appendChild(b); }
+    b.textContent='ⓘ Contours à la granularité « '+gran+' » — '+(meta.note||'')+
+      (meta.contours_exacts!=null&&meta.codes_postaux!=null
+        ? ' ('+meta.contours_exacts+'/'+meta.codes_postaux+' codes postaux au contour exact)' : '');
+  }
   // Contours RÉELS des codes postaux (GeoJSON servi par /geo/postcode-polygons).
   // AUCUN REPLI : sans polygones on affiche l'erreur — plus de pastilles au
   // centre du CP, qui faisaient passer un point pour un territoire.
@@ -1056,6 +1071,10 @@ class Component extends DCLogic {
       if(bounds) m.fitBounds(bounds,{padding:[30,30],maxZoom:11});
       if(manquants.length) this.czMapMsg('⚠ '+manquants.length+' code(s) postal(aux) sans contour dans le GeoJSON : '+
         manquants.slice(0,12).join(' · ')+(manquants.length>12?' …':'')+' — please debug');
+      // Granularité du jeu de contours : si ce n'est pas le code postal
+      // lui-même, on le DIT sous la carte (bandeau discret, non bloquant) —
+      // une approximation étiquetée, jamais présentée comme exacte.
+      this.czGranMsg(polys._meta);
     }).catch(e=>{
       if(this._zLayer){ m.removeLayer(this._zLayer); this._zLayer=null; }
       this._zKey=null;   // permet une nouvelle tentative
