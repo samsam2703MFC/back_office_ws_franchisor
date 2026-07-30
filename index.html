@@ -7,20 +7,56 @@
 <script src="api-config.js"></script>
 <script src="bo_server.js"></script>
 <script>
-/* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime,
-   avec repli seed : si l'API ne répond pas / pas de jeton, on rend le seed.
+/* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime.
+   RÈGLE GO-LIVE : aucune donnée de secours — si l'API ne répond pas ou que le
+   jeton admin manque, un BANDEAU D'ERREUR visible le dit (« please debug »).
    - tables (bo_server) via BOServer.hydrate()
    - menu builder via /franchisor/menus → window.__FR_MENUS (lu par menu_api.js) */
 (function(){
-  function boot(){ var s=document.createElement('script'); s.src='./support.js'; document.head.appendChild(s); }
+  // Bandeau d'erreur (DOM pur, indépendant du runtime : s'affiche même si tout
+  // le reste échoue). Alimenté par BOServer.loadErrors via __BO_RENDER_ERRORS.
+  window.__BO_RENDER_ERRORS = function(errors){
+    try {
+      var el = document.getElementById('bo-errors');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'bo-errors';
+        el.setAttribute('role', 'alert');
+        el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#8d1d2c;color:#fff;' +
+          'font:600 13px/1.45 system-ui,sans-serif;padding:10px 44px 10px 14px;box-shadow:0 3px 14px rgba(0,0,0,.3);white-space:pre-wrap';
+        var x = document.createElement('button');
+        x.textContent = '✕';
+        x.setAttribute('aria-label', 'Fermer');
+        x.style.cssText = 'position:absolute;top:6px;right:8px;background:none;border:none;color:#fff;font-size:16px;cursor:pointer';
+        x.onclick = function(){ el.remove(); };
+        el.appendChild(x);
+        var body = document.createElement('div');
+        body.id = 'bo-errors-body';
+        el.appendChild(body);
+        (document.body || document.documentElement).appendChild(el);
+      }
+      var b = document.getElementById('bo-errors-body');
+      if (b) b.textContent = '⚠ ERREUR — PLEASE DEBUG (' + errors.length + ')\n' +
+        errors.map(function(e){ return '• [' + e.kind + '] ' + e.detail; }).join('\n');
+    } catch(e){}
+  };
+  function boot(){
+    var s=document.createElement('script'); s.src='./support.js'; document.head.appendChild(s);
+    try { var E = window.BOServer && window.BOServer.loadErrors; if (E && E.length) setTimeout(function(){ window.__BO_RENDER_ERRORS(E); }, 800); } catch(e){}
+  }
   var fr = window.__FR || {}, jobs = [];
   try {
     if (window.BOServer && window.BOServer.hydrate) jobs.push(window.BOServer.hydrate());
-    if (fr.base) {
-      jobs.push(fetch(fr.base + '/franchisor/menus', { headers: fr.token ? {'X-Admin-Token': fr.token} : {}, credentials: 'omit' })
-        .then(function(r){ return r.ok ? r.json() : null; })
+    if (fr.base && fr.token) {
+      jobs.push(fetch(fr.base + '/franchisor/menus', { headers: {'X-Admin-Token': fr.token}, credentials: 'omit' })
+        .then(function(r){
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
         .then(function(d){ if (d && typeof d === 'object' && !Array.isArray(d)) window.__FR_MENUS = d; })
-        .catch(function(){}));
+        .catch(function(e){
+          try { window.BOServer.loadErrors.push({kind:'chargement', detail:'Menus (menu builder) en échec — please debug : ' + (e && e.message || e), at:new Date().toISOString()}); } catch(_){ }
+        }));
     }
     var done=false, go=function(){ if(done) return; done=true; clearTimeout(to); boot(); };
     var to=setTimeout(go, 4000);             // ne jamais bloquer le boot
@@ -72,7 +108,7 @@
     </nav>
     <div onClick="{{ openProfile }}" title="Profil & paramètres du site" style="padding:12px 16px;border-top:.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;cursor:pointer">
       <div style="width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px var(--font-ui)">SR</div>
-      <div style="line-height:1.2"><div style="font:500 12px var(--font-ui);color:var(--color-text)">Sophie Renard</div><div style="font:400 10px var(--font-ui);color:var(--color-text-muted)">Admin réseau · Siège</div></div>
+      <div style="line-height:1.2"><div style="font:500 12px var(--font-ui);color:var(--color-text)">Administrateur</div><div style="font:400 10px var(--font-ui);color:var(--color-text-muted)">Admin réseau · Siège</div></div>
       <span style="margin-left:auto;color:var(--color-text-muted)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
     </div>
   </aside>
@@ -971,16 +1007,16 @@ class Component extends DCLogic {
     const c2=this.state.cz; const postcodes=c2.cps.join(' · ');
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     const payload={id:c2.id||undefined,name:c2.name,shop_id:c2.shop_id===''?null:parseInt(c2.shop_id,10),postcodes,exclusive:c2.exclusive,active:1};
-    if(!fr.base){ const rows=window.BOServer?window.BOServer.table('catchment'):[]; if(c2.id){ const i=rows.findIndex(r=>r.id===c2.id); if(i>=0) rows[i]={...rows[i],...payload}; } else rows.push({...payload,id:Date.now()}); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({czOpen:false,_rev:(st._rev||0)+1})); this.printJob('✔ Zone enregistrée (local)'); return; }
+    if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : zone NON enregistrée (please debug)'); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'})
       .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.setState({czOpen:false}); this.printJob('✔ Zone de chalandise enregistrée : '+c2.name); this.czReload(); })
       .catch(()=>this.printJob('⚠ Réseau indisponible'));
   }
   czDel(z){ return ()=>{ if(!confirm('Supprimer la zone de chalandise « '+z.name+' » ?')) return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
-    if(!fr.base){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]).filter(r=>r.id!==z.id); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); return; }
+    if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : zone NON supprimée (please debug)'); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify({delete:z.id}),credentials:'omit'})
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
-  frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
+  frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : NON enregistré (please debug)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
       .then(r=>r.ok?r.json():Promise.reject(r.status)).then(j=>{ this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true; })
@@ -1442,7 +1478,7 @@ class Component extends DCLogic {
       navBlocks, pageTitle:titles[S.screen], pageSub:subs[S.screen],
       tableBadge, srcHint, pencilStyle, porteeBadge, langBadge,
       profileOpen:!!S.profileOpen, profileParams, openProfile:()=>this.openProfile(), closeProfile:()=>this.closeProfile(),
-      profName:'Sophie Renard', profRole:'Admin réseau · Siège', profInit:'SR',
+      profName:'Administrateur', profRole:'Admin réseau · Siège', profInit:'AD',
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
       isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
