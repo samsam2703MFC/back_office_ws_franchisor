@@ -1,0 +1,111 @@
+{
+  "key": "console_marque",
+  "slug": "console-marque",
+  "group": "Pilotage",
+  "icon": "layout-dashboard",
+  "isNew": true,
+  "sortOrder": 2,
+  "name": {
+    "fr": "Console marque",
+    "en": "Brand console",
+    "ar": "لوحة العلامة"
+  },
+  "description": {
+    "fr": "Le back office du siège : boutiques, catalogue, formules et promotions du réseau.",
+    "en": "The head-office back office: stores, catalogue, bundles and network offers.",
+    "ar": "لوحة المقر: الفروع والكتالوج والصيغ وعروض الشبكة."
+  },
+  "overview": {
+    "fr": "C'est l'écran du franchiseur. Il décide ce que le réseau vend — le catalogue, les formules, les prix, les promotions — et voit ce que le réseau a fait : chiffre consolidé, boutique par boutique, zone par zone. Chaque écran nomme la table qu'il lit, et les droits sont posés par rôle avec un journal d'audit derrière.",
+    "en": "This is the franchisor's screen. It decides what the network sells — catalogue, bundles, prices, offers — and shows what the network did: consolidated figures, store by store, area by area. Every screen names the table it reads, rights are set per role, and an audit log sits behind them."
+  },
+  "metric": {
+    "value": "1",
+    "label": { "fr": "catalogue pour tout le réseau", "en": "catalogue for the whole network" }
+  },
+  "screenshots": [
+    { "file": "docs/landing/franchisor-dashboard.png", "alt": { "fr": "Tableau de bord réseau consolidé", "en": "Consolidated network dashboard" } }
+  ],
+  "features": [
+    {
+      "key": "dashboard",
+      "icon": "chart-line",
+      "name": { "fr": "Tableau de bord réseau", "en": "Network dashboard" },
+      "description": {
+        "fr": "Les indicateurs du réseau consolidés au siège, avec le détail par boutique en dessous : on voit l'écart entre les points de vente sans exporter quoi que ce soit.",
+        "en": "Network indicators consolidated at head office, with the per-store detail underneath: you see the spread between locations without exporting anything."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-dashboard.png", "alt": { "fr": "KPIs réseau et liste des boutiques", "en": "Network KPIs and store list" } }]
+    },
+    {
+      "key": "boutiques",
+      "icon": "store",
+      "name": { "fr": "Boutiques du réseau", "en": "Network stores" },
+      "description": {
+        "fr": "La fiche de chaque point de vente — ouverture, périmètre, réglages hérités du siège — et ce que le franchisé a le droit de modifier chez lui. La gouvernance est un interrupteur, pas une convention orale.",
+        "en": "Each location's record — opening, scope, settings inherited from head office — and what the franchisee is allowed to change locally. Governance is a switch, not a spoken convention."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-boutiques.png", "alt": { "fr": "Gestion des boutiques du réseau", "en": "Network store management" } }]
+    },
+    {
+      "key": "catalogue",
+      "icon": "book-open",
+      "name": { "fr": "Catalogue produits", "en": "Product catalogue" },
+      "description": {
+        "fr": "L'arbre catégories puis produits, avec la saison et la disponibilité. C'est la source unique : le webshop, les écrans en magasin et les back-offices franchisés lisent tous ce catalogue.",
+        "en": "The category tree down to products, with season and availability. It is the single source: the webshop, the in-store screens and the franchisee back offices all read this catalogue."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-catalogue.png", "alt": { "fr": "Catalogue : catégories et produits", "en": "Catalogue: categories and products" } }]
+    },
+    {
+      "key": "menus",
+      "icon": "utensils",
+      "name": { "fr": "Menus et formules", "en": "Menus and bundles" },
+      "description": {
+        "fr": "Le constructeur de formules : une formule, ses étapes, les choix ouverts à chaque étape, et le prix résolu côté serveur avec sa marge. Le déclencheur se pose sur une catégorie ou se force sur un produit.",
+        "en": "The bundle builder: a bundle, its steps, the choices open at each step, and the price resolved server-side with its margin. The trigger sits on a category or is forced on a product."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-menus.png", "alt": { "fr": "Constructeur de menus et formules", "en": "Menu and bundle builder" } }]
+    },
+    {
+      "key": "promotions",
+      "icon": "percent",
+      "name": { "fr": "Promotions réseau", "en": "Network offers" },
+      "description": {
+        "fr": "Bons de réduction et règles de prix décidés au siège, avec le périmètre des boutiques concernées. Le franchisé garde ses promotions locales à côté, sans écraser celles de la marque.",
+        "en": "Vouchers and pricing rules decided at head office, with the store scope they apply to. The franchisee keeps local offers alongside, without overwriting the brand's."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-promotions.png", "alt": { "fr": "Promotions et règles de prix du réseau", "en": "Network offers and pricing rules" } }]
+    },
+    {
+      "key": "geo",
+      "icon": "map-pin",
+      "name": { "fr": "Analyse géographique", "en": "Geographic analysis" },
+      "description": {
+        "fr": "Les ventes rapportées aux codes postaux : zones de chalandise, recouvrements entre boutiques, secteurs vides. C'est l'écran qui sert à décider où ouvrir.",
+        "en": "Sales mapped onto postcodes: catchment areas, overlap between stores, empty ground. This is the screen you use to decide where to open."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-geo.png", "alt": { "fr": "Analyse géographique par code postal", "en": "Geographic analysis by postcode" } }]
+    },
+    {
+      "key": "tracabilite",
+      "icon": "users",
+      "name": { "fr": "Traçabilité clients", "en": "Customer traceability" },
+      "description": {
+        "fr": "Le parcours d'un client à travers le réseau : où il commande, à quelle fréquence, sous quelle enseigne. Utile quand plusieurs boutiques servent la même personne.",
+        "en": "A customer's path across the network: where they order, how often, under which brand. Useful when several stores serve the same person."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-tracabilite.png", "alt": { "fr": "Traçabilité des clients du réseau", "en": "Network customer traceability" } }]
+    },
+    {
+      "key": "prospects",
+      "icon": "handshake",
+      "name": { "fr": "Prospects", "en": "Prospects" },
+      "description": {
+        "fr": "Les candidats franchisés et les demandes d'ouverture suivis au même endroit que le reste du réseau, plutôt que dans un tableur à part.",
+        "en": "Franchise candidates and opening requests tracked in the same place as the rest of the network, rather than in a spreadsheet of their own."
+      },
+      "screenshots": [{ "file": "docs/landing/franchisor-prospects.png", "alt": { "fr": "Suivi des prospects franchisés", "en": "Franchise prospect tracking" } }]
+    }
+  ]
+}
