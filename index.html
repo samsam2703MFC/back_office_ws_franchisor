@@ -444,23 +444,25 @@
              franchisé. Un PIN ne donne jamais les droits admin. -->
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px">
           <div>
-            <span style="{{ tableBadge }}">bo_users · sections · PIN (tablette boutique)</span>
-            <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:6px">Connexion par PIN à 4 chiffres sur la tablette du magasin · accès limité aux sections cochées · l'accès admin complet reste le jeton ERP</div>
+            <span style="{{ tableBadge }}">bo_role · sections (profils tablette)</span>
+            <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:6px">La <strong>marque</strong> définit les profils et les sections qu'ils ouvrent. Le <strong>franchisé</strong> crée ses comptes tablette et leur attribue un profil — il ne choisit pas les sections, donc il ne peut pas s'octroyer un accès non prévu.</div>
           </div>
-          <button onClick="{{ suNew }}" class="btn-primary" style="font-size:12px;flex:none">+ Compte tablette</button>
+          <div style="display:flex;gap:8px;flex:none">
+            <button onClick="{{ suInitStd }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 14px;font:600 12px var(--font-ui);cursor:pointer">Créer les profils standard</button>
+            <button onClick="{{ suNew }}" class="btn-primary" style="font-size:12px;flex:none">+ Profil</button>
+          </div>
         </div>
         <sc-if value="{{ suHasErr }}" hint-placeholder-val="{{ false }}">
           <div style="background:#8d1d2c;color:#fff;border-radius:10px;padding:10px 14px;font:600 12px var(--font-ui)">⚠ {{ suErr }}</div>
         </sc-if>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="display:grid;grid-template-columns:1.3fr 1.2fr 1fr .6fr .6fr .6fr 70px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Nom</span><span class="t-admin-label">Boutique</span><span class="t-admin-label">Rôle</span><span class="t-admin-label">Sections</span><span class="t-admin-label">PIN</span><span class="t-admin-label">État</span><span></span></div>
+          <div style="display:grid;grid-template-columns:1.6fr 1.1fr .7fr .8fr .6fr 70px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Profil</span><span class="t-admin-label">Clé</span><span class="t-admin-label">Sections</span><span class="t-admin-label">Comptes</span><span class="t-admin-label">État</span><span></span></div>
           <sc-for list="{{ suRows }}" as="u" hint-placeholder-count="2">
             <div style="{{ u.rowStyle }}">
               <span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ u.nom }}</span>
-              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.boutiques }}</span>
-              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.roleTxt }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.keyTxt }}</span>
               <span style="font:600 11.5px var(--font-ui);color:var(--color-text)">{{ u.secTxt }}</span>
-              <span style="font:600 11.5px var(--font-ui);color:{{ u.pinColor }}">{{ u.pinTxt }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:{{ u.usedColor }}">{{ u.usedTxt }}</span>
               <span style="font:600 11.5px var(--font-ui);color:{{ u.actColor }}">{{ u.actTxt }}</span>
               <div style="display:flex;justify-content:flex-end;gap:6px">
                 <button onClick="{{ u.edit }}" style="{{ pencilStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h3l11-11-3-3L4 17z"/><path d="M14 5l3 3"/></svg></button>
@@ -477,24 +479,17 @@
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:760px;max-width:94vw;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ suTitle }}</div><button onClick="{{ suClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Nom de l'employé</span>
-                <input value="{{ suF.nom }}" onInput="{{ suSetNom }}" placeholder="ex. Julie D." style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
-              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Email (facultatif)</span>
-                <input value="{{ suF.email }}" onInput="{{ suSetEmail }}" placeholder="laisser vide si l'employé n'en a pas" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
-              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Boutique de rattachement</span>
-                <select onChange="{{ suSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)">
-                  <option value="">— choisir —</option>
-                  <sc-for list="{{ suShopOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for>
-                </select></label>
-              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Rôle (pré-coche les sections)</span>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Libellé du profil</span>
+                <input value="{{ suF.label }}" onInput="{{ suSetLabel }}" placeholder="ex. Vendeur (comptoir)" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Clé technique (facultative)</span>
+                <input value="{{ suF.key }}" onInput="{{ suSetKey }}" placeholder="déduite du libellé si vide" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Partir d'un profil standard</span>
                 <select onChange="{{ suSetRole }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)">
-                  <option value="">— sur mesure —</option>
-                  <sc-for list="{{ suRoleOpts }}" as="r" hint-placeholder-count="4"><option value="{{ r.key }}" selected="{{ r.sel }}">{{ r.label }}</option></sc-for>
-                </select></label>
-              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">PIN à 4 chiffres</span>
-                <input value="{{ suF.pin }}" onInput="{{ suSetPin }}" inputmode="numeric" maxlength="4" placeholder="••••" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:700 15px var(--font-ui);letter-spacing:.25em"/>
-                <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">{{ suPinHelp }}</span></label>
-              <label style="display:flex;align-items:center;gap:8px;align-self:end"><input type="checkbox" checked="{{ suF.active }}" onChange="{{ suSetActive }}"/><span style="font:500 12.5px var(--font-ui)">Compte actif</span></label>
+                  <option value="">— repartir de zéro —</option>
+                  <sc-for list="{{ suRoleOpts }}" as="r" hint-placeholder-count="4"><option value="{{ r.key }}">{{ r.label }}</option></sc-for>
+                </select>
+                <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">pré-coche les sections, ajustables ensuite</span></label>
+              <label style="display:flex;align-items:center;gap:8px;align-self:end"><input type="checkbox" checked="{{ suF.active }}" onChange="{{ suSetActive }}"/><span style="font:500 12.5px var(--font-ui)">Profil attribuable</span></label>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
               <span class="t-admin-label">Sections autorisées</span>
@@ -502,7 +497,10 @@
             </div>
             <sc-for list="{{ suGroupes }}" as="g" hint-placeholder-count="6">
               <div style="margin-bottom:10px">
-                <div style="font:600 11px var(--font-ui);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">{{ g.groupe }}</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font:600 11px var(--font-ui);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em">{{ g.groupe }}</span>
+                  <button onClick="{{ g.toggleAll }}" style="background:transparent;border:none;font:600 10.5px var(--font-ui);color:var(--color-primary);cursor:pointer;padding:0">{{ g.toggleAllTxt }}</button>
+                </div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px">
                   <sc-for list="{{ g.items }}" as="sc" hint-placeholder-count="5">
                     <button onClick="{{ sc.toggle }}" style="{{ sc.boxStyle }}">{{ sc.label }}</button>
@@ -1067,68 +1065,89 @@ class Component extends DCLogic {
   // ===== COMPTES TABLETTE (PIN + sections) — chargement et écriture réels =====
   // Le référentiel des sections et la liste des comptes viennent de l'API ;
   // aucun échec n'est avalé (message explicite, jamais d'écran muet).
+  // ── PROFILS TABLETTE (marque) ───────────────────────────────────────────
+  // La marque définit les PROFILS et leurs sections ; le franchisé crée ses
+  // comptes et leur attribue un profil. Cet écran ne gère donc plus de comptes :
+  // le personnel d'une boutique est connu du franchisé, pas du réseau.
   suEnsure(){ if(this.state.screen!=='users' || this._suLoading) return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
-    if(!fr.base||!fr.token){ if(!this.state.suErr) this.setState({suErr:'API ou jeton admin absent — comptes tablette indisponibles (please debug)'}); return; }
+    if(!fr.base||!fr.token){ if(!this.state.suErr) this.setState({suErr:'API ou jeton admin absent — profils tablette indisponibles (please debug)'}); return; }
     if(this.state.suRef && this.state.suList) return;
     this._suLoading=true;
     const H={'X-Admin-Token':fr.token};
     Promise.all([
       fetch(fr.base+'/franchisor/bo-sections',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('sections HTTP '+r.status); return r.json(); }),
-      fetch(fr.base+'/franchisor/shop-users',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('comptes HTTP '+r.status); return r.json(); }),
+      fetch(fr.base+'/franchisor/bo-roles',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('profils HTTP '+r.status); return r.json(); }),
     ]).then(([ref,list])=>{ this._suLoading=false;
       this.setState({suRef:ref, suList:Array.isArray(list)?list:[], suErr:null}); })
       .catch(e=>{ this._suLoading=false;
-        this.setState({suErr:'Chargement des comptes tablette en échec — please debug : '+(e&&e.message||e)}); });
+        this.setState({suErr:'Chargement des profils tablette en échec — please debug : '+(e&&e.message||e)}); });
   }
   suReload(){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base||!fr.token) return;
-    fetch(fr.base+'/franchisor/shop-users',{headers:{'X-Admin-Token':fr.token},credentials:'omit'})
+    fetch(fr.base+'/franchisor/bo-roles',{headers:{'X-Admin-Token':fr.token},credentials:'omit'})
       .then(r=>r.ok?r.json():null)
       .then(l=>{ if(Array.isArray(l)) this.setState({suList:l}); })
-      .catch(()=>this.printJob('⚠ Rechargement des comptes en échec'));
+      .catch(()=>this.printJob('⚠ Rechargement des profils en échec'));
   }
-  suNew(){ this.setState({su:{id:0,nom:'',email:'',shopId:'',rolePreset:'',sections:[],pin:'',active:true}}); }
-  suEdit(u){ this.setState({su:{id:u.id,nom:u.nom==='(sans nom)'?'':u.nom,email:u.email||'',
-    shopId:(u.shopIds&&u.shopIds[0])?String(u.shopIds[0]):'',rolePreset:u.rolePreset||'',
-    sections:(u.sections||[]).slice(),pin:'',active:!!u.active}}); }
+  suNew(){ this.setState({su:{id:0,label:'',key:'',sections:[],active:true}}); }
+  suEdit(r){ this.setState({su:{id:r.id,label:r.label||'',key:r.key||'',
+    sections:(r.sections||[]).slice(),active:!!r.active}}); }
   suClose(){ this.setState({su:null}); }
   suSet(k){ return (e)=>{ const v=(k==='active')?e.target.checked:e.target.value;
     this.setState(st=>({su:{...st.su,[k]:v}})); }; }
-  // Choisir un rôle PRÉ-COCHE ses sections ; l'admin peut ensuite ajuster.
+  // Partir d'un profil standard PRÉ-COCHE ses sections ; la marque ajuste ensuite.
   suSetRole(){ return (e)=>{ const key=e.target.value; const ref=this.state.suRef;
     const r=(ref&&(ref.roles||[]).find(x=>x.key===key))||null;
-    this.setState(st=>({su:{...st.su,rolePreset:key,sections:r?r.sections.slice():st.su.sections}})); }; }
+    if(!r) return;
+    this.setState(st=>({su:{...st.su,label:st.su.label||r.label,key:st.su.key||r.key,sections:r.sections.slice()}})); }; }
   suToggleSection(key){ this.setState(st=>{ const cur=(st.su.sections||[]).slice();
     const i=cur.indexOf(key); if(i>=0) cur.splice(i,1); else cur.push(key);
     return {su:{...st.su,sections:cur}}; }); }
+  // Cocher / décocher un GROUPE entier (Vente, Logistique…) — 37 cases à la main
+  // est une invitation à l'erreur.
+  suToggleGroup(keys,allOn){ this.setState(st=>{ let cur=(st.su.sections||[]).slice();
+    if(allOn){ cur=cur.filter(k=>keys.indexOf(k)<0); }
+    else { keys.forEach(k=>{ if(cur.indexOf(k)<0) cur.push(k); }); }
+    return {su:{...st.su,sections:cur}}; }); }
   suSave(){ const u=this.state.su; if(!u) return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
-    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : compte NON enregistré (please debug)'); return; }
-    if(!String(u.nom||'').trim()){ this.printJob('⚠ Nom requis'); return; }
-    if(!u.shopId){ this.printJob('⚠ Boutique de rattachement requise'); return; }
-    if(!(u.sections||[]).length){ this.printJob('⚠ Au moins une section doit être autorisée'); return; }
-    const pin=String(u.pin||'').replace(/\D/g,'');
-    if(pin && pin.length!==4){ this.printJob('⚠ Le PIN doit comporter exactement 4 chiffres'); return; }
-    if(!u.id && !pin){ this.printJob('⚠ Un PIN à 4 chiffres est requis pour un nouveau compte'); return; }
-    fetch(fr.base+'/franchisor/shop-user',{method:'POST',
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : profil NON enregistré (please debug)'); return; }
+    if(!String(u.label||'').trim()){ this.printJob('⚠ Libellé du profil requis'); return; }
+    if(!(u.sections||[]).length){ this.printJob('⚠ Un profil sans aucune section ne donnerait accès à rien'); return; }
+    fetch(fr.base+'/franchisor/bo-role',{method:'POST',
       headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
-      body:JSON.stringify({id:u.id||undefined,nom:u.nom,email:u.email||'',shopId:parseInt(u.shopId,10),
-        rolePreset:u.rolePreset||'',sections:u.sections,pin:pin,active:u.active?1:0})})
+      body:JSON.stringify({id:u.id||undefined,label:u.label,key:u.key||'',
+        sections:u.sections,active:u.active?1:0})})
       .then(r=>r.json().then(j=>({ok:r.ok,j})))
       .then(({ok,j})=>{ if(!ok||!j.ok){ this.printJob('⚠ '+((j&&j.error)||'Enregistrement refusé')); return; }
-        this.printJob('✔ Compte « '+u.nom+' » enregistré · '+j.sections+' section(s)'+(j.pinPose?' · PIN posé':''));
+        this.printJob('✔ Profil « '+u.label+' » enregistré · '+j.nbSections+' section(s)');
         this.setState({su:null}); this.suReload(); })
-      .catch(()=>this.printJob('⚠ Réseau indisponible — compte non enregistré'));
+      .catch(()=>this.printJob('⚠ Réseau indisponible — profil non enregistré'));
   }
-  suDelete(u){ if(!confirm('Supprimer le compte « '+u.nom+' » ? Sa session tablette sera révoquée.')) return;
+  suDelete(r){
+    const msg=r.nbComptes ? ('Le profil « '+r.label+' » est utilisé par '+r.nbComptes+' compte(s).\nIl sera DÉSACTIVÉ (plus attribuable) mais conservé, pour ne pas fermer ces tablettes en plein service.\nContinuer ?')
+                          : ('Supprimer le profil « '+r.label+' » ?');
+    if(!confirm(msg)) return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : suppression impossible'); return; }
-    fetch(fr.base+'/franchisor/shop-user-delete',{method:'POST',
+    fetch(fr.base+'/franchisor/bo-role-delete',{method:'POST',
       headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
-      body:JSON.stringify({id:u.id})})
-      .then(r=>r.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Suppression refusée')); return; }
-        this.printJob('✖ Compte supprimé'); this.suReload(); })
+      body:JSON.stringify({id:r.id})})
+      .then(r2=>r2.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Suppression refusée')); return; }
+        this.printJob(j.desactive ? ('⚠ '+(j.message||'Profil désactivé')) : '✖ Profil supprimé'); this.suReload(); })
       .catch(()=>this.printJob('⚠ Réseau indisponible — suppression non effectuée'));
+  }
+  // Création des profils STANDARD : action explicite de la marque. Rien n'est
+  // créé automatiquement, et les profils déjà présents ne sont pas écrasés.
+  suInitStd(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent'); return; }
+    if(!confirm('Créer les profils standard (Vendeur, Préparateur, Chauffeur, Gérant, Admin boutique) ?\nLes profils existants ne sont pas modifiés.')) return;
+    fetch(fr.base+'/franchisor/bo-roles-init',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',body:'{}'})
+      .then(r=>r.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Création refusée')); return; }
+        this.printJob(j.crees ? ('✔ '+j.crees+' profil(s) standard créé(s)') : 'Aucun profil à créer : ils existent déjà');
+        this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — profils non créés'));
   }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
@@ -1398,7 +1417,7 @@ class Component extends DCLogic {
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
       {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['prospects','Prospect','var(--color-primary)'],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER]]},
-      {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
+      {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & profils',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
       toggle:()=>this.setState(st=>({paramNavOpen:!(st.paramNavOpen!==undefined?st.paramNavOpen:false)})),
@@ -1406,7 +1425,7 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',prospects:'Prospect',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',prospects:'Prospect',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & profils tablette',zones:'Zones de chalandise',geo:'Analyse géographique'};
     const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',prospects:'Demandes bureau non rattachées à un franchisé · client.id_main_shop = 0',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones de chalandise par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
@@ -1572,24 +1591,29 @@ class Component extends DCLogic {
     // 37 sections vient de l'API (/franchisor/bo-sections) — jamais dupliqué ici.
     const suRef=S.suRef||null, suList=S.suList||[], su=S.su||null;
     const suRows=suList.map(u=>({
-      id:u.id, nom:u.nom, boutiques:u.boutiques||'—',
-      roleTxt:(suRef&&(suRef.roles||[]).find(r=>r.key===u.rolePreset)||{}).label||'— sur mesure',
+      id:u.id, nom:u.label, keyTxt:u.key||'—',
       secTxt:u.nbSections+' / '+((suRef&&suRef.total)||37),
-      pinTxt:u.pinPose?'✓ posé':'— aucun',
-      pinColor:u.pinPose?'#2d7a3e':'var(--color-primary)',
-      actTxt:u.active?'Actif':'Inactif',
+      usedTxt:u.nbComptes?(u.nbComptes+' compte'+(u.nbComptes>1?'s':'')):'aucun',
+      usedColor:u.nbComptes?'var(--color-text)':'var(--color-text-muted)',
+      actTxt:u.active?'Attribuable':'Désactivé',
       actColor:u.active?'#2d7a3e':'var(--color-text-muted)',
-      rowStyle:'display:grid;grid-template-columns:1.3fr 1.2fr 1fr .6fr .6fr .6fr 70px;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)'+(u.active?'':';opacity:.55'),
+      rowStyle:'display:grid;grid-template-columns:1.6fr 1.1fr .7fr .8fr .6fr 70px;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)'+(u.active?'':';opacity:.55'),
       edit:()=>this.suEdit(u), del:()=>this.suDelete(u)}));
     // Cases à cocher groupées, cochées d'après su.sections.
-    const suGroupes=(suRef?(suRef.groupes||[]):[]).map(g=>({
+    const suGroupes=(suRef?(suRef.groupes||[]):[]).map(g=>{
+      const keys=(g.sections||[]).map(sc=>sc.key);
+      const allOn=keys.length>0 && keys.every(k=>!!(su&&(su.sections||[]).includes(k)));
+      return {
       groupe:g.groupe,
+      toggleAll:()=>this.suToggleGroup(keys,allOn),
+      toggleAllTxt:allOn?'tout décocher':'tout cocher',
       items:(g.sections||[]).map(sc=>({ key:sc.key, label:sc.label,
         on:!!(su&&(su.sections||[]).includes(sc.key)),
         boxStyle:'display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font:500 11.5px var(--font-ui);border:.5px solid '+((su&&(su.sections||[]).includes(sc.key))?'var(--color-primary);background:#fbe9eb;color:var(--color-primary)':'var(--color-border-secondary);background:var(--color-surface);color:var(--color-text)'),
-        toggle:()=>this.suToggleSection(sc.key) }))}));
-    const suRoleOpts=(suRef?(suRef.roles||[]):[]).map(r=>({key:r.key,label:r.label+' ('+r.sections.length+' sections)',sel:!!(su&&su.rolePreset===r.key)}));
-    const suShopOpts=(SRV('shops')||[]).map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:!!(su&&String(su.shopId)===String(sh.id))}));
+        toggle:()=>this.suToggleSection(sc.key) }))}; });
+    // Profils STANDARD proposés comme point de départ (ils ne sont créés en base
+    // que par le bouton « Créer les profils standard »).
+    const suRoleOpts=(suRef?(suRef.roles||[]):[]).map(r=>({key:r.key,label:r.label+' ('+r.sections.length+' sections)'}));
 
     // Audit
     const vPill=v=>pill(v==='Création'?'#eaf5ec':(v==='Suppression'?'#fbe9eb':'#fbf1e3'),v==='Création'?'#2d7a3e':(v==='Suppression'?'var(--color-primary)':'#b26a00'));
@@ -1815,14 +1839,14 @@ class Component extends DCLogic {
       czSetName:this.czSet('name'), czSetShop:this.czSet('shop_id'), czSetExcl:this.czSet('exclusive'),
       czShopOpts:SRV('shops').map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:String(sh.id)===String(S.cz.shop_id)})),
       czFormTitle:S.cz.id?'Modifier la zone de chalandise':'Nouvelle zone de chalandise', usersRows, addUser:this.openForm('user'),
-      suRows, suGroupes, suRoleOpts, suShopOpts, suErr:S.suErr||'', suHasErr:!!S.suErr,
-      suOpen:!!su, suF:su||{nom:'',email:'',shopId:'',rolePreset:'',pin:'',active:true},
+      suRows, suGroupes, suRoleOpts, suErr:S.suErr||'', suHasErr:!!S.suErr,
+      suOpen:!!su, suF:su||{label:'',key:'',active:true},
       suNbSel:su?(su.sections||[]).length:0, suTotal:(suRef&&suRef.total)||37,
-      suTitle:(su&&su.id)?'Modifier le compte tablette':'Nouveau compte tablette',
-      suPinHelp:(su&&su.id)?'Laisser vide pour conserver le PIN actuel':'4 chiffres — requis pour un nouveau compte',
+      suTitle:(su&&su.id)?'Modifier le profil tablette':'Nouveau profil tablette',
       suNew:()=>this.suNew(), suClose:()=>this.suClose(), suSave:()=>this.suSave(),
-      suSetNom:this.suSet('nom'), suSetEmail:this.suSet('email'), suSetShop:this.suSet('shopId'),
-      suSetPin:this.suSet('pin'), suSetActive:this.suSet('active'), suSetRole:this.suSetRole(),
+      suInitStd:()=>this.suInitStd(),
+      suSetLabel:this.suSet('label'), suSetKey:this.suSet('key'),
+      suSetActive:this.suSet('active'), suSetRole:this.suSetRole(),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
       menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,
