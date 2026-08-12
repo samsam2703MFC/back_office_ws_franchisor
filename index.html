@@ -1928,6 +1928,10 @@ class Component extends DCLogic {
       flatProds.push({id,pid,name:p.nom,cat:c.cat,catId:(c.id!=null?+c.id:null),
         sub:(p.sub||null),subId:(p.sub_id!=null?+p.sub_id:null),
         price:p.prix,menu:!!p.menu,active:(p.bw!==false)}); }); });
+    // Libelle d'une sous-categorie (ws_category_subs) par son identifiant.
+    const subLabel=(sid)=>{ if(sid==null) return null;
+      for(const cc of CATALOG){ const hit=(cc.subs||[]).find(sb=>+sb.id===+sid); if(hit) return hit.label; }
+      return null; };
     // Nom de produit -> catégorie : un choix dont le libellé = un produit connu
     // hérite de l'icône de sa catégorie (étape validée).
     const prodCat={}; flatProds.forEach(pp=>{ if(pp.name)prodCat[pp.name]=pp.cat; });
@@ -1992,18 +1996,17 @@ class Component extends DCLogic {
         catOpts:(()=>{ const out=[{value:'',label:'— Catégorie (tout le catalogue) —'}];
           CATALOG.filter(cc=>cc.id!=null).forEach(cc=>{
             out.push({value:'c:'+cc.id,label:cc.cat});
-            const seen={};
-            flatProds.filter(pp=>pp.active&&pp.catId===+cc.id&&pp.subId!=null).forEach(pp=>{
-              if(seen[pp.subId]) return; seen[pp.subId]=1;
-              out.push({value:'s:'+pp.subId,label:'   › '+(pp.sub||('#'+pp.subId))}); });
+            // Sous-catégories telles que les sert ws_category_subs (actives).
+            // Les déduire des produits ne montrerait que celles déjà pourvues.
+            (cc.subs||[]).forEach(sb=>out.push({value:'s:'+sb.id,label:'   › '+sb.label}));
           });
           return out; })(),
         setCat:e=>{ const v=String(e.target.value||'');
           if(!v){ this.setSlotFields(AB.id,s.id,{cat_id:null,sub_cat_id:null}); return; }
           const n=parseInt(v.slice(2),10);
           if(v.charAt(0)==='c') this.setSlotFields(AB.id,s.id,{cat_id:n,sub_cat_id:null});
-          else { const pp=flatProds.find(x=>x.subId===n);
-            this.setSlotFields(AB.id,s.id,{cat_id:(pp?pp.catId:null),sub_cat_id:n}); } },
+          else { const owner=CATALOG.find(cc=>(cc.subs||[]).some(sb=>+sb.id===n));
+            this.setSlotFields(AB.id,s.id,{cat_id:(owner?+owner.id:null),sub_cat_id:n}); } },
         catTitle:(s.sub_cat_id!=null)?'Les choix viennent de cette sous-catégorie'
                 :((s.cat_id!=null)?'Les choix viennent de cette catégorie'
                                   :'Aucune catégorie : les choix peuvent venir de tout le catalogue'),
@@ -2048,7 +2051,7 @@ class Component extends DCLogic {
             this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:pp.pid});
             this.setState({choicePickerFor:null}); },
           pickHint:(s.sub_cat_id!=null)
-            ?('Produits actifs de « '+((flatProds.find(x=>x.subId===+s.sub_cat_id)||{}).sub||'cette sous-catégorie')+' »')
+            ?('Produits actifs de « '+(subLabel(s.sub_cat_id)||'cette sous-catégorie')+' »')
             :((s.cat_id!=null)
               ?('Produits actifs de « '+((CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat||'')+' »')
               :'Cette étape n’a pas de catégorie — tout le catalogue actif est proposé.'),
