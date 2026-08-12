@@ -4,23 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>window.__resources={"https://unpkg.com/react@18.3.1/umd/react.production.min.js":"vendor/react.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js":"vendor/react-dom.js"};</script>
-<script src="api-config.js"></script>
-<script src="bo_server.js"></script>
+<script src="api-config.js?v=2026073013"></script>
+<script src="bo_server.js?v=2026073013"></script>
 <script>
-/* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime,
-   avec repli seed : si l'API ne répond pas / pas de jeton, on rend le seed.
+/* Hydrate la donnée réelle (API PHP /franchisor/*) AVANT de booter le runtime.
+   RÈGLE GO-LIVE : aucune donnée de secours — si l'API ne répond pas ou que le
+   jeton admin manque, un BANDEAU D'ERREUR visible le dit (« please debug »).
    - tables (bo_server) via BOServer.hydrate()
    - menu builder via /franchisor/menus → window.__FR_MENUS (lu par menu_api.js) */
 (function(){
-  function boot(){ var s=document.createElement('script'); s.src='./support.js'; document.head.appendChild(s); }
+  // Bandeau d'erreur (DOM pur, indépendant du runtime : s'affiche même si tout
+  // le reste échoue). Alimenté par BOServer.loadErrors via __BO_RENDER_ERRORS.
+  window.__BO_RENDER_ERRORS = function(errors){
+    try {
+      var el = document.getElementById('bo-errors');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'bo-errors';
+        el.setAttribute('role', 'alert');
+        el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#8d1d2c;color:#fff;' +
+          'font:600 13px/1.45 system-ui,sans-serif;padding:10px 44px 10px 14px;box-shadow:0 3px 14px rgba(0,0,0,.3);white-space:pre-wrap';
+        var x = document.createElement('button');
+        x.textContent = '✕';
+        x.setAttribute('aria-label', 'Fermer');
+        x.style.cssText = 'position:absolute;top:6px;right:8px;background:none;border:none;color:#fff;font-size:16px;cursor:pointer';
+        x.onclick = function(){ el.remove(); };
+        el.appendChild(x);
+        var body = document.createElement('div');
+        body.id = 'bo-errors-body';
+        el.appendChild(body);
+        (document.body || document.documentElement).appendChild(el);
+      }
+      var b = document.getElementById('bo-errors-body');
+      if (b) b.textContent = '⚠ ERREUR — PLEASE DEBUG (' + errors.length + ')\n' +
+        errors.map(function(e){ return '• [' + e.kind + '] ' + e.detail; }).join('\n');
+    } catch(e){}
+  };
+  function boot(){
+    var s=document.createElement('script'); s.src='./support.js?v=2026073013'; document.head.appendChild(s);
+    try { var E = window.BOServer && window.BOServer.loadErrors; if (E && E.length) setTimeout(function(){ window.__BO_RENDER_ERRORS(E); }, 800); } catch(e){}
+  }
   var fr = window.__FR || {}, jobs = [];
   try {
     if (window.BOServer && window.BOServer.hydrate) jobs.push(window.BOServer.hydrate());
-    if (fr.base) {
-      jobs.push(fetch(fr.base + '/franchisor/menus', { headers: fr.token ? {'X-Admin-Token': fr.token} : {}, credentials: 'omit' })
-        .then(function(r){ return r.ok ? r.json() : null; })
+    if (fr.base && fr.token) {
+      jobs.push(fetch(fr.base + '/franchisor/menus', { headers: {'X-Admin-Token': fr.token}, credentials: 'omit' })
+        .then(function(r){
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
         .then(function(d){ if (d && typeof d === 'object' && !Array.isArray(d)) window.__FR_MENUS = d; })
-        .catch(function(){}));
+        .catch(function(e){
+          try { window.BOServer.loadErrors.push({kind:'chargement', detail:'Menus (menu builder) en échec — please debug : ' + (e && e.message || e), at:new Date().toISOString()}); } catch(_){ }
+        }));
     }
     var done=false, go=function(){ if(done) return; done=true; clearTimeout(to); boot(); };
     var to=setTimeout(go, 4000);             // ne jamais bloquer le boot
@@ -34,8 +70,8 @@
 <body>
 <x-dc>
 <helmet>
-<link rel="stylesheet" href="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/global.css">
-<script src="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/_ds_bundle.js"></script>
+<link rel="stylesheet" href="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/global.css?v=2026073013">
+<script src="_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/_ds_bundle.js?v=2026073013"></script>
 <style>
   html,body{height:100%}
   a{color:var(--color-primary);text-decoration:none}
@@ -71,8 +107,8 @@
       </sc-for>
     </nav>
     <div onClick="{{ openProfile }}" title="Profil & paramètres du site" style="padding:12px 16px;border-top:.5px solid var(--color-border-tertiary);display:flex;align-items:center;gap:10px;cursor:pointer">
-      <div style="width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px var(--font-ui)">SR</div>
-      <div style="line-height:1.2"><div style="font:500 12px var(--font-ui);color:var(--color-text)">Sophie Renard</div><div style="font:400 10px var(--font-ui);color:var(--color-text-muted)">Admin réseau · Siège</div></div>
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px var(--font-ui)">AD</div>
+      <div style="line-height:1.2"><div style="font:500 12px var(--font-ui);color:var(--color-text)">Administrateur</div><div style="font:400 10px var(--font-ui);color:var(--color-text-muted)">Admin réseau · Siège</div></div>
       <span style="margin-left:auto;color:var(--color-text-muted)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>
     </div>
   </aside>
@@ -120,7 +156,7 @@
       <!-- BOUTIQUES (CRUD) -->
       <sc-if value="{{ isBoutiques }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_shops ← franchise_shops · synchronisé</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">shops ← franchise_shops · synchronisé</span></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
           <div style="display:grid;grid-template-columns:1.6fr 1fr .8fr .9fr .7fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Boutique</span><span class="t-admin-label">Ville</span><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label">Contrat</span><span class="t-admin-label" style="text-align:center">Actif</span><span></span></div>
           <sc-for list="{{ shopsRows }}" as="s" hint-placeholder-count="5">
@@ -180,7 +216,7 @@
             </sc-if>
             <sc-if value="{{ r.isProd }}" hint-placeholder-val="{{ false }}">
               <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
-                <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:24px"><span style="font:500 11px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.photoMissing }}" hint-placeholder-val="{{ false }}"><span title="Aucune photo produit — déposer {id}.png|jpg dans assets/product_pictures/" style="display:inline-flex;align-items:center;gap:4px;font:600 8.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;color:#b26a00;background:#fdf3e3;border-radius:10px;padding:2px 7px;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><path d="M1 1l22 22"/></svg>Sans photo</span></sc-if><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if></div>
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:24px"><span style="font:500 11px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.photoMissing }}" hint-placeholder-val="{{ false }}"><span title="Aucune photo produit — déposer {id}.png|jpg dans assets/product_pictures/" style="display:inline-flex;align-items:center;gap:4px;font:600 8.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;color:#b26a00;background:#fdf3e3;border-radius:10px;padding:2px 7px;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><path d="M1 1l22 22"/></svg>Sans photo</span></sc-if><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if><sc-if value="{{ r.hasPort }}" hint-placeholder-val="{{ false }}"><span title="{{ r.portTitle }}" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:#eef3fb;color:#2a5a9e;font:700 8.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;cursor:help;flex:none">◔ Portions</span></sc-if></div>
                 <div style="display:flex;justify-content:flex-end"><input type="number" step="0.01" value="{{ r.prix }}" onChange="{{ r.setPrix }}" style="width:70px;text-align:right;border:.5px solid var(--color-border-secondary);border-radius:7px;padding:6px 7px;font:600 12px var(--font-ui);color:var(--color-text);background:var(--color-surface)"/></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-background-secondary);border-radius:16px;padding:4px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBw }}" style="{{ r.bwStyle }}"><span style="{{ r.bwKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleOd }}" style="{{ r.odStyle }}"><span style="{{ r.odKnob }}"></span></button></div></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBm }}" style="{{ r.bmStyle }}"><span style="{{ r.bmKnob }}"></span></button></div>
@@ -195,16 +231,136 @@
       </sc-if>
 
       <!-- PROMOTIONS RÉSEAU -->
+      <sc-if value="{{ isCrossSell }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="t-section-title" style="font-size:15px">Règles de ventes croisées</div>
+              <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-top:3px">Si le panier contient un déclencheur, proposer des produits — sur une période, à certaines heures de <strong>retrait</strong>, certains jours. Le serveur écarte tout produit hors assortiment, hors saison ou en rupture.</div>
+            </div>
+            <button onClick="{{ xsNew }}" class="btn-primary" style="padding:9px 16px;font-size:12px;flex:none">+ Nouvelle règle</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ xsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--color-surface);border:1.5px solid var(--color-primary);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="t-section-title" style="font-size:15px">{{ xsTitle }}</div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ xsToggleActive }}" style="padding:8px 14px;border-radius:8px;border:.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font:600 11.5px var(--font-ui);color:var(--color-text)">{{ xsActiveLabel }}</button>
+              <button onClick="{{ xsCancel }}" class="btn-secondary" style="padding:8px 14px;font-size:12px">Annuler</button>
+              <button onClick="{{ xsSave }}" class="btn-primary" style="padding:8px 16px;font-size:12px">Enregistrer</button>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Nom de la règle</label>
+            <input type="text" value="{{ xsName }}" onInput="{{ xsSetName }}" placeholder="Boisson avec le salé" style="width:100%;max-width:420px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 13px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Déclencheur — si le panier contient</label>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+              <sc-for list="{{ xsTrigChips }}" as="t" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+              <sc-for list="{{ xsTrigCatChips }}" as="t" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+            </div>
+            <input type="text" value="{{ xsTrigQ }}" onInput="{{ xsSetTrigQ }}" placeholder="Rechercher un produit déclencheur…" style="width:100%;max-width:420px;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text)"/>
+            <div style="display:flex;flex-direction:column;gap:1px;margin-top:3px;max-width:420px">
+              <sc-for list="{{ xsTrigHits }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.pick }}" style="display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--color-text);font:500 12px var(--font-ui);padding:6px 9px;cursor:pointer;border-radius:6px">{{ h.label }}</button></sc-for>
+            </div>
+            <select onChange="{{ xsAddCat }}" value="" style="margin-top:8px;max-width:420px;width:100%;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text-muted);cursor:pointer">
+              <sc-for list="{{ xsCatOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+            </select>
+            <div style="display:flex;gap:7px;margin-top:10px;align-items:center">
+              <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Le panier doit contenir</span>
+              <sc-for list="{{ xsModes }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.set }}" style="{{ m.style }}">{{ m.label }}</button></sc-for>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Suggestions — dans cet ordre</label>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+              <sc-for list="{{ xsTargChips }}" as="t" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbeee4;color:#8C4A2F;border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+            </div>
+            <input type="text" value="{{ xsTargQ }}" onInput="{{ xsSetTargQ }}" placeholder="Rechercher un produit à suggérer…" style="width:100%;max-width:420px;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text)"/>
+            <div style="display:flex;flex-direction:column;gap:1px;margin-top:3px;max-width:420px">
+              <sc-for list="{{ xsTargHits }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.pick }}" style="display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--color-text);font:500 12px var(--font-ui);padding:6px 9px;cursor:pointer;border-radius:6px">{{ h.label }}</button></sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Du</label><input type="date" value="{{ xsDateFrom }}" onInput="{{ xsSetDateFrom }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Au</label><input type="date" value="{{ xsDateTo }}" onInput="{{ xsSetDateTo }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Retrait entre</label><input type="time" value="{{ xsHourFrom }}" onInput="{{ xsSetHourFrom }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Et</label><input type="time" value="{{ xsHourTo }}" onInput="{{ xsSetHourTo }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Suggestions affichées</label><input type="number" min="1" max="6" value="{{ xsMax }}" onInput="{{ xsSetMax }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Jours actifs</label>
+            <div style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ xsDays }}" as="d" hint-placeholder-count="7"><button onClick="{{ d.toggle }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div>
+          </div>
+
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Canal</label><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsChannels }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.set }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Où la suggestion apparaît</label><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsPlacements }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.set }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Portée — {{ xsScopeTxt }}</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsShops }}" as="sh" hint-placeholder-count="4"><button onClick="{{ sh.toggle }}" style="{{ sh.style }}">{{ sh.label }}</button></sc-for></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-for list="{{ xsRules }}" as="r" hint-placeholder-count="3">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font:600 14px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><span style="{{ r.etatPill }}">{{ r.etat }}</span></div>
+              <div style="display:flex;gap:7px;flex:none">
+                <button onClick="{{ r.basculer }}" class="btn-secondary" style="padding:7px 12px;font-size:11.5px">Activer / suspendre</button>
+                <button onClick="{{ r.editer }}" class="btn-secondary" style="padding:7px 12px;font-size:11.5px">Modifier</button>
+                <button onClick="{{ r.supprimer }}" style="padding:7px 12px;font-size:11.5px;border-radius:8px;border:.5px solid var(--color-border-secondary);background:transparent;color:var(--color-primary);cursor:pointer;font-weight:600">Supprimer</button>
+              </div>
+            </div>
+            <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ r.fenetre }} · {{ r.jours }} · {{ r.canal }} · {{ r.portee }} · {{ r.maxi }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)">Si</span>
+              <sc-for list="{{ r.declencheurs }}" as="d" hint-placeholder-count="2"><span style="background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:3px 10px;font:600 11px var(--font-ui)">{{ d.label }}</span></sc-for>
+              <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">({{ r.mode }})</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)">Alors</span>
+              <sc-for list="{{ r.suggestions }}" as="t" hint-placeholder-count="2"><span style="background:#fbeee4;color:#8C4A2F;border-radius:999px;padding:3px 10px;font:600 11px var(--font-ui)">{{ t.label }}</span></sc-for>
+            </div>
+            <div style="display:flex;gap:22px;flex-wrap:wrap;border-top:.5px solid var(--color-border-tertiary);padding-top:10px">
+              <div><div style="font:700 16px var(--font-ui);color:var(--color-text)">{{ r.statImp }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">affichages</div></div>
+              <div><div style="font:700 16px var(--font-ui);color:var(--color-text)">{{ r.statAdd }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">ajouts au panier</div></div>
+              <div><div style="font:700 16px var(--font-ui);color:#2d7a3e">{{ r.statRate }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">{{ r.statHint }}</div></div>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ xsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:26px;text-align:center;font:400 12px var(--font-ui);color:var(--color-text-muted)">Aucune règle. Créez-en une avec « + Nouvelle règle » — rien ne sera proposé aux clients tant qu'aucune règle n'existe.</div>
+        </sc-if>
+      </div>
+      </sc-if>
+
       <sc-if value="{{ isPromos }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons marque</div><div style="{{ srcHint }}">ws_vouchers · shop_id NULL = tout le réseau ⇩</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="t-section-title" style="font-size:15px">Bons réseau & boutiques</div><div style="{{ srcHint }}">voucher_campaign / voucher_code · Marque = tout le réseau ⇩ · les bons émis par une boutique n’agissent que chez elle</div></div><button onClick="{{ addVoucher }}" class="btn-primary" style="font-size:12px;flex:none">+ Bon marque</button></div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
             <sc-for list="{{ vouchersM }}" as="v" hint-placeholder-count="3">
               <div style="border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font:700 14px var(--font-mono,monospace);color:var(--color-primary);letter-spacing:.05em">{{ v.code }}</span><span style="{{ porteeBadge }}">Réseau</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font:700 14px var(--font-mono,monospace);color:var(--color-primary);letter-spacing:.05em">{{ v.code }}</span><span style="{{ v.badgeStyle }}">{{ v.emetteur }}</span></div>
                 <div style="font:500 13px var(--font-ui);color:var(--color-text)">{{ v.valeur }}</div>
-                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">{{ v.type }} · {{ v.validite }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:4px">Cible : {{ v.cible }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">Motif : {{ v.motif }}</div>
+                <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">{{ v.usages }} usage(s) · {{ v.validite }} · <span style="color:{{ v.etatColor }}">{{ v.etat }}</span></div>
               </div>
             </sc-for>
           </div>
@@ -219,6 +375,20 @@
               <span style="font:600 12px var(--font-ui);color:var(--color-text);text-align:right">{{ r.effet }}</span>
             </div>
           </sc-for>
+        </div>
+
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="t-section-title" style="font-size:15px">Portions — produits portionnables (ERP)</div><span style="display:inline-flex;align-items:center;padding:4px 11px;border-radius:999px;font:600 10.5px var(--font-ui);background:var(--color-background-secondary);color:var(--color-text-muted)">👁 Lecture seule</span></div>
+          <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-bottom:14px">product_portion (ERP) — quelles portions sont actives par produit, groupé par catégorie · survol du produit = prix posés par boutique</div>
+          <div style="display:grid;grid-template-columns:2fr 2fr;gap:12px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Produit</span><span class="t-admin-label">Portions disponibles</span></div>
+          <sc-for list="{{ erpPortions }}" as="ep" hint-placeholder-count="4">
+            <sc-if value="{{ ep.hasCat }}" hint-placeholder-val="{{ false }}"><div style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);background:var(--color-background-secondary);padding:6px 8px;margin-top:6px;border-radius:6px">{{ ep.cat }}</div></sc-if>
+            <div style="display:grid;grid-template-columns:2fr 2fr;gap:12px;align-items:center;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
+              <span style="font:500 12.5px var(--font-ui);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:help" title="{{ ep.prix }}">◔ {{ ep.produit }}</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ ep.badges }}" as="b" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font:600 10.5px var(--font-ui);background:#eef3fb;color:#2a5a9e">{{ b.label }}</span></sc-for></div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ erpPortionsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:18px;text-align:center;font:400 12px var(--font-ui);color:var(--color-text-muted)">Aucun produit portionnable dans l'ERP (product_portion).</div></sc-if>
         </div>
       </div>
       </sc-if>
@@ -282,14 +452,37 @@
           </div>
         </div>
       </sc-if>
+      <sc-if value="{{ isProspects }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:.5px solid var(--color-border-tertiary);display:flex;justify-content:space-between;align-items:center">
+            <div><div class="t-section-title" style="font-size:15px">Prospects bureau non rattachés</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:2px">Demandes « livraison au bureau » dont le code postal n'est couvert par aucun franchisé (client.id_main_shop = 0)</div></div>
+            <span style="font:600 11px var(--font-ui);color:var(--color-text-muted)">{{ prospectsCount }} prospect(s)</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1.4fr 1fr 1.5fr .9fr 1fr .8fr;padding:10px 18px;border-bottom:.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)"><span class="t-admin-label">Société</span><span class="t-admin-label">Contact</span><span class="t-admin-label">Email</span><span class="t-admin-label">Téléphone</span><span class="t-admin-label">Code postal</span><span class="t-admin-label">Statut</span></div>
+          <sc-for list="{{ prospectsRows }}" as="p" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1.4fr 1fr 1.5fr .9fr 1fr .8fr;align-items:center;padding:12px 18px;border-bottom:.5px solid var(--color-border-tertiary)">
+              <span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ p.name }}</span>
+              <span style="font:400 12px var(--font-ui);color:var(--color-text-muted)">{{ p.contact }}</span>
+              <span style="font:400 12px var(--font-ui);color:var(--color-text)">{{ p.email }}</span>
+              <span style="font:400 12px var(--font-ui);color:var(--color-text-muted)">{{ p.phone }}</span>
+              <span style="font:500 12px var(--font-ui);color:var(--color-text)">{{ p.zip }}</span>
+              <span style="{{ p.statusStyle }}">{{ p.statusLabel }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ prospectsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:34px 18px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucun prospect pour l'instant.</div></sc-if>
+        </div>
+      </div>
+      </sc-if>
+
       <sc-if value="{{ isZones }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;flex-direction:column;gap:14px">
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fdf9f3;border-color:#eadfce">
-            <div style="font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted);max-width:640px"><strong style="color:var(--color-text)">Découpez le territoire de la marque en zones primaires</strong> et affectez chacune à un point de vente. Un code postal ne peut appartenir qu'à une seule zone primaire — le franchisé bâtit ensuite ses zones secondaires à l'intérieur de ce cadre.</div>
+            <div style="font:12.5px/1.55 var(--font-ui);color:var(--color-text-muted);max-width:640px"><strong style="color:var(--color-text)">Découpez le territoire de la marque en zones de chalandise</strong> et affectez chacune à un point de vente. Un code postal ne peut appartenir qu'à une seule zone de chalandise — le franchisé bâtit ensuite ses tournées à l'intérieur de ce cadre.</div>
             <button onClick="{{ czNew }}" style="flex:none;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:11px 18px;font:600 12.5px var(--font-ui);cursor:pointer;box-shadow:0 1px 3px rgba(141,29,44,.25)">+ Nouvelle zone</button>
           </div>
           <sc-if value="{{ czEmpty }}" hint-placeholder-val="{{ false }}">
-            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone primaire pour l'instant — créez la première pour poser le cadre du réseau.</div>
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;text-align:center;padding:38px;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune zone de chalandise pour l'instant — créez la première pour poser le cadre du réseau.</div>
           </sc-if>
           <sc-for list="{{ czRows }}" as="z" hint-placeholder-count="2">
             <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px">
@@ -309,7 +502,7 @@
             </div>
           </sc-for>
           <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:0;overflow:hidden">
-            <div style="padding:12px 18px;display:flex;align-items:center;gap:10px"><span class="t-admin-label">Carte du territoire</span><span style="font:11px var(--font-ui);color:var(--color-text-muted)">un point par code postal · une couleur par zone primaire</span></div>
+            <div style="padding:12px 18px;display:flex;align-items:center;gap:10px"><span class="t-admin-label">Carte du territoire</span><span style="font:11px var(--font-ui);color:var(--color-text-muted)">un point par code postal · une couleur par zone de chalandise</span></div>
             <div id="map-zones" style="width:100%;height:380px;background:var(--color-background-secondary)"></div>
           </div>
         </div>
@@ -330,7 +523,83 @@
             </div>
           </sc-for>
         </div>
+
+        <!-- COMPTES TABLETTE BOUTIQUE : PIN 4 chiffres + droits par section.
+             Créés ici (structure identique partout), consommés par le back-office
+             franchisé. Un PIN ne donne jamais les droits admin. -->
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px">
+          <div>
+            <span style="{{ tableBadge }}">bo_role · sections (profils tablette)</span>
+            <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:6px">La <strong>marque</strong> définit les profils et les sections qu'ils ouvrent. Le <strong>franchisé</strong> crée ses comptes tablette et leur attribue un profil — il ne choisit pas les sections, donc il ne peut pas s'octroyer un accès non prévu.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex:none">
+            <button onClick="{{ suInitStd }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 14px;font:600 12px var(--font-ui);cursor:pointer">Créer les profils standard</button>
+            <button onClick="{{ suNew }}" class="btn-primary" style="font-size:12px;flex:none">+ Profil</button>
+          </div>
+        </div>
+        <sc-if value="{{ suHasErr }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#8d1d2c;color:#fff;border-radius:10px;padding:10px 14px;font:600 12px var(--font-ui)">⚠ {{ suErr }}</div>
+        </sc-if>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:grid;grid-template-columns:1.6fr 1.1fr .7fr .8fr .6fr 70px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Profil</span><span class="t-admin-label">Clé</span><span class="t-admin-label">Sections</span><span class="t-admin-label">Comptes</span><span class="t-admin-label">État</span><span></span></div>
+          <sc-for list="{{ suRows }}" as="u" hint-placeholder-count="2">
+            <div style="{{ u.rowStyle }}">
+              <span style="font:500 12.5px var(--font-ui);color:var(--color-text)">{{ u.nom }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ u.keyTxt }}</span>
+              <span style="font:600 11.5px var(--font-ui);color:var(--color-text)">{{ u.secTxt }}</span>
+              <span style="font:400 11.5px var(--font-ui);color:{{ u.usedColor }}">{{ u.usedTxt }}</span>
+              <span style="font:600 11.5px var(--font-ui);color:{{ u.actColor }}">{{ u.actTxt }}</span>
+              <div style="display:flex;justify-content:flex-end;gap:6px">
+                <button onClick="{{ u.edit }}" style="{{ pencilStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h3l11-11-3-3L4 17z"/><path d="M14 5l3 3"/></svg></button>
+                <button onClick="{{ u.del }}" style="{{ pencilStyle }}" title="Supprimer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg></button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
       </div>
+
+      <!-- Formulaire compte tablette -->
+      <sc-if value="{{ suOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:320">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px;width:760px;max-width:94vw;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div class="t-section-title" style="font-size:18px">{{ suTitle }}</div><button onClick="{{ suClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Libellé du profil</span>
+                <input value="{{ suF.label }}" onInput="{{ suSetLabel }}" placeholder="ex. Vendeur (comptoir)" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Clé technique (facultative)</span>
+                <input value="{{ suF.key }}" onInput="{{ suSetKey }}" placeholder="déduite du libellé si vide" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)"/></label>
+              <label style="display:flex;flex-direction:column;gap:5px"><span class="t-admin-label">Partir d'un profil standard</span>
+                <select onChange="{{ suSetRole }}" style="border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 10px;font:500 13px var(--font-ui)">
+                  <option value="">— repartir de zéro —</option>
+                  <sc-for list="{{ suRoleOpts }}" as="r" hint-placeholder-count="4"><option value="{{ r.key }}">{{ r.label }}</option></sc-for>
+                </select>
+                <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">pré-coche les sections, ajustables ensuite</span></label>
+              <label style="display:flex;align-items:center;gap:8px;align-self:end"><input type="checkbox" checked="{{ suF.active }}" onChange="{{ suSetActive }}"/><span style="font:500 12.5px var(--font-ui)">Profil attribuable</span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span class="t-admin-label">Sections autorisées</span>
+              <span style="font:600 11.5px var(--font-ui);color:var(--color-primary)">{{ suNbSel }} / {{ suTotal }} sélectionnée(s)</span>
+            </div>
+            <sc-for list="{{ suGroupes }}" as="g" hint-placeholder-count="6">
+              <div style="margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+                  <span style="font:600 11px var(--font-ui);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em">{{ g.groupe }}</span>
+                  <button onClick="{{ g.toggleAll }}" style="background:transparent;border:none;font:600 10.5px var(--font-ui);color:var(--color-primary);cursor:pointer;padding:0">{{ g.toggleAllTxt }}</button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ g.items }}" as="sc" hint-placeholder-count="5">
+                    <button onClick="{{ sc.toggle }}" style="{{ sc.boxStyle }}">{{ sc.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+              <button onClick="{{ suClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 16px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button>
+              <button onClick="{{ suSave }}" class="btn-primary" style="font-size:12.5px">Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
       </sc-if>
 
       <sc-if value="{{ isComms }}" hint-placeholder-val="{{ false }}">
@@ -982,19 +1251,109 @@ class Component extends DCLogic {
     g.addTo(m); this._geoLayer=g;
     if(refit&&pts.length) m.fitBounds(pts,{padding:[36,36],maxZoom:12});
   }
+  // ===== COMPTES TABLETTE (PIN + sections) — chargement et écriture réels =====
+  // Le référentiel des sections et la liste des comptes viennent de l'API ;
+  // aucun échec n'est avalé (message explicite, jamais d'écran muet).
+  // ── PROFILS TABLETTE (marque) ───────────────────────────────────────────
+  // La marque définit les PROFILS et leurs sections ; le franchisé crée ses
+  // comptes et leur attribue un profil. Cet écran ne gère donc plus de comptes :
+  // le personnel d'une boutique est connu du franchisé, pas du réseau.
+  suEnsure(){ if(this.state.screen!=='users' || this._suLoading) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ if(!this.state.suErr) this.setState({suErr:'API ou jeton admin absent — profils tablette indisponibles (please debug)'}); return; }
+    if(this.state.suRef && this.state.suList) return;
+    this._suLoading=true;
+    const H={'X-Admin-Token':fr.token};
+    Promise.all([
+      fetch(fr.base+'/franchisor/bo-sections',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('sections HTTP '+r.status); return r.json(); }),
+      fetch(fr.base+'/franchisor/bo-roles',{headers:H,credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('profils HTTP '+r.status); return r.json(); }),
+    ]).then(([ref,list])=>{ this._suLoading=false;
+      this.setState({suRef:ref, suList:Array.isArray(list)?list:[], suErr:null}); })
+      .catch(e=>{ this._suLoading=false;
+        this.setState({suErr:'Chargement des profils tablette en échec — please debug : '+(e&&e.message||e)}); });
+  }
+  suReload(){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base||!fr.token) return;
+    fetch(fr.base+'/franchisor/bo-roles',{headers:{'X-Admin-Token':fr.token},credentials:'omit'})
+      .then(r=>r.ok?r.json():null)
+      .then(l=>{ if(Array.isArray(l)) this.setState({suList:l}); })
+      .catch(()=>this.printJob('⚠ Rechargement des profils en échec'));
+  }
+  suNew(){ this.setState({su:{id:0,label:'',key:'',sections:[],active:true}}); }
+  suEdit(r){ this.setState({su:{id:r.id,label:r.label||'',key:r.key||'',
+    sections:(r.sections||[]).slice(),active:!!r.active}}); }
+  suClose(){ this.setState({su:null}); }
+  suSet(k){ return (e)=>{ const v=(k==='active')?e.target.checked:e.target.value;
+    this.setState(st=>({su:{...st.su,[k]:v}})); }; }
+  // Partir d'un profil standard PRÉ-COCHE ses sections ; la marque ajuste ensuite.
+  suSetRole(){ return (e)=>{ const key=e.target.value; const ref=this.state.suRef;
+    const r=(ref&&(ref.roles||[]).find(x=>x.key===key))||null;
+    if(!r) return;
+    this.setState(st=>({su:{...st.su,label:st.su.label||r.label,key:st.su.key||r.key,sections:r.sections.slice()}})); }; }
+  suToggleSection(key){ this.setState(st=>{ const cur=(st.su.sections||[]).slice();
+    const i=cur.indexOf(key); if(i>=0) cur.splice(i,1); else cur.push(key);
+    return {su:{...st.su,sections:cur}}; }); }
+  // Cocher / décocher un GROUPE entier (Vente, Logistique…) — 37 cases à la main
+  // est une invitation à l'erreur.
+  suToggleGroup(keys,allOn){ this.setState(st=>{ let cur=(st.su.sections||[]).slice();
+    if(allOn){ cur=cur.filter(k=>keys.indexOf(k)<0); }
+    else { keys.forEach(k=>{ if(cur.indexOf(k)<0) cur.push(k); }); }
+    return {su:{...st.su,sections:cur}}; }); }
+  suSave(){ const u=this.state.su; if(!u) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : profil NON enregistré (please debug)'); return; }
+    if(!String(u.label||'').trim()){ this.printJob('⚠ Libellé du profil requis'); return; }
+    if(!(u.sections||[]).length){ this.printJob('⚠ Un profil sans aucune section ne donnerait accès à rien'); return; }
+    fetch(fr.base+'/franchisor/bo-role',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
+      body:JSON.stringify({id:u.id||undefined,label:u.label,key:u.key||'',
+        sections:u.sections,active:u.active?1:0})})
+      .then(r=>r.json().then(j=>({ok:r.ok,j})))
+      .then(({ok,j})=>{ if(!ok||!j.ok){ this.printJob('⚠ '+((j&&j.error)||'Enregistrement refusé')); return; }
+        this.printJob('✔ Profil « '+u.label+' » enregistré · '+j.nbSections+' section(s)');
+        this.setState({su:null}); this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — profil non enregistré'));
+  }
+  suDelete(r){
+    const msg=r.nbComptes ? ('Le profil « '+r.label+' » est utilisé par '+r.nbComptes+' compte(s).\nIl sera DÉSACTIVÉ (plus attribuable) mais conservé, pour ne pas fermer ces tablettes en plein service.\nContinuer ?')
+                          : ('Supprimer le profil « '+r.label+' » ?');
+    if(!confirm(msg)) return;
+    const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent : suppression impossible'); return; }
+    fetch(fr.base+'/franchisor/bo-role-delete',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',
+      body:JSON.stringify({id:r.id})})
+      .then(r2=>r2.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Suppression refusée')); return; }
+        this.printJob(j.desactive ? ('⚠ '+(j.message||'Profil désactivé')) : '✖ Profil supprimé'); this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — suppression non effectuée'));
+  }
+  // Création des profils STANDARD : action explicite de la marque. Rien n'est
+  // créé automatiquement, et les profils déjà présents ne sont pas écrasés.
+  suInitStd(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base||!fr.token){ this.printJob('⚠ ERREUR — API/jeton absent'); return; }
+    if(!confirm('Créer les profils standard (Vendeur, Préparateur, Chauffeur, Gérant, Admin boutique) ?\nLes profils existants ne sont pas modifiés.')) return;
+    fetch(fr.base+'/franchisor/bo-roles-init',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Admin-Token':fr.token},credentials:'omit',body:'{}'})
+      .then(r=>r.json()).then(j=>{ if(!j.ok){ this.printJob('⚠ '+(j.error||'Création refusée')); return; }
+        this.printJob(j.crees ? ('✔ '+j.crees+' profil(s) standard créé(s)') : 'Aucun profil à créer : ils existent déjà');
+        this.suReload(); })
+      .catch(()=>this.printJob('⚠ Réseau indisponible — profils non créés'));
+  }
   czEnsure(){ if(this.state.screen!=='zones') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     // Contours des codes postaux (asset statique servi à côté de la page) — indépendant du backend.
     this.loadPoly();
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
       Promise.all([
-        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>r.ok?r.json():null),
+        fetch(fr.base+'/geo/postcodes?all=1',{credentials:'omit'}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }),
         fetch(fr.base+'/geo/postcodes?groups=1',{credentials:'omit'}).then(r=>r.ok?r.json():null).catch(()=>null),
       ]).then(([a,g])=>{
+        this._geoLoading=false;
         if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; });
           const communes={}; a.forEach(e=>{ const c=String(e[1]); (communes[c]=communes[c]||[]).push(String(e[0])); });
           window.__CPGEO={list:a,idx,communes,groups:Array.isArray(g)?g:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); }
-      }).catch(()=>{}); }
+        else { this.czMapMsg('⚠ ERREUR — référentiel des codes postaux vide (api/data/zipcodes_be.json) — please debug'); }
+      }).catch(e=>{ this._geoLoading=false;
+        this.czMapMsg('⚠ ERREUR — référentiel des codes postaux indisponible : '+(e&&e.message||e)+' — please debug'); }); }
     if(!window.L){ clearTimeout(this._zmT); this._zmT=setTimeout(()=>this.czEnsure(),160); return; }
     const el=document.getElementById('map-zones'); if(!el) return;
     if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8);
@@ -1055,13 +1414,13 @@ class Component extends DCLogic {
     const c2=this.state.cz; const postcodes=c2.cps.join(' · ');
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     const payload={id:c2.id||undefined,name:c2.name,shop_id:c2.shop_id===''?null:parseInt(c2.shop_id,10),postcodes,exclusive:c2.exclusive,active:1};
-    if(!fr.base){ const rows=window.BOServer?window.BOServer.table('catchment'):[]; if(c2.id){ const i=rows.findIndex(r=>r.id===c2.id); if(i>=0) rows[i]={...rows[i],...payload}; } else rows.push({...payload,id:Date.now()}); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({czOpen:false,_rev:(st._rev||0)+1})); this.printJob('✔ Zone enregistrée (local)'); return; }
+    if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : zone NON enregistrée (please debug)'); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'})
-      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.setState({czOpen:false}); this.printJob('✔ Zone primaire enregistrée : '+c2.name); this.czReload(); })
+      .then(async r=>{ const v=await r.json().catch(()=>({})); if(!r.ok){ this.printJob('⚠ '+(v.error||('Erreur '+r.status))); return; } this.setState({czOpen:false}); this.printJob('✔ Zone de chalandise enregistrée : '+c2.name); this.czReload(); })
       .catch(()=>this.printJob('⚠ Réseau indisponible'));
   }
-  czDel(z){ return ()=>{ if(!confirm('Supprimer la zone primaire « '+z.name+' » ?')) return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
-    if(!fr.base){ const rows=(window.BOServer?window.BOServer.table('catchment'):[]).filter(r=>r.id!==z.id); if(window.BOServer) window.BOServer.save('catchment',rows); this.setState(st=>({_rev:(st._rev||0)+1})); return; }
+  czDel(z){ return ()=>{ if(!confirm('Supprimer la zone de chalandise « '+z.name+' » ?')) return; const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : zone NON supprimée (please debug)'); return; }
     fetch(fr.base+'/franchisor/catchment',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify({delete:z.id}),credentials:'omit'})
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
   // Clic sur un point de la carte : retire ce code postal de sa zone primaire.
@@ -1161,11 +1520,21 @@ class Component extends DCLogic {
     g.addTo(m); this._traceLayer=g;
     const fk=JSON.stringify(filter); if(pts.length && this._traceFitKey!==fk){ this._traceFitKey=fk; m.fitBounds(pts,{padding:[30,30],maxZoom:12}); }
   }
-  frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('✔ Enregistré (local)'); return Promise.resolve(false); }
+  frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : NON enregistré (please debug)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
+    /* L'échec disait « Échec enregistrement » et rien d'autre, alors que le
+       serveur donne une RAISON — « Produit OBLIGATOIRE : il doit rester
+       vendable sur au moins un canal », par exemple. On refusait donc une
+       action en gardant le motif pour soi, pendant que l'interrupteur restait
+       basculé à l'écran : la marque croyait avoir retiré un produit que le
+       franchisé continuait de voir dans son assortiment. */
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
-      .then(r=>r.ok?r.json():Promise.reject(r.status)).then(()=>{ this.printJob('✔ Enregistré en base'); return true; })
-      .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
+      .then(async r=>{
+        const j=await r.json().catch(()=>null);
+        if(!r.ok){ this.printJob('⚠ Non enregistré — '+((j&&(j.error||j.message))||('HTTP '+r.status))); return false; }
+        this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true;
+      })
+      .catch(()=>{ this.printJob('⚠ Non enregistré — réseau indisponible'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
@@ -1205,13 +1574,16 @@ class Component extends DCLogic {
     // Boutiques RÉELLES (hydratées depuis /franchisor/shops → SRV('shops') = {nom, ville, …}).
     // Repli sur des libellés génériques uniquement si aucune donnée (dev/API absente).
     const shopList=(window.BOServer?window.BOServer.table('shops'):[])||[];
+    // Produits du catalogue (droplist « périmètre produit » des bons) — 'id — nom'.
+    const prodOpts=((window.BOServer?window.BOServer.table('catalog'):[])||[])
+      .flatMap(c=>(c.prods||[])).map(pr=>pr.id+' — '+(pr.nom||pr.name||'')).filter(x=>!/^undefined/.test(x));
     const shopNames=shopList.map(s=>s.nom||s.name).filter(Boolean);
     const shopVilles=[...new Set(shopList.map(s=>(s.ville||s.city||'').replace(/\s*\d{4,}\s*$/,'').trim()).filter(Boolean))];
     const villes=shopVilles.length?shopVilles:['Bruxelles','Anderlecht','Uccle','Schaerbeek','Louvain','Waterloo'];
     const cats=['Boulangerie','Pâtisserie fraîche','Chocolaterie','Traiteur','Glaces'];
     const sel=a=>a.map(x=>({value:x,label:x}));
     return {
-      shop:{ title:'Boutique', table:'shops (+ ws_shops)', save:'Enregistrer', fields:[
+      shop:{ title:'Boutique', table:'shops', save:'Enregistrer', fields:[
         {k:'nom',label:'Enseigne',type:'text',ph:'L\'Atelier — …'},
         {k:'ville',label:'Ville',type:'select',options:sel(villes),def:villes[0]},
         {k:'contrat',label:'Contrat',type:'select',options:sel(['Franchise','Succursale','Master']),def:'Franchise'},
@@ -1223,13 +1595,18 @@ class Component extends DCLogic {
         {k:'prix',label:'Prix de référence (€)',type:'number',def:3.5},
       ]},
       voucher:{ title:'Bon', table:'ws_vouchers', save:'Créer le bon', fields:[
-        {k:'code',label:'Code',type:'text',ph:'ex. BIENVENUE10'},
-        {k:'type',label:'Type (type)',type:'select',options:sel(['percent','amount','free_delivery','add_office']),def:'percent'},
+        {k:'code',label:'Code (vide = généré automatiquement)',type:'text',ph:'Laisser vide pour générer'},
+        {k:'type',label:'Type (type)',type:'select',options:sel(['percent','fixed','free_delivery']),def:'percent'},
         {k:'value',label:'Valeur (value)',type:'number',def:10},
         {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
+        {k:'per_customer',label:'Limite par client (vide = illimité · 1 = une fois par travailleur)',type:'number',def:''},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
         {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
+        {k:'scope_product',label:'Limiter à un produit (vide = panier entier)',type:'select',options:sel(['— panier entier —'].concat(prodOpts)),def:'— panier entier —'},
+        {k:'scope_max_qty',label:'Pièces max remisées (avec périmètre · 1 = produit offert)',type:'number',def:''},
+        {k:'reason_kind',label:'Motif',type:'select',options:sel(['MARKETING','FIDELITE','GESTE_CO','RECLAMATION']),def:'MARKETING'},
+        {k:'reason_note',label:'Note motif (libre)',type:'text',ph:'ex. campagne rentrée'},
         {k:'active',label:'Actif (active)',type:'bool',def:true},
       ]},
       pricing:{ title:'Règle de prix réseau', table:'ws_pricing_rules (shop_id NULL)', save:'Créer', fields:[
@@ -1268,7 +1645,7 @@ class Component extends DCLogic {
     let path=null, payload=null;
     if(key==='shop'){ path='/franchisor/shop'; payload={id:v.id, contrat:v.contrat}; }
     else if(key==='product'){ path='/franchisor/product'; payload={id:v.id, price:v.prix}; }
-    else if(key==='voucher'){ path='/franchisor/voucher'; payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null}; }
+    else if(key==='voucher'){ path='/franchisor/voucher'; const spm=String(v.scope_product||'').match(/^(\d+)/); payload={code:v.code,type:v.type,value:v.value,min_order:v.min_order,max_uses:v.max_uses,expires_at:v.expires_at,active:v.active, target_kind:tk, target_id:(tk!=='NETWORK'&&tsel)?tsel.id:null, scope_product_id:spm?parseInt(spm[1],10):null, scope_max_qty:(spm&&v.scope_max_qty)?parseInt(v.scope_max_qty,10):null, per_customer:(v.per_customer!==''&&v.per_customer!=null)?parseInt(v.per_customer,10):null, reason_kind:v.reason_kind, reason_note:v.reason_note}; }
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
@@ -1287,7 +1664,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)']]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)']]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -1296,8 +1673,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1325,6 +1702,9 @@ class Component extends DCLogic {
     // Catalogue + gouvernance + prix — arbre catégories › produits
     const CATALOG=SRV('catalog');
     const stPill=s=>pill(s==='Publié'?'#eaf5ec':(s==='Brouillon'?'var(--color-background-secondary)':'#fbf1e3'),s==='Publié'?'#2d7a3e':(s==='Brouillon'?'var(--color-text-muted)':'#b26a00'));
+    // Portions ERP par produit (erp_portions) : icône ◔ sur la vignette
+    // produit du catalogue, info-bulle = portions actives + prix par boutique.
+    const erpPortIdx={}; (SRV('erp_portions')||[]).forEach(r=>{ if(r&&r.produit) erpPortIdx[r.produit]=(r.portions||[]).join(' · ')+(r.prix?(' — '+r.prix):''); });
     const catTree=[];
     const activeOnly=S.flags['catActiveOnly']!==undefined?S.flags['catActiveOnly']:true;
     const seasonFilter=S.seasonFilter||'';
@@ -1362,7 +1742,10 @@ class Component extends DCLogic {
       if(catQuery){ const _bwOn=(pp,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:pp.bw; }; const _hit=c.prods.some((pp,pi)=>prodVisible(pp)&&(!activeOnly||_bwOn(pp,pi))&&(!seasonFilter||pp.saison===seasonFilter)); if(!_hit) return; }
       const nbWeb=c.prods.filter((p,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:p.bw; }).length;
       const menuDefOn=this.api?!!this.api.getCategoryDefault(c.cat):false;
-      const cwOn=S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true;
+      // RÈGLE : l'état webshop de la CATÉGORIE est DÉRIVÉ de ses produits —
+      // active dès qu'UN produit est en ligne, désactivée quand plus aucun.
+      const cwOn=c.prods.length?c.prods.some((pp,ppi)=>{ const v=S.flags['bw_'+ci+'_'+ppi]; return v!==undefined?v:pp.bw; })
+        :(S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true);
       const coffOn=S.flags['catOff_'+ci]!==undefined?S.flags['catOff_'+ci]:true;
       const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
       if(activeOnly&&!cwOn) return;
@@ -1406,19 +1789,34 @@ class Component extends DCLogic {
         const mnOn=_inStore?(rm.effective===1):_catDef;
         catTree.push({isCat:false,isProd:true,nom:p.nom,
           hasSaison:!!p.saison, saison:p.saison||'', saisonPill:pill('#fbf1e3','#C87A3F'),
+          hasPort:!!erpPortIdx[p.nom], portTitle:'Portions : '+(erpPortIdx[p.nom]||''),
           photoMissing:(p.photo===false),
           mnStyle:swL(mnOn,RUBY,HPRD),mnKnob:knL(mnOn,HPRD),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
+          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}).then(ok=>{ if(!ok) bw.toggle(); }); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}).then(ok=>{ if(!ok) od.toggle(); }); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}).then(ok=>{ if(!ok) bm.toggle(); }); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
 
     // Promotions
     const porteeBadge=pill('#eef3fb','#2a5a9e');
-    const vouchersM=SRV('vouchers');
+    // Bons UNIFIÉS : émetteur (Marque / boutique), cible, motif, usages — servis
+    // par GET /franchisor/vouchers (modèle voucher_campaign/voucher_code + 0041).
+    const vouchersM=SRV('vouchers').map(v=>({...v,
+      emetteur:v.emetteur||'Marque',
+      badgeStyle:(v.emetteur&&v.emetteur!=='Marque')?pill('#eaf5ec','#2d7a3e'):pill('#eef3fb','#2a5a9e'),
+      cible:v.cible||'Réseau',motif:v.motif||'—',usages:v.usages||'0',
+      etat:(v.act===false)?'Inactif':'Actif',
+      etatColor:(v.act===false)?'var(--color-text-muted)':'#2d7a3e'}));
     const pricingR=SRV('pricing_rules');
+    // Portions réseau (ERP product_portion × shop_product_portion_price),
+    // groupées par catégorie — lecture seule.
+    let _epCat=null;
+    const erpPortions=SRV('erp_portions').map(r=>{ const cat=r.cat||'Autres';
+      const hasCat=cat!==_epCat; _epCat=cat;
+      return {produit:r.produit,cat,hasCat,badges:(r.portions||[]).map(t=>({label:t})),prix:r.prix||'—'}; });
+    const erpPortionsEmpty=erpPortions.length===0;
 
     // Config marque (ws_param)
     const paramRaw=SRV('params');
@@ -1434,6 +1832,36 @@ class Component extends DCLogic {
     const usersRows=usersRaw.map((u,i)=>{ const a=tog('userAct_'+i,u.act);
       return {...u, rolePill:pill(u.role==='Siège'?'#fbe9eb':'var(--color-background-secondary)',u.role==='Siège'?'var(--color-primary)':'var(--color-text-muted)'),
         actStyle:a.style,actKnob:a.knob,toggleAct:a.toggle, edit:this.editForm('user',{nom:u.nom,email:u.email,role:u.role,portee:u.portee})}; });
+
+    // ===== COMPTES TABLETTE BOUTIQUE (PIN 4 chiffres + droits par section) =====
+    // Créés ICI (structure identique partout) et consommés par le BO franchisé :
+    // un PIN ouvre une session limitée aux sections cochées. Le référentiel des
+    // 37 sections vient de l'API (/franchisor/bo-sections) — jamais dupliqué ici.
+    const suRef=S.suRef||null, suList=S.suList||[], su=S.su||null;
+    const suRows=suList.map(u=>({
+      id:u.id, nom:u.label, keyTxt:u.key||'—',
+      secTxt:u.nbSections+' / '+((suRef&&suRef.total)||37),
+      usedTxt:u.nbComptes?(u.nbComptes+' compte'+(u.nbComptes>1?'s':'')):'aucun',
+      usedColor:u.nbComptes?'var(--color-text)':'var(--color-text-muted)',
+      actTxt:u.active?'Attribuable':'Désactivé',
+      actColor:u.active?'#2d7a3e':'var(--color-text-muted)',
+      rowStyle:'display:grid;grid-template-columns:1.6fr 1.1fr .7fr .8fr .6fr 70px;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)'+(u.active?'':';opacity:.55'),
+      edit:()=>this.suEdit(u), del:()=>this.suDelete(u)}));
+    // Cases à cocher groupées, cochées d'après su.sections.
+    const suGroupes=(suRef?(suRef.groupes||[]):[]).map(g=>{
+      const keys=(g.sections||[]).map(sc=>sc.key);
+      const allOn=keys.length>0 && keys.every(k=>!!(su&&(su.sections||[]).includes(k)));
+      return {
+      groupe:g.groupe,
+      toggleAll:()=>this.suToggleGroup(keys,allOn),
+      toggleAllTxt:allOn?'tout décocher':'tout cocher',
+      items:(g.sections||[]).map(sc=>({ key:sc.key, label:sc.label,
+        on:!!(su&&(su.sections||[]).includes(sc.key)),
+        boxStyle:'display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:8px;cursor:pointer;font:500 11.5px var(--font-ui);border:.5px solid '+((su&&(su.sections||[]).includes(sc.key))?'var(--color-primary);background:#fbe9eb;color:var(--color-primary)':'var(--color-border-secondary);background:var(--color-surface);color:var(--color-text)'),
+        toggle:()=>this.suToggleSection(sc.key) }))}; });
+    // Profils STANDARD proposés comme point de départ (ils ne sont créés en base
+    // que par le bouton « Créer les profils standard »).
+    const suRoleOpts=(suRef?(suRef.roles||[]):[]).map(r=>({key:r.key,label:r.label+' ('+r.sections.length+' sections)'}));
 
     // Audit
     const vPill=v=>pill(v==='Création'?'#eaf5ec':(v==='Suppression'?'#fbe9eb':'#fbf1e3'),v==='Création'?'#2d7a3e':(v==='Suppression'?'var(--color-primary)':'#b26a00'));
@@ -1574,8 +2002,8 @@ class Component extends DCLogic {
     const _vtBtn=(on)=>'font:600 11px var(--font-ui);padding:7px 13px;border-radius:8px;cursor:pointer;border:.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'var(--color-surface)')+';color:'+(on?'#fff':'var(--color-text)');
     const vtModes=[{k:'NETWORK',label:'Réseau'},{k:'CUSTOMER',label:'Personne'},{k:'OFFICE',label:'Entreprise'}].map(m=>({label:m.label,style:_vtBtn(_vtKind===m.k),pick:()=>this.setVtKind(m.k)}));
     const vtNeedsSearch=(_vtKind==='CUSTOMER'||_vtKind==='OFFICE');
-    const vtSearchPh=_vtKind==='CUSTOMER'?'Rechercher un client (mail, nom, téléphone)…':'Rechercher une entreprise / bureau (nom, ville)…';
-    const vtResults=(S.vtResults||[]).map(r=>{ const label=(_vtKind==='CUSTOMER')?((r.name||'—')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
+    const vtSearchPh=_vtKind==='CUSTOMER'?'Rechercher un client (nom, prénom, société, mail, téléphone)…':'Rechercher une entreprise / bureau (nom, ville) — le bon vaudra pour tous ses travailleurs…';
+    const vtResults=(S.vtResults||[]).map(r=>{ const nomFull=((r.name||'')+' '+(r.surname||'')).trim()||'—'; const label=(_vtKind==='CUSTOMER')?(nomFull+(r.soc?(' — '+r.soc):'')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
     const _vtSel=S.vtSel||null;
     const formFields=fCfg?fCfg.fields.map(f=>{ const val=S.formVals[f.k]!==undefined?S.formVals[f.k]:'';
       const onInput=e=>{ const v=e.target.value; this.setState(st=>({formVals:{...st.formVals,[f.k]:v}})); };
@@ -1594,14 +2022,160 @@ class Component extends DCLogic {
       navBlocks, pageTitle:titles[S.screen], pageSub:subs[S.screen],
       tableBadge, srcHint, pencilStyle, porteeBadge, langBadge,
       profileOpen:!!S.profileOpen, profileParams, openProfile:()=>this.openProfile(), closeProfile:()=>this.closeProfile(),
-      profName:'Sophie Renard', profRole:'Admin réseau · Siège', profInit:'SR',
+      profName:'Administrateur', profRole:'Admin réseau · Siège', profInit:'AD',
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
       isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
-      isPromos:S.screen==='promos', vouchersM, pricingR, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
+      /* ── PANIER CROISÉ — règles de ventes croisées (migration 0056). ────────
+         Tout passe par l'API : GET/POST/DELETE /franchisor/cross-sell. Aucune
+         écriture directe en base, aucune donnée inventée — la liste vient du
+         serveur et y retourne. ── */
+      ...(()=>{
+        const X=S.xs||null;                                   // règle en cours d'édition
+        const RULES=SRV('cross_sell')||[];
+        const PRODS=[]; CATALOG.forEach(c=>(c.prods||[]).forEach(p=>{ if(p&&p.id!=null) PRODS.push({id:+p.id,nom:p.nom,cat:c.cat}); }));
+        const CATS=CATALOG.filter(c=>c.id!=null).map(c=>({id:+c.id,label:c.cat}));
+        const SHOPS=(SRV('shops')||[]).filter(x=>x&&x.id!=null).map(x=>({id:+x.id,nom:x.nom||x.name||('#'+x.id)}));
+        const pName=id=>{ const h=PRODS.find(x=>x.id===+id); return h?h.nom:('#'+id); };
+        const DAYS=[[1,'L'],[2,'Ma'],[3,'Me'],[4,'J'],[5,'V'],[6,'S'],[7,'D']];
+        const hhmm=v=>{ const t=String(v||'').match(/^([01]\d|2[0-3]):[0-5]\d/); return t?t[0]:''; };
+        const dmy=v=>{ const t=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return t?(t[3]+'/'+t[2]+'/'+t[1]):''; };
+
+        const reload=()=>{ const fr=window.__FR||{}; if(!fr.base) return;
+          fetch(fr.base+'/franchisor/cross-sell',{headers:{'X-Admin-Token':fr.token||''},credentials:'omit'})
+            .then(r=>r.ok?r.json():Promise.reject(r.status))
+            .then(a=>{ if(Array.isArray(a)&&window.BOServer) window.BOServer.refresh('cross_sell',a);
+                       this.setState(st=>({_rev:(st._rev||0)+1})); })
+            .catch(e=>this.printJob('⚠ Règles non rechargées — '+e)); };
+
+        const blank={id:0,name:'',dateFrom:'',dateTo:'',hourFrom:'',hourTo:'',weekdays:[1,2,3,4,5,6,7],
+          matchMode:'any',channel:'both',placement:['cart','checkout'],maxSuggestions:2,active:1,
+          triggerProducts:[],triggerCategories:[],targets:[],shops:[]};
+        const setX=patch=>this.setState(st=>({xs:{...(st.xs||blank),...patch}}));
+        const tog=(arr,v)=>arr.indexOf(v)>=0?arr.filter(x=>x!==v):arr.concat([v]);
+
+        // Recherche produit — même parti pris que le rattachement des bureaux :
+        // une liste déroulante devient inutilisable passé quelques dizaines
+        // d'entrées, et le catalogue en compte des centaines.
+        const pick=(q,exclude)=>{ const n=String(q||'').trim().toLowerCase();
+          if(!n) return [];
+          return PRODS.filter(p=>exclude.indexOf(p.id)<0 && (p.nom||'').toLowerCase().indexOf(n)>=0).slice(0,7); };
+
+        return {
+        isCrossSell:S.screen==='crosssell',
+        xsRules:RULES.map(r=>{
+          const st2=r.stats||{};
+          const win=[dmy(r.date_from)&&('du '+dmy(r.date_from)),dmy(r.date_to)&&('au '+dmy(r.date_to))].filter(Boolean).join(' ')||'toute l’année';
+          const hrs=(hhmm(r.hour_from)&&hhmm(r.hour_to))?(hhmm(r.hour_from)+'–'+hhmm(r.hour_to)+' (retrait)'):'toute la journée';
+          const wd=String(r.weekdays||'').split(',').filter(Boolean).map(Number);
+          return {
+            id:r.id, nom:r.name,
+            etat:+r.active?'Active':'Suspendue',
+            etatPill:pill(+r.active?'#eaf5ec':'var(--color-background-secondary)',+r.active?'#2d7a3e':'var(--color-text-muted)'),
+            fenetre:win+' · '+hrs,
+            jours:(!wd.length||wd.length===7)?'tous les jours':DAYS.filter(d=>wd.indexOf(d[0])>=0).map(d=>d[1]).join(' '),
+            canal:r.channel==='collect'?'Click & Collect':(r.channel==='delivery'?'Livraison bureau':'Les deux canaux'),
+            portee:(r.shops&&r.shops.length)?(r.shops.length+' boutique(s)'):'Tout le réseau',
+            declencheurs:[].concat((r.triggerProducts||[]).map(x=>x.name),(r.triggerCategories||[]).map(x=>'Catégorie · '+x.name)).map(l=>({label:l})),
+            suggestions:(r.targets||[]).map((t,i)=>({label:(i+1)+'. '+t.name})),
+            mode:r.match_mode==='all'?'tous les déclencheurs':'au moins un déclencheur',
+            maxi:String(r.max_suggestions)+' max',
+            statImp:String(st2.impressions||0), statAdd:String(st2.adds||0),
+            statRate:st2.rate!=null?(st2.rate+' %'):'—',
+            // Un taux ne veut rien dire sous 20 affichages : on le dit plutôt
+            // que d'afficher « 100 % » sur une seule vue.
+            statHint:(st2.impressions||0)<20?'trop peu d’affichages pour conclure':'ajouts / affichages',
+            editer:()=>this.setState({xs:{id:r.id,name:r.name||'',
+              dateFrom:String(r.date_from||'').slice(0,10),dateTo:String(r.date_to||'').slice(0,10),
+              hourFrom:hhmm(r.hour_from),hourTo:hhmm(r.hour_to),
+              weekdays:wd.length?wd:[1,2,3,4,5,6,7],matchMode:r.match_mode||'any',channel:r.channel||'both',
+              placement:String(r.placement||'cart').split(',').filter(Boolean),
+              maxSuggestions:+r.max_suggestions||2,active:+r.active?1:0,
+              triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
+              triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+              targets:(r.targets||[]).map(x=>+x.id), shops:(r.shops||[]).map(Number)}}),
+            basculer:()=>{ this.frPost('/franchisor/cross-sell',{id:r.id,name:r.name,
+                dateFrom:String(r.date_from||'').slice(0,10)||null,dateTo:String(r.date_to||'').slice(0,10)||null,
+                hourFrom:hhmm(r.hour_from)||null,hourTo:hhmm(r.hour_to)||null,weekdays:wd,
+                matchMode:r.match_mode,channel:r.channel,placement:String(r.placement||'cart').split(','),
+                maxSuggestions:+r.max_suggestions,active:+r.active?0:1,
+                triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
+                triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+                targets:(r.targets||[]).map(x=>+x.id),shops:(r.shops||[]).map(Number)})
+              .then(ok=>{ if(ok) reload(); }); },
+            supprimer:()=>{ if(!confirm('Supprimer la règle « '+r.name+' » ?\n\nLes statistiques déjà mesurées sont conservées.')) return;
+              const fr=window.__FR||{};
+              fetch(fr.base+'/franchisor/cross-sell?id='+r.id,{method:'DELETE',headers:{'X-Admin-Token':fr.token||''},credentials:'omit'})
+                .then(async rr=>{ const j=await rr.json().catch(()=>null);
+                  if(!rr.ok||!(j&&j.ok)){ this.printJob('⚠ Non supprimée — '+((j&&j.error)||('HTTP '+rr.status))); return; }
+                  this.printJob('✔ Règle supprimée'); reload(); })
+                .catch(()=>this.printJob('⚠ Non supprimée — réseau indisponible')); },
+          };
+        }),
+        xsEmpty:RULES.length===0,
+        xsNew:()=>this.setState({xs:{...blank}}),
+        xsOpen:!!X,
+        xsTitle:X&&X.id?('Modifier — '+(X.name||'sans nom')):'Nouvelle règle',
+        xsName:X?X.name:'', xsSetName:e=>setX({name:e.target.value}),
+        xsDateFrom:X?X.dateFrom:'', xsSetDateFrom:e=>setX({dateFrom:e.target.value}),
+        xsDateTo:X?X.dateTo:'',     xsSetDateTo:e=>setX({dateTo:e.target.value}),
+        xsHourFrom:X?X.hourFrom:'', xsSetHourFrom:e=>setX({hourFrom:e.target.value}),
+        xsHourTo:X?X.hourTo:'',     xsSetHourTo:e=>setX({hourTo:e.target.value}),
+        xsMax:X?String(X.maxSuggestions):'2', xsSetMax:e=>setX({maxSuggestions:Math.max(1,Math.min(6,parseInt(e.target.value,10)||1))}),
+        xsDays:DAYS.map(([n,l])=>({label:l,
+          style:'width:38px;height:32px;border-radius:8px;border:.5px solid var(--color-border-secondary);font:600 11px var(--font-ui);cursor:pointer;'
+            +((X&&X.weekdays.indexOf(n)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          toggle:()=>setX({weekdays:tog((X||blank).weekdays,n)})})),
+        xsModes:[['any','Au moins un'],['all','Tous']].map(([v,l])=>({label:l,
+          style:this.segStyle?this.segStyle(X&&X.matchMode===v):('padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.matchMode===v)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)')),
+          set:()=>setX({matchMode:v})})),
+        xsChannels:[['both','Les deux'],['collect','Collect'],['delivery','Livraison']].map(([v,l])=>({label:l,
+          style:'padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.channel===v)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          set:()=>setX({channel:v})})),
+        xsPlacements:[['cart','Panier'],['checkout','Paiement'],['product','Fiche produit']].map(([v,l])=>({label:l,
+          style:'padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.placement.indexOf(v)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          set:()=>setX({placement:tog((X||blank).placement,v)})})),
+        xsActive:!!(X&&X.active), xsActiveLabel:(X&&X.active)?'Active':'Suspendue',
+        xsToggleActive:()=>setX({active:(X&&X.active)?0:1}),
+        // — déclencheurs —
+        xsTrigChips:(X?X.triggerProducts:[]).map(id=>({label:pName(id),remove:()=>setX({triggerProducts:X.triggerProducts.filter(x=>x!==id)})})),
+        xsTrigCatChips:(X?X.triggerCategories:[]).map(id=>{ const c=CATS.find(x=>x.id===id);
+          return {label:'Catégorie · '+(c?c.label:('#'+id)),remove:()=>setX({triggerCategories:X.triggerCategories.filter(x=>x!==id)})}; }),
+        xsTrigQ:S.xsQt||'', xsSetTrigQ:e=>this.setState({xsQt:e.target.value}),
+        xsTrigHits:pick(S.xsQt,(X?X.triggerProducts:[])).map(p=>({label:p.nom+' · '+p.cat,
+          pick:()=>{ setX({triggerProducts:(X||blank).triggerProducts.concat([p.id])}); this.setState({xsQt:''}); }})),
+        xsCatOpts:[{value:'',label:'+ Ajouter une catégorie déclencheur…'}].concat(
+          CATS.filter(c=>(X?X.triggerCategories:[]).indexOf(c.id)<0).map(c=>({value:String(c.id),label:c.label}))),
+        xsAddCat:e=>{ const v=parseInt(e.target.value,10); if(v) setX({triggerCategories:(X||blank).triggerCategories.concat([v])}); },
+        // — suggestions —
+        xsTargChips:(X?X.targets:[]).map((id,i)=>({label:(i+1)+'. '+pName(id),remove:()=>setX({targets:X.targets.filter(x=>x!==id)})})),
+        xsTargQ:S.xsQs||'', xsSetTargQ:e=>this.setState({xsQs:e.target.value}),
+        xsTargHits:pick(S.xsQs,(X?X.targets:[])).map(p=>({label:p.nom+' · '+p.cat,
+          pick:()=>{ setX({targets:(X||blank).targets.concat([p.id])}); this.setState({xsQs:''}); }})),
+        // — portée boutique : aucune coche = tout le réseau —
+        xsShops:SHOPS.map(sh=>({label:sh.nom,
+          style:'padding:6px 11px;border-radius:999px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11px var(--font-ui);'
+            +((X&&X.shops.indexOf(sh.id)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          toggle:()=>setX({shops:tog((X||blank).shops,sh.id)})})),
+        xsScopeTxt:(X&&X.shops.length)?(X.shops.length+' boutique(s) sélectionnée(s)'):'Aucune sélection = tout le réseau',
+        xsCancel:()=>this.setState({xs:null,xsQt:'',xsQs:''}),
+        xsSave:()=>{ if(!X) return;
+          this.frPost('/franchisor/cross-sell',{id:X.id||undefined,name:X.name,
+            dateFrom:X.dateFrom||null,dateTo:X.dateTo||null,hourFrom:X.hourFrom||null,hourTo:X.hourTo||null,
+            weekdays:X.weekdays,matchMode:X.matchMode,channel:X.channel,placement:X.placement,
+            maxSuggestions:X.maxSuggestions,active:X.active,
+            triggerProducts:X.triggerProducts,triggerCategories:X.triggerCategories,
+            targets:X.targets,shops:X.shops})
+            .then(ok=>{ if(ok){ this.setState({xs:null,xsQt:'',xsQs:''}); reload(); } }); },
+        };
+      })(),
+      isPromos:S.screen==='promos', vouchersM, pricingR, erpPortions, erpPortionsEmpty, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isProspects:S.screen==='prospects',
@@ -1697,7 +2271,15 @@ class Component extends DCLogic {
       czAdd:()=>this.czAddCp(), czKey:(e)=>this.czKeyCp(e), czSetDraftH:(e)=>this.czSetDraft(e),
       czSetName:this.czSet('name'), czSetShop:this.czSet('shop_id'), czSetExcl:this.czSet('exclusive'),
       czShopOpts:SRV('shops').map(sh=>({id:String(sh.id),label:sh.nom||sh.name||('#'+sh.id),sel:String(sh.id)===String(S.cz.shop_id)})),
-      czFormTitle:S.cz.id?'Modifier la zone primaire':'Nouvelle zone primaire', usersRows, addUser:this.openForm('user'),
+      czFormTitle:S.cz.id?'Modifier la zone de chalandise':'Nouvelle zone de chalandise', usersRows, addUser:this.openForm('user'),
+      suRows, suGroupes, suRoleOpts, suErr:S.suErr||'', suHasErr:!!S.suErr,
+      suOpen:!!su, suF:su||{label:'',key:'',active:true},
+      suNbSel:su?(su.sections||[]).length:0, suTotal:(suRef&&suRef.total)||37,
+      suTitle:(su&&su.id)?'Modifier le profil tablette':'Nouveau profil tablette',
+      suNew:()=>this.suNew(), suClose:()=>this.suClose(), suSave:()=>this.suSave(),
+      suInitStd:()=>this.suInitStd(),
+      suSetLabel:this.suSet('label'), suSetKey:this.suSet('key'),
+      suSetActive:this.suSet('active'), suSetRole:this.suSetRole(),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
       menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,

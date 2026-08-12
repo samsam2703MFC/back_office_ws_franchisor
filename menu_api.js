@@ -5,7 +5,7 @@
 // the tree directly — it calls these functions, exactly as it would call the API.
 import { SEED } from './menu_seed.js';
 
-const LS = 'ws_menu_store_v2';
+const LS = 'ws_menu_store_v3';   // v3 : purge go-live — invalide le cache du menu de démo
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 let DB = null;

@@ -41,7 +41,15 @@ jobs:
           rm -rf site && mkdir -p site
           cp back_office_ws_franchisor.dc.html api-config.js support.js bo_server.js menu_api.js menu_seed.js codes_postaux.geojson site/
           cp codes_postaux.geojson site/codes_postaux.json
-          cp back_office_ws_franchisor.dc.html site/index.html
+          # La page servie est index.html — la copie CÂBLÉE et maintenue (même
+          # convention que le back-office franchisé). AVANT, cette étape écrasait
+          # index.html par back_office_ws_franchisor.dc.html : la production
+          # tournait donc sur une version ANTÉRIEURE, et tout correctif apporté à
+          # index.html (carte des zones, cycle de vie, cache-busting…) n'était
+          # JAMAIS déployé.
+          cp index.html site/index.html
+          # Garde-fou : ne jamais déployer une page vide/absente.
+          test -s site/index.html || (echo 'ERREUR : index.html absent ou vide'; exit 1)
           cp -r _ds site/
           cp -r vendor site/
           mkdir -p site/img && cp img/logo.png site/img/
