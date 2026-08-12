@@ -17,6 +17,7 @@
     "shops": [],
     "catalog": [],
     "vouchers": [],
+    "cross_sell": [],
     "pricing_rules": [],
     "params": [
       {cle:'admin.schema_reports',type:'bool',def:true},
@@ -76,7 +77,8 @@
       ensure();
       var MAP = { catchment:'catchment', kpis:'kpis', shops:'shops', catalog:'catalog', vouchers:'vouchers',
                   pricing_rules:'pricing-rules', erp_portions:'erp-portion-rules', params:'params', prospects:'prospects',
-                  email_templates:'email-templates', users:'users', audit:'audit' };
+                  email_templates:'email-templates', users:'users', audit:'audit',
+                  cross_sell:'cross-sell' };
       // CONFIGS d'écran : une réponse vide ne les écrase pas (textes d'UI).
       var CONFIG = { params:1, email_templates:1 };
       var headers = { 'X-Admin-Token': fr.token };

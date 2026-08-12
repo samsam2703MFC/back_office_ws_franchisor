@@ -231,6 +231,124 @@
       </sc-if>
 
       <!-- PROMOTIONS RÉSEAU -->
+      <sc-if value="{{ isCrossSell }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:18px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="t-section-title" style="font-size:15px">Règles de ventes croisées</div>
+              <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-top:3px">Si le panier contient un déclencheur, proposer des produits — sur une période, à certaines heures de <strong>retrait</strong>, certains jours. Le serveur écarte tout produit hors assortiment, hors saison ou en rupture.</div>
+            </div>
+            <button onClick="{{ xsNew }}" class="btn-primary" style="padding:9px 16px;font-size:12px;flex:none">+ Nouvelle règle</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ xsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--color-surface);border:1.5px solid var(--color-primary);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="t-section-title" style="font-size:15px">{{ xsTitle }}</div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ xsToggleActive }}" style="padding:8px 14px;border-radius:8px;border:.5px solid var(--color-border-secondary);background:transparent;cursor:pointer;font:600 11.5px var(--font-ui);color:var(--color-text)">{{ xsActiveLabel }}</button>
+              <button onClick="{{ xsCancel }}" class="btn-secondary" style="padding:8px 14px;font-size:12px">Annuler</button>
+              <button onClick="{{ xsSave }}" class="btn-primary" style="padding:8px 16px;font-size:12px">Enregistrer</button>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Nom de la règle</label>
+            <input type="text" value="{{ xsName }}" onInput="{{ xsSetName }}" placeholder="Boisson avec le salé" style="width:100%;max-width:420px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 13px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Déclencheur — si le panier contient</label>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+              <sc-for list="{{ xsTrigChips }}" as="t" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+              <sc-for list="{{ xsTrigCatChips }}" as="t" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+            </div>
+            <input type="text" value="{{ xsTrigQ }}" onInput="{{ xsSetTrigQ }}" placeholder="Rechercher un produit déclencheur…" style="width:100%;max-width:420px;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text)"/>
+            <div style="display:flex;flex-direction:column;gap:1px;margin-top:3px;max-width:420px">
+              <sc-for list="{{ xsTrigHits }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.pick }}" style="display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--color-text);font:500 12px var(--font-ui);padding:6px 9px;cursor:pointer;border-radius:6px">{{ h.label }}</button></sc-for>
+            </div>
+            <select onChange="{{ xsAddCat }}" value="" style="margin-top:8px;max-width:420px;width:100%;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text-muted);cursor:pointer">
+              <sc-for list="{{ xsCatOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+            </select>
+            <div style="display:flex;gap:7px;margin-top:10px;align-items:center">
+              <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Le panier doit contenir</span>
+              <sc-for list="{{ xsModes }}" as="m" hint-placeholder-count="2"><button onClick="{{ m.set }}" style="{{ m.style }}">{{ m.label }}</button></sc-for>
+            </div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Suggestions — dans cet ordre</label>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+              <sc-for list="{{ xsTargChips }}" as="t" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbeee4;color:#8C4A2F;border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+            </div>
+            <input type="text" value="{{ xsTargQ }}" onInput="{{ xsSetTargQ }}" placeholder="Rechercher un produit à suggérer…" style="width:100%;max-width:420px;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text)"/>
+            <div style="display:flex;flex-direction:column;gap:1px;margin-top:3px;max-width:420px">
+              <sc-for list="{{ xsTargHits }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.pick }}" style="display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--color-text);font:500 12px var(--font-ui);padding:6px 9px;cursor:pointer;border-radius:6px">{{ h.label }}</button></sc-for>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Du</label><input type="date" value="{{ xsDateFrom }}" onInput="{{ xsSetDateFrom }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Au</label><input type="date" value="{{ xsDateTo }}" onInput="{{ xsSetDateTo }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Retrait entre</label><input type="time" value="{{ xsHourFrom }}" onInput="{{ xsSetHourFrom }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Et</label><input type="time" value="{{ xsHourTo }}" onInput="{{ xsSetHourTo }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Suggestions affichées</label><input type="number" min="1" max="6" value="{{ xsMax }}" onInput="{{ xsSetMax }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/></div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Jours actifs</label>
+            <div style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ xsDays }}" as="d" hint-placeholder-count="7"><button onClick="{{ d.toggle }}" style="{{ d.style }}">{{ d.label }}</button></sc-for></div>
+          </div>
+
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Canal</label><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsChannels }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.set }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+            <div><label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Où la suggestion apparaît</label><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsPlacements }}" as="c" hint-placeholder-count="3"><button onClick="{{ c.set }}" style="{{ c.style }}">{{ c.label }}</button></sc-for></div></div>
+          </div>
+
+          <div>
+            <label style="display:block;font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px">Portée — {{ xsScopeTxt }}</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ xsShops }}" as="sh" hint-placeholder-count="4"><button onClick="{{ sh.toggle }}" style="{{ sh.style }}">{{ sh.label }}</button></sc-for></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-for list="{{ xsRules }}" as="r" hint-placeholder-count="3">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font:600 14px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><span style="{{ r.etatPill }}">{{ r.etat }}</span></div>
+              <div style="display:flex;gap:7px;flex:none">
+                <button onClick="{{ r.basculer }}" class="btn-secondary" style="padding:7px 12px;font-size:11.5px">Activer / suspendre</button>
+                <button onClick="{{ r.editer }}" class="btn-secondary" style="padding:7px 12px;font-size:11.5px">Modifier</button>
+                <button onClick="{{ r.supprimer }}" style="padding:7px 12px;font-size:11.5px;border-radius:8px;border:.5px solid var(--color-border-secondary);background:transparent;color:var(--color-primary);cursor:pointer;font-weight:600">Supprimer</button>
+              </div>
+            </div>
+            <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ r.fenetre }} · {{ r.jours }} · {{ r.canal }} · {{ r.portee }} · {{ r.maxi }}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)">Si</span>
+              <sc-for list="{{ r.declencheurs }}" as="d" hint-placeholder-count="2"><span style="background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:3px 10px;font:600 11px var(--font-ui)">{{ d.label }}</span></sc-for>
+              <span style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">({{ r.mode }})</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <span style="font:600 10px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted)">Alors</span>
+              <sc-for list="{{ r.suggestions }}" as="t" hint-placeholder-count="2"><span style="background:#fbeee4;color:#8C4A2F;border-radius:999px;padding:3px 10px;font:600 11px var(--font-ui)">{{ t.label }}</span></sc-for>
+            </div>
+            <div style="display:flex;gap:22px;flex-wrap:wrap;border-top:.5px solid var(--color-border-tertiary);padding-top:10px">
+              <div><div style="font:700 16px var(--font-ui);color:var(--color-text)">{{ r.statImp }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">affichages</div></div>
+              <div><div style="font:700 16px var(--font-ui);color:var(--color-text)">{{ r.statAdd }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">ajouts au panier</div></div>
+              <div><div style="font:700 16px var(--font-ui);color:#2d7a3e">{{ r.statRate }}</div><div style="font:400 10.5px var(--font-ui);color:var(--color-text-muted)">{{ r.statHint }}</div></div>
+            </div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ xsEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:26px;text-align:center;font:400 12px var(--font-ui);color:var(--color-text-muted)">Aucune règle. Créez-en une avec « + Nouvelle règle » — rien ne sera proposé aux clients tant qu'aucune règle n'existe.</div>
+        </sc-if>
+      </div>
+      </sc-if>
+
       <sc-if value="{{ isPromos }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
@@ -1426,7 +1544,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['prospects','Prospect','var(--color-primary)'],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['geo','Analyse géographique',COPPER]]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['prospects','Prospect','var(--color-primary)'],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['geo','Analyse géographique',COPPER]]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & profils',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -1435,8 +1553,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',prospects:'Prospect',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',config:'Config marque',comms:'Communications',users:'Utilisateurs & profils tablette',zones:'Zones de chalandise',geo:'Analyse géographique'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',prospects:'Demandes bureau non rattachées à un franchisé · client.id_main_shop = 0',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones de chalandise par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',prospects:'Prospect',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & profils tablette',zones:'Zones de chalandise',geo:'Analyse géographique'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',prospects:'Demandes bureau non rattachées à un franchisé · client.id_main_shop = 0',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones de chalandise par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -1791,6 +1909,152 @@ class Component extends DCLogic {
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
+      /* ── PANIER CROISÉ — règles de ventes croisées (migration 0056). ────────
+         Tout passe par l'API : GET/POST/DELETE /franchisor/cross-sell. Aucune
+         écriture directe en base, aucune donnée inventée — la liste vient du
+         serveur et y retourne. ── */
+      ...(()=>{
+        const X=S.xs||null;                                   // règle en cours d'édition
+        const RULES=SRV('cross_sell')||[];
+        const PRODS=[]; CATALOG.forEach(c=>(c.prods||[]).forEach(p=>{ if(p&&p.id!=null) PRODS.push({id:+p.id,nom:p.nom,cat:c.cat}); }));
+        const CATS=CATALOG.filter(c=>c.id!=null).map(c=>({id:+c.id,label:c.cat}));
+        const SHOPS=(SRV('shops')||[]).filter(x=>x&&x.id!=null).map(x=>({id:+x.id,nom:x.nom||x.name||('#'+x.id)}));
+        const pName=id=>{ const h=PRODS.find(x=>x.id===+id); return h?h.nom:('#'+id); };
+        const DAYS=[[1,'L'],[2,'Ma'],[3,'Me'],[4,'J'],[5,'V'],[6,'S'],[7,'D']];
+        const hhmm=v=>{ const t=String(v||'').match(/^([01]\d|2[0-3]):[0-5]\d/); return t?t[0]:''; };
+        const dmy=v=>{ const t=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return t?(t[3]+'/'+t[2]+'/'+t[1]):''; };
+
+        const reload=()=>{ const fr=window.__FR||{}; if(!fr.base) return;
+          fetch(fr.base+'/franchisor/cross-sell',{headers:{'X-Admin-Token':fr.token||''},credentials:'omit'})
+            .then(r=>r.ok?r.json():Promise.reject(r.status))
+            .then(a=>{ if(Array.isArray(a)&&window.BOServer) window.BOServer.refresh('cross_sell',a);
+                       this.setState(st=>({_rev:(st._rev||0)+1})); })
+            .catch(e=>this.printJob('⚠ Règles non rechargées — '+e)); };
+
+        const blank={id:0,name:'',dateFrom:'',dateTo:'',hourFrom:'',hourTo:'',weekdays:[1,2,3,4,5,6,7],
+          matchMode:'any',channel:'both',placement:['cart','checkout'],maxSuggestions:2,active:1,
+          triggerProducts:[],triggerCategories:[],targets:[],shops:[]};
+        const setX=patch=>this.setState(st=>({xs:{...(st.xs||blank),...patch}}));
+        const tog=(arr,v)=>arr.indexOf(v)>=0?arr.filter(x=>x!==v):arr.concat([v]);
+
+        // Recherche produit — même parti pris que le rattachement des bureaux :
+        // une liste déroulante devient inutilisable passé quelques dizaines
+        // d'entrées, et le catalogue en compte des centaines.
+        const pick=(q,exclude)=>{ const n=String(q||'').trim().toLowerCase();
+          if(!n) return [];
+          return PRODS.filter(p=>exclude.indexOf(p.id)<0 && (p.nom||'').toLowerCase().indexOf(n)>=0).slice(0,7); };
+
+        return {
+        isCrossSell:S.screen==='crosssell',
+        xsRules:RULES.map(r=>{
+          const st2=r.stats||{};
+          const win=[dmy(r.date_from)&&('du '+dmy(r.date_from)),dmy(r.date_to)&&('au '+dmy(r.date_to))].filter(Boolean).join(' ')||'toute l’année';
+          const hrs=(hhmm(r.hour_from)&&hhmm(r.hour_to))?(hhmm(r.hour_from)+'–'+hhmm(r.hour_to)+' (retrait)'):'toute la journée';
+          const wd=String(r.weekdays||'').split(',').filter(Boolean).map(Number);
+          return {
+            id:r.id, nom:r.name,
+            etat:+r.active?'Active':'Suspendue',
+            etatPill:pill(+r.active?'#eaf5ec':'var(--color-background-secondary)',+r.active?'#2d7a3e':'var(--color-text-muted)'),
+            fenetre:win+' · '+hrs,
+            jours:(!wd.length||wd.length===7)?'tous les jours':DAYS.filter(d=>wd.indexOf(d[0])>=0).map(d=>d[1]).join(' '),
+            canal:r.channel==='collect'?'Click & Collect':(r.channel==='delivery'?'Livraison bureau':'Les deux canaux'),
+            portee:(r.shops&&r.shops.length)?(r.shops.length+' boutique(s)'):'Tout le réseau',
+            declencheurs:[].concat((r.triggerProducts||[]).map(x=>x.name),(r.triggerCategories||[]).map(x=>'Catégorie · '+x.name)).map(l=>({label:l})),
+            suggestions:(r.targets||[]).map((t,i)=>({label:(i+1)+'. '+t.name})),
+            mode:r.match_mode==='all'?'tous les déclencheurs':'au moins un déclencheur',
+            maxi:String(r.max_suggestions)+' max',
+            statImp:String(st2.impressions||0), statAdd:String(st2.adds||0),
+            statRate:st2.rate!=null?(st2.rate+' %'):'—',
+            // Un taux ne veut rien dire sous 20 affichages : on le dit plutôt
+            // que d'afficher « 100 % » sur une seule vue.
+            statHint:(st2.impressions||0)<20?'trop peu d’affichages pour conclure':'ajouts / affichages',
+            editer:()=>this.setState({xs:{id:r.id,name:r.name||'',
+              dateFrom:String(r.date_from||'').slice(0,10),dateTo:String(r.date_to||'').slice(0,10),
+              hourFrom:hhmm(r.hour_from),hourTo:hhmm(r.hour_to),
+              weekdays:wd.length?wd:[1,2,3,4,5,6,7],matchMode:r.match_mode||'any',channel:r.channel||'both',
+              placement:String(r.placement||'cart').split(',').filter(Boolean),
+              maxSuggestions:+r.max_suggestions||2,active:+r.active?1:0,
+              triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
+              triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+              targets:(r.targets||[]).map(x=>+x.id), shops:(r.shops||[]).map(Number)}}),
+            basculer:()=>{ this.frPost('/franchisor/cross-sell',{id:r.id,name:r.name,
+                dateFrom:String(r.date_from||'').slice(0,10)||null,dateTo:String(r.date_to||'').slice(0,10)||null,
+                hourFrom:hhmm(r.hour_from)||null,hourTo:hhmm(r.hour_to)||null,weekdays:wd,
+                matchMode:r.match_mode,channel:r.channel,placement:String(r.placement||'cart').split(','),
+                maxSuggestions:+r.max_suggestions,active:+r.active?0:1,
+                triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
+                triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+                targets:(r.targets||[]).map(x=>+x.id),shops:(r.shops||[]).map(Number)})
+              .then(ok=>{ if(ok) reload(); }); },
+            supprimer:()=>{ if(!confirm('Supprimer la règle « '+r.name+' » ?\n\nLes statistiques déjà mesurées sont conservées.')) return;
+              const fr=window.__FR||{};
+              fetch(fr.base+'/franchisor/cross-sell?id='+r.id,{method:'DELETE',headers:{'X-Admin-Token':fr.token||''},credentials:'omit'})
+                .then(async rr=>{ const j=await rr.json().catch(()=>null);
+                  if(!rr.ok||!(j&&j.ok)){ this.printJob('⚠ Non supprimée — '+((j&&j.error)||('HTTP '+rr.status))); return; }
+                  this.printJob('✔ Règle supprimée'); reload(); })
+                .catch(()=>this.printJob('⚠ Non supprimée — réseau indisponible')); },
+          };
+        }),
+        xsEmpty:RULES.length===0,
+        xsNew:()=>this.setState({xs:{...blank}}),
+        xsOpen:!!X,
+        xsTitle:X&&X.id?('Modifier — '+(X.name||'sans nom')):'Nouvelle règle',
+        xsName:X?X.name:'', xsSetName:e=>setX({name:e.target.value}),
+        xsDateFrom:X?X.dateFrom:'', xsSetDateFrom:e=>setX({dateFrom:e.target.value}),
+        xsDateTo:X?X.dateTo:'',     xsSetDateTo:e=>setX({dateTo:e.target.value}),
+        xsHourFrom:X?X.hourFrom:'', xsSetHourFrom:e=>setX({hourFrom:e.target.value}),
+        xsHourTo:X?X.hourTo:'',     xsSetHourTo:e=>setX({hourTo:e.target.value}),
+        xsMax:X?String(X.maxSuggestions):'2', xsSetMax:e=>setX({maxSuggestions:Math.max(1,Math.min(6,parseInt(e.target.value,10)||1))}),
+        xsDays:DAYS.map(([n,l])=>({label:l,
+          style:'width:38px;height:32px;border-radius:8px;border:.5px solid var(--color-border-secondary);font:600 11px var(--font-ui);cursor:pointer;'
+            +((X&&X.weekdays.indexOf(n)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          toggle:()=>setX({weekdays:tog((X||blank).weekdays,n)})})),
+        xsModes:[['any','Au moins un'],['all','Tous']].map(([v,l])=>({label:l,
+          style:this.segStyle?this.segStyle(X&&X.matchMode===v):('padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.matchMode===v)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)')),
+          set:()=>setX({matchMode:v})})),
+        xsChannels:[['both','Les deux'],['collect','Collect'],['delivery','Livraison']].map(([v,l])=>({label:l,
+          style:'padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.channel===v)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          set:()=>setX({channel:v})})),
+        xsPlacements:[['cart','Panier'],['checkout','Paiement'],['product','Fiche produit']].map(([v,l])=>({label:l,
+          style:'padding:7px 13px;border-radius:8px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11.5px var(--font-ui);'
+            +((X&&X.placement.indexOf(v)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          set:()=>setX({placement:tog((X||blank).placement,v)})})),
+        xsActive:!!(X&&X.active), xsActiveLabel:(X&&X.active)?'Active':'Suspendue',
+        xsToggleActive:()=>setX({active:(X&&X.active)?0:1}),
+        // — déclencheurs —
+        xsTrigChips:(X?X.triggerProducts:[]).map(id=>({label:pName(id),remove:()=>setX({triggerProducts:X.triggerProducts.filter(x=>x!==id)})})),
+        xsTrigCatChips:(X?X.triggerCategories:[]).map(id=>{ const c=CATS.find(x=>x.id===id);
+          return {label:'Catégorie · '+(c?c.label:('#'+id)),remove:()=>setX({triggerCategories:X.triggerCategories.filter(x=>x!==id)})}; }),
+        xsTrigQ:S.xsQt||'', xsSetTrigQ:e=>this.setState({xsQt:e.target.value}),
+        xsTrigHits:pick(S.xsQt,(X?X.triggerProducts:[])).map(p=>({label:p.nom+' · '+p.cat,
+          pick:()=>{ setX({triggerProducts:(X||blank).triggerProducts.concat([p.id])}); this.setState({xsQt:''}); }})),
+        xsCatOpts:[{value:'',label:'+ Ajouter une catégorie déclencheur…'}].concat(
+          CATS.filter(c=>(X?X.triggerCategories:[]).indexOf(c.id)<0).map(c=>({value:String(c.id),label:c.label}))),
+        xsAddCat:e=>{ const v=parseInt(e.target.value,10); if(v) setX({triggerCategories:(X||blank).triggerCategories.concat([v])}); },
+        // — suggestions —
+        xsTargChips:(X?X.targets:[]).map((id,i)=>({label:(i+1)+'. '+pName(id),remove:()=>setX({targets:X.targets.filter(x=>x!==id)})})),
+        xsTargQ:S.xsQs||'', xsSetTargQ:e=>this.setState({xsQs:e.target.value}),
+        xsTargHits:pick(S.xsQs,(X?X.targets:[])).map(p=>({label:p.nom+' · '+p.cat,
+          pick:()=>{ setX({targets:(X||blank).targets.concat([p.id])}); this.setState({xsQs:''}); }})),
+        // — portée boutique : aucune coche = tout le réseau —
+        xsShops:SHOPS.map(sh=>({label:sh.nom,
+          style:'padding:6px 11px;border-radius:999px;border:.5px solid var(--color-border-secondary);cursor:pointer;font:600 11px var(--font-ui);'
+            +((X&&X.shops.indexOf(sh.id)>=0)?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text-muted)'),
+          toggle:()=>setX({shops:tog((X||blank).shops,sh.id)})})),
+        xsScopeTxt:(X&&X.shops.length)?(X.shops.length+' boutique(s) sélectionnée(s)'):'Aucune sélection = tout le réseau',
+        xsCancel:()=>this.setState({xs:null,xsQt:'',xsQs:''}),
+        xsSave:()=>{ if(!X) return;
+          this.frPost('/franchisor/cross-sell',{id:X.id||undefined,name:X.name,
+            dateFrom:X.dateFrom||null,dateTo:X.dateTo||null,hourFrom:X.hourFrom||null,hourTo:X.hourTo||null,
+            weekdays:X.weekdays,matchMode:X.matchMode,channel:X.channel,placement:X.placement,
+            maxSuggestions:X.maxSuggestions,active:X.active,
+            triggerProducts:X.triggerProducts,triggerCategories:X.triggerCategories,
+            targets:X.targets,shops:X.shops})
+            .then(ok=>{ if(ok){ this.setState({xs:null,xsQt:'',xsQs:''}); reload(); } }); },
+        };
+      })(),
       isPromos:S.screen==='promos', vouchersM, pricingR, erpPortions, erpPortionsEmpty, addVoucher:this.openForm('voucher'), addPricing:this.openForm('pricing'),
       isComms:S.screen==='comms', templates, addTemplate:this.openForm('template'),
       isUsers:S.screen==='users', isZones:S.screen==='zones',
