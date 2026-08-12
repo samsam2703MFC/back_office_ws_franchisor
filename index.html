@@ -1283,9 +1283,19 @@ class Component extends DCLogic {
       .then(()=>{ this.printJob('✖ Zone supprimée'); this.czReload(); }).catch(()=>{}); }; }
   frPost(path, payload){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base){ this.printJob('⚠ ERREUR — API non configurée : NON enregistré (please debug)'); return Promise.resolve(false); }
     const h=Object.assign({'Content-Type':'application/json'}, fr.token?{'X-Admin-Token':fr.token}:{});
+    /* L'échec disait « Échec enregistrement » et rien d'autre, alors que le
+       serveur donne une RAISON — « Produit OBLIGATOIRE : il doit rester
+       vendable sur au moins un canal », par exemple. On refusait donc une
+       action en gardant le motif pour soi, pendant que l'interrupteur restait
+       basculé à l'écran : la marque croyait avoir retiré un produit que le
+       franchisé continuait de voir dans son assortiment. */
     return fetch(fr.base+path,{method:'POST',headers:h,body:JSON.stringify(payload),credentials:'omit'})
-      .then(r=>r.ok?r.json():Promise.reject(r.status)).then(j=>{ this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true; })
-      .catch(()=>{ this.printJob('⚠ Échec enregistrement'); return false; }); }
+      .then(async r=>{
+        const j=await r.json().catch(()=>null);
+        if(!r.ok){ this.printJob('⚠ Non enregistré — '+((j&&(j.error||j.message))||('HTTP '+r.status))); return false; }
+        this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true;
+      })
+      .catch(()=>{ this.printJob('⚠ Non enregistré — réseau indisponible'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   // (Ex-componentDidMount du Menu Builder — FUSIONNÉ dans l'unique
@@ -1546,7 +1556,7 @@ class Component extends DCLogic {
           mnStyle:swL(mnOn,RUBY,HPRD),mnKnob:knL(mnOn,HPRD),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}); },
+          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}).then(ok=>{ if(!ok) bw.toggle(); }); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}).then(ok=>{ if(!ok) od.toggle(); }); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}).then(ok=>{ if(!ok) bm.toggle(); }); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
