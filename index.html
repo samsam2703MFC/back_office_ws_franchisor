@@ -1561,7 +1561,7 @@ class Component extends DCLogic {
         // cat_id : la categorie dont proviennent les choix de cette etape. Le
         // libelle reste libre pour l'affichage client, mais il ne decide plus
         // de rien — c'est la categorie qui borne les produits proposes.
-        slots:(bu.slots||[]).map(s=>({ label:s.label, cat_id:(s.cat_id!=null?s.cat_id:null), required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
+        slots:(bu.slots||[]).map(s=>({ label:s.label, cat_id:(s.cat_id!=null?s.cat_id:null), sub_cat_id:(s.sub_cat_id!=null?s.sub_cat_id:null), required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
           // product_id : la DONNEE PORTEE par le choix. Le libelle n'est qu'un
           // affichage — sans l'identifiant, la commande ne pouvait pas relier le
           // choix a un produit (ni stock, ni prix, ni allergenes).
@@ -1576,6 +1576,9 @@ class Component extends DCLogic {
   removeSlot(bid,sid){ if(!this.api)return; this.apply(this.api.removeSlot(this.pid(),bid,sid)); }
   moveSlot(bid,sid,d){ if(!this.api)return; this.apply(this.api.moveSlot(this.pid(),bid,sid,d)); }
   setSlotField(bid,sid,f,v){ if(!this.api)return; this.apply(this.api.updateSlot(this.pid(),bid,sid,{[f]:v})); }
+  // Categorie et sous-categorie changent ENSEMBLE : les ecrire separement
+  // laisserait une sous-categorie orpheline de sa categorie le temps d'un rendu.
+  setSlotFields(bid,sid,patch){ if(!this.api)return; this.apply(this.api.updateSlot(this.pid(),bid,sid,patch)); }
   setSlotKind(bid,sid,k){ if(!this.api)return; this.apply(this.api.updateSlot(this.pid(),bid,sid,{kind:k})); }
   setSlotMax(bid,sid,d){ if(!this.api)return; this.apply(this.api.setSlotMax(this.pid(),bid,sid,d)); }
   addChoice(bid,sid){ if(!this.api)return; this.apply(this.api.addChoice(this.pid(),bid,sid)); }
@@ -1922,7 +1925,9 @@ class Component extends DCLogic {
       const id=(pid!=null)?String(pid):('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-'));
       // `bw` = produit actif cote marque : seuls ceux-la peuvent etre proposes
       // dans un menu, sinon on ferait choisir un produit non vendable.
-      flatProds.push({id,pid,name:p.nom,cat:c.cat,price:p.prix,menu:!!p.menu,active:(p.bw!==false)}); }); });
+      flatProds.push({id,pid,name:p.nom,cat:c.cat,catId:(c.id!=null?+c.id:null),
+        sub:(p.sub||null),subId:(p.sub_id!=null?+p.sub_id:null),
+        price:p.prix,menu:!!p.menu,active:(p.bw!==false)}); }); });
     // Nom de produit -> catégorie : un choix dont le libellé = un produit connu
     // hérite de l'icône de sa catégorie (étape validée).
     const prodCat={}; flatProds.forEach(pp=>{ if(pp.name)prodCat[pp.name]=pp.cat; });
@@ -1978,13 +1983,30 @@ class Component extends DCLogic {
     const editSlots=AB?AB.slots.map(s=>{ const acs=s.choices.filter(c=>c.active); const invalid=s.required&&acs.length===0;
       return { id:s.id, label:s.label, setLabel:e=>this.setSlotField(AB.id,s.id,'label',e.target.value),
         // Categorie de l'etape — source des produits proposes a ses choix.
-        catSel:(s.cat_id!=null?String(s.cat_id):''),
-        catOpts:[{value:'',label:'— Catégorie (tout le catalogue) —'}].concat(
-          CATALOG.filter(cc=>cc.id!=null).map(cc=>({value:String(cc.id),label:cc.cat}))),
-        setCat:e=>{ const v=parseInt(e.target.value,10);
-          this.setSlotField(AB.id,s.id,'cat_id',(isFinite(v)&&v>0)?v:null); },
-        catTitle:(s.cat_id!=null)?'Les choix de cette étape viennent de cette catégorie'
-                                 :'Aucune catégorie : les choix peuvent venir de tout le catalogue',
+        /* Une seule liste, deux niveaux : la catégorie, puis ses SOUS-CATÉGORIES
+           en retrait. « Pâtisserie » englobe les tartes entières et les parts ;
+           une étape « Dessert » d'un menu du midi ne veut que les secondes.
+           Les sous-catégories proposées sont celles qui portent réellement des
+           produits ACTIFS — en offrir une vide n'aurait aucun sens. */
+        catSel:(s.sub_cat_id!=null?('s:'+s.sub_cat_id):(s.cat_id!=null?('c:'+s.cat_id):'')),
+        catOpts:(()=>{ const out=[{value:'',label:'— Catégorie (tout le catalogue) —'}];
+          CATALOG.filter(cc=>cc.id!=null).forEach(cc=>{
+            out.push({value:'c:'+cc.id,label:cc.cat});
+            const seen={};
+            flatProds.filter(pp=>pp.active&&pp.catId===+cc.id&&pp.subId!=null).forEach(pp=>{
+              if(seen[pp.subId]) return; seen[pp.subId]=1;
+              out.push({value:'s:'+pp.subId,label:'   › '+(pp.sub||('#'+pp.subId))}); });
+          });
+          return out; })(),
+        setCat:e=>{ const v=String(e.target.value||'');
+          if(!v){ this.setSlotFields(AB.id,s.id,{cat_id:null,sub_cat_id:null}); return; }
+          const n=parseInt(v.slice(2),10);
+          if(v.charAt(0)==='c') this.setSlotFields(AB.id,s.id,{cat_id:n,sub_cat_id:null});
+          else { const pp=flatProds.find(x=>x.subId===n);
+            this.setSlotFields(AB.id,s.id,{cat_id:(pp?pp.catId:null),sub_cat_id:n}); } },
+        catTitle:(s.sub_cat_id!=null)?'Les choix viennent de cette sous-catégorie'
+                :((s.cat_id!=null)?'Les choix viennent de cette catégorie'
+                                  :'Aucune catégorie : les choix peuvent venir de tout le catalogue'),
         reqStyle:switchS(s.required), reqKnob:knobS(s.required), reqToggle:()=>this.setSlotField(AB.id,s.id,'required',!s.required),
         single:s.kind==='single', multi:s.kind==='multi', singleStyle:segStyle(s.kind==='single'), multiStyle:segStyle(s.kind==='multi'),
         setSingle:()=>this.setSlotKind(AB.id,s.id,'single'), setMulti:()=>this.setSlotKind(AB.id,s.id,'multi'),
@@ -2013,9 +2035,11 @@ class Component extends DCLogic {
           setSearch:e=>this.setState({choiceSearch:e.target.value}),
           prodSel:(c.product_id!=null?String(c.product_id):''),
           prodOpts:(()=>{ const q=(S.choiceSearch||'').trim().toLowerCase();
-            const slotCat=(s.cat_id!=null)?(CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat:null;
+            // La SOUS-categorie de l'etape prime sur sa categorie ; sans l'une
+            // ni l'autre, tout le catalogue actif reste propose.
             const list=flatProds.filter(pp=>pp.pid!=null&&pp.active
-              &&(!slotCat||pp.cat===slotCat)
+              &&(s.sub_cat_id!=null ? pp.subId===+s.sub_cat_id
+                 : (s.cat_id==null || pp.catId===+s.cat_id))
               &&(!q||pp.name.toLowerCase().indexOf(q)>=0||String(pp.pid).indexOf(q)>=0));
             return [{value:'',label:list.length?'— Choisir un produit —':'Aucun produit actif dans cette catégorie'}]
               .concat(list.map(pp=>({value:String(pp.pid),label:pp.name+' · #'+pp.pid}))); })(),
@@ -2023,8 +2047,11 @@ class Component extends DCLogic {
             const pp=flatProds.find(x=>x.pid===v); if(!pp) return;
             this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:pp.pid});
             this.setState({choicePickerFor:null}); },
-          pickHint:(s.cat_id!=null)?('Produits actifs de « '+((CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat||'')+' »')
-                                   :'Cette étape n’a pas de catégorie — tout le catalogue est proposé.',
+          pickHint:(s.sub_cat_id!=null)
+            ?('Produits actifs de « '+((flatProds.find(x=>x.subId===+s.sub_cat_id)||{}).sub||'cette sous-catégorie')+' »')
+            :((s.cat_id!=null)
+              ?('Produits actifs de « '+((CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat||'')+' »')
+              :'Cette étape n’a pas de catégorie — tout le catalogue actif est proposé.'),
           delta:c.delta, setDelta:e=>this.setChoiceField(AB.id,s.id,c.id,'delta',parseFloat(e.target.value)||0),
           cost:(c.cost!=null?c.cost:0), setCost:e=>this.setChoiceField(AB.id,s.id,c.id,'cost',parseFloat(e.target.value)||0),
           imgStyle:(cImg?catBox(cImg,38,false):imgBox(c.img)), imgLabel:(cImg?'':(c.img?'':'＋')), pick:()=>this.pickImage(AB.id,s.id,c.id),
