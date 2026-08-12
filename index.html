@@ -1895,7 +1895,17 @@ class Component extends DCLogic {
     const catBox=(url,size,round)=>{ const s=size||38; return 'width:'+s+'px;height:'+s+'px;border-radius:'+(round?'50%':'8px')+";flex:none;border:none;background:var(--color-background-secondary) center/cover no-repeat;background-image:url('"+url+"');cursor:pointer"; };
     let activeBundleId=S.activeBundle; if(!M.bundles.find(b=>b.id===activeBundleId))activeBundleId=M.bundles[0]&&M.bundles[0].id;
     const pq=(S.productSearch||'').toLowerCase();
-    const flatProds=[]; CATALOG.forEach(c=>{ c.prods.forEach(p=>{ const id=p.id||('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')); flatProds.push({id,name:p.nom,cat:c.cat,price:p.prix,menu:!!p.menu}); }); });
+    /* Produits du catalogue — SOURCE des choix de menu. `pid` est l'identifiant
+       RÉEL de ws_products : c'est lui que porte le choix, et rien d'autre.
+       L'ancien repli fabriquait un identifiant à partir du nom quand le produit
+       n'en avait pas ; ce faux identifiant ne pouvait jamais rattacher un choix
+       à un produit, et le sélecteur proposait donc des entrées inutilisables.
+       Il ne sert plus que de clé d'affichage. */
+    const flatProds=[]; CATALOG.forEach(c=>{ c.prods.forEach(p=>{
+      const raw=p.id;
+      const pid=(typeof raw==='number')?raw:(/^\d+$/.test(String(raw==null?'':raw))?parseInt(raw,10):null);
+      const id=(pid!=null)?String(pid):('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-'));
+      flatProds.push({id,pid,name:p.nom,cat:c.cat,price:p.prix,menu:!!p.menu}); }); });
     // Nom de produit -> catégorie : un choix dont le libellé = un produit connu
     // hérite de l'icône de sa catégorie (étape validée).
     const prodCat={}; flatProds.forEach(pp=>{ if(pp.name)prodCat[pp.name]=pp.cat; });
@@ -1963,7 +1973,7 @@ class Component extends DCLogic {
           // fois les commandes passées.
           noProduct:(c.product_id==null), setLabel:e=>this.setChoiceField(AB.id,s.id,c.id,'label',e.target.value),
           openPicker:()=>this.setState({choicePickerFor:c.id,choiceSearch:''}), pickerOpen:(S.choicePickerFor===c.id), choiceSearch:S.choiceSearch||'', setChoiceSearch:e=>{ const v=e.target.value; this.setState({choiceSearch:v}); },
-          options:(S.choicePickerFor===c.id)?flatProds.filter(pp=>pp.name.toLowerCase().includes((S.choiceSearch||'').toLowerCase())||pp.cat.toLowerCase().includes((S.choiceSearch||'').toLowerCase())).map(pp=>({name:pp.name,catLabel:pp.cat,style:'display:flex;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer',pick:()=>{ this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:(typeof pp.id==='number'?pp.id:null)}); this.setState({choicePickerFor:null}); }})):[],
+          options:(S.choicePickerFor===c.id)?flatProds.filter(pp=>pp.pid!=null&&(pp.name.toLowerCase().includes((S.choiceSearch||'').toLowerCase())||pp.cat.toLowerCase().includes((S.choiceSearch||'').toLowerCase()))).map(pp=>({name:pp.name,catLabel:pp.cat+' · #'+pp.pid,style:'display:flex;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer',pick:()=>{ this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:pp.pid}); this.setState({choicePickerFor:null}); }})):[],
           delta:c.delta, setDelta:e=>this.setChoiceField(AB.id,s.id,c.id,'delta',parseFloat(e.target.value)||0),
           cost:(c.cost!=null?c.cost:0), setCost:e=>this.setChoiceField(AB.id,s.id,c.id,'cost',parseFloat(e.target.value)||0),
           imgStyle:(cImg?catBox(cImg,38,false):imgBox(c.img)), imgLabel:(cImg?'':(c.img?'':'＋')), pick:()=>this.pickImage(AB.id,s.id,c.id),
