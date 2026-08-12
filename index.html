@@ -684,6 +684,57 @@
       </div>
       </sc-if>
 
+      <!-- AVIS CLIENTS -->
+      <sc-if value="{{ isAvis }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font:600 11px var(--font-ui);background:#fdf3e7;color:#6b4420;border:.5px solid #ead9c3">{{ avScopeBadge }}</span>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
+            <select onChange="{{ avSetShop }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"><option value="">Toutes les boutiques</option><sc-for list="{{ avShopOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option></sc-for></select>
+            <button onClick="{{ avRefresh }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:9px 16px;font:600 12px var(--font-ui);cursor:pointer">Rafraîchir</button>
+          </div>
+        </div>
+        <sc-if value="{{ avHasErr }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fbe9eb;border:.5px solid #f0cdd2;border-radius:10px;padding:12px 14px;font:12.5px var(--font-ui);color:#8D1D2C">⚠ {{ avErr }}</div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+          <sc-for list="{{ avKpis }}" as="k" hint-placeholder-count="4">
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px"><div class="t-admin-label">{{ k.label }}</div><div style="font:700 28px/1 var(--font-ui);color:{{ k.valColor }};margin-top:8px">{{ k.value }}</div></div>
+          </sc-for>
+        </div>
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div class="t-section-title" style="font-size:15px;margin-bottom:12px">Note moyenne par produit <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">— les moins bien notés d'abord</span></div>
+          <sc-if value="{{ avProductsEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:26px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune note produit pour l'instant.</div>
+          </sc-if>
+          <sc-if value="{{ avProductsShow }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:2fr 1.4fr .7fr;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Produit</span><span class="t-admin-label">Note moyenne</span><span class="t-admin-label" style="text-align:right">Nb d'avis</span></div>
+            <sc-for list="{{ avProducts }}" as="p" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:2fr 1.4fr .7fr;align-items:center;padding:11px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
+                <span style="font:600 12.5px var(--font-ui);color:var(--color-text)">{{ p.name }}</span>
+                <span style="display:inline-flex;align-items:center;gap:9px"><span style="{{ p.pillStyle }}">{{ p.avgTxt }}</span><span style="font-size:14px;letter-spacing:1px"><span style="color:#E8964B">{{ p.sf }}</span><span style="color:#d9d2c6">{{ p.se }}</span></span></span>
+                <span style="font:600 12px var(--font-mono,monospace);color:var(--color-text-muted);text-align:right">{{ p.n }}</span>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="t-section-title" style="font-size:15px">Derniers avis négatifs</div>
+          <sc-if value="{{ avNegativesEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:26px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucun avis négatif 🎉</div>
+          </sc-if>
+          <sc-for list="{{ avNegatives }}" as="r" hint-placeholder-count="3">
+            <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:600 12.5px var(--font-ui);color:var(--color-text)">{{ r.store }}</span><span style="font:400 11px var(--font-mono,monospace);color:var(--color-text-muted)">{{ r.dateTxt }}</span></div>
+              <sc-for list="{{ r.items }}" as="it" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:12.5px var(--font-ui);color:var(--color-text)"><span style="font-weight:700">{{ it.name }}</span><span style="font-size:13px;letter-spacing:1px"><span style="color:#E8964B">{{ it.sf }}</span><span style="color:#d9d2c6">{{ it.se }}</span></span><sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-text-muted)">— {{ it.note }}</span></sc-if></div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
       <!-- JOURNAL D'AUDIT -->
       <sc-if value="{{ isAudit }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -1171,7 +1222,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{},
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
@@ -1180,7 +1231,21 @@ class Component extends DCLogic {
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
     const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
     fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); }
+  // ===== Avis clients (satisfaction) — serveur autoritaire, aucune donnée inventée =====
+  avEnsure(){ if(this.state.screen!=='avis') return; const key=String(this.state.avShop||''); if(this._avKey===key && !this._avForce) return; this._avKey=key; this._avForce=false; this.avLoad(); }
+  avRefresh(){ this._avForce=true; this.avEnsure(); }
+  avSetShop(e){ this.setState({avShop:e.target.value}); }
+  avLoad(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this.setState({avErr:'API non configurée — écran serveur-autoritaire (aucune donnée locale).',avData:null,avLoading:false}); return; }
+    this.setState({avLoading:true,avErr:''});
+    const url=fr.base+'/admin/reviews'+(this.state.avShop?('?shopId='+encodeURIComponent(this.state.avShop)):'');
+    fetch(url,{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
+      .then(r=>{ if(!r.ok) throw r.status; return r.json(); })
+      .then(d=>this.setState({avData:d,avErr:'',avLoading:false}))
+      .catch(e=>this.setState({avData:null,avLoading:false,avErr:(e===401||e===403)?('Accès refusé (HTTP '+e+') — jeton admin invalide ou absent.'):('Chargement des avis en échec (HTTP '+e+').')})); }
+  avStars(n){ n=Math.max(0,Math.min(5,Math.round(+n||0))); return {sf:'★'.repeat(n), se:'☆'.repeat(5-n)}; }
+  avDateFmt(s){ if(!s) return ''; const m=String(s).replace('T',' ').match(/^(\d{4})-(\d{2})-(\d{2})[ ](\d{2}):(\d{2})/); return m?(m[1]+'-'+m[2]+'-'+m[3]+' '+m[4]+':'+m[5]):String(s); }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -1550,7 +1615,7 @@ class Component extends DCLogic {
       .catch(()=>{ this.printJob('⚠ Non enregistré — réseau indisponible'); return false; }); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
+  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
   pid(){ return this.state.menuProductId || Object.keys(this.state.menus||{}).filter(k=>k!=='_categories')[0] || ''; }
   apply(db){ this.setState({menus:db}); this.saveMenu(db); }
   // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
@@ -1689,7 +1754,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)']]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)'],['avis','Avis clients','#C9A227']]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -1698,8 +1763,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin',avis:'Avis clients'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées',avis:'Satisfaction produits · avis clients par boutique'};
 
     const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
@@ -2282,6 +2347,22 @@ class Component extends DCLogic {
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isProspects:S.screen==='prospects',
       isTrace:S.screen==='trace',
+      isAvis:S.screen==='avis',
+      avScopeBadge:'Franchiseur · réseau',
+      avShop:S.avShop||'', avSetShop:(e)=>this.avSetShop(e), avRefresh:()=>this.avRefresh(),
+      avLoading:!!S.avLoading, avErr:S.avErr||'', avHasErr:!!S.avErr,
+      avShopOpts:((S.avData&&S.avData.shops)||[]).map(s=>({id:String(s.id),label:s.name+(s.city?(' · '+s.city):''),sel:String(s.id)===String(S.avShop)})),
+      ...(function(self,S){ const d=S.avData||{}; const t=d.totals||{total:0,liked:0,disliked:0,pending:0};
+        const kpi=[{label:'Avis',value:t.total|0,color:'var(--color-text)'},{label:'Aimé',value:t.liked|0,color:'#2d7a3e'},{label:'Pas aimé',value:t.disliked|0,color:'#8D1D2C'},{label:'En attente',value:t.pending|0,color:'#C87A3F'}];
+        const prodColor=(a)=>a<2.5?'#8D1D2C':(a<3.5?'#C87A3F':'#2d7a3e'); const prodBg=(a)=>a<2.5?'#fbe9eb':(a<3.5?'#fbf1e3':'#eaf5ec');
+        const products=(d.byProduct||[]).map(p=>{ const a=+p.avg_rating||0; const st=self.avStars(a); const col=prodColor(a);
+          return {name:p.product_name||'—', n:p.n|0, avgTxt:(Math.round(a*100)/100).toString().replace('.',','), sf:st.sf, se:st.se,
+            pillStyle:'display:inline-flex;align-items:center;border-radius:999px;padding:3px 11px;font:700 12px var(--font-ui);color:'+col+';background:'+prodBg(a)+';border:.5px solid '+col}; });
+        const negatives=(d.recentNegative||[]).map(r=>({ store:r.store||'—', dateTxt:self.avDateFmt(r.created_at),
+          items:(r.items||[]).map(it=>{ const st=self.avStars(it.rating); return {name:it.product_name||'—', sf:st.sf, se:st.se, note:it.note||'', hasNote:!!(it.note&&String(it.note).trim())}; }) }));
+        return { avKpis:kpi.map(k=>({label:k.label,value:String(k.value),valColor:k.color})),
+          avProducts:products, avProductsEmpty:!products.length, avProductsShow:!!products.length,
+          avNegatives:negatives, avNegativesEmpty:!negatives.length }; })(this,S),
       traceCp:S.traceCp||'', setTraceCp:(e)=>this.setState({traceCp:e.target.value}),
       ...(function(self,S){
         const rows=(window.BOServer?window.BOServer.table('catchment'):[]); const D=self._geoData; const owner=self.traceOwner();
