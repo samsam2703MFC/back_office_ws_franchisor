@@ -871,6 +871,7 @@
                         <div style="position:relative;flex:1;min-width:0">
                           <button onClick="{{ c.openPicker }}" style="display:flex;align-items:center;gap:6px;width:100%;background:var(--color-surface);border:.5px solid var(--color-border-secondary);border-radius:7px;padding:7px 9px;cursor:pointer;text-align:left">
                             <span style="flex:1;min-width:0;font:500 12px var(--font-ui);color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.label }}</span>
+                            <sc-if value="{{ c.noProduct }}" hint-placeholder-val="{{ false }}"><span title="Ce choix n'est rattaché à AUCUN produit du catalogue : la commande ne saura ni le décompter du stock, ni en donner le prix ou les allergènes. Choisissez un produit." style="flex:none;display:inline-flex;align-items:center;border-radius:999px;padding:1px 8px;background:#fbf2df;color:#9A6B12;font:700 9.5px var(--font-ui)">sans produit</span></sc-if>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                           </button>
                           <sc-if value="{{ c.pickerOpen }}" hint-placeholder-val="{{ false }}">
@@ -1546,7 +1547,10 @@ class Component extends DCLogic {
     const payload={ productId:pid, menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
       bundles:(m.bundles||[]).map(bu=>({ name:bu.name, description:bu.description, price_modifier:bu.price_modifier, active:bu.active,
         slots:(bu.slots||[]).map(s=>({ label:s.label, required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
-          choices:(s.choices||[]).map(c=>({ label:c.label, img:c.img, delta:c.delta, cost:c.cost, active:c.active })) })) })) };
+          // product_id : la DONNEE PORTEE par le choix. Le libelle n'est qu'un
+          // affichage — sans l'identifiant, la commande ne pouvait pas relier le
+          // choix a un produit (ni stock, ni prix, ni allergenes).
+          choices:(s.choices||[]).map(c=>({ label:c.label, product_id:(c.product_id!=null?c.product_id:null), img:c.img, delta:c.delta, cost:c.cost, active:c.active })) })) })) };
     clearTimeout(this._menuT); this._menuT=setTimeout(()=>this.frPost('/franchisor/menu',payload),700); }
   addBundle(){ if(!this.api)return; const cur=this.state.menus&&this.state.menus[this.pid()]; if(cur&&cur.bundles.length>=3){ this.printJob('Maximum 3 formules par produit'); return; } const r=this.api.addBundle(this.pid()); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule créée'); }
   duplicateBundle(id){ if(!this.api)return; const r=this.api.duplicateBundle(this.pid(),id); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule dupliquée (étapes + choix)'); }
@@ -1563,6 +1567,9 @@ class Component extends DCLogic {
   removeChoice(bid,sid,cid){ if(!this.api)return; this.apply(this.api.removeChoice(this.pid(),bid,sid,cid)); }
   moveChoice(bid,sid,cid,d){ if(!this.api)return; this.apply(this.api.moveChoice(this.pid(),bid,sid,cid,d)); }
   setChoiceField(bid,sid,cid,f,v){ if(!this.api)return; this.apply(this.api.updateChoice(this.pid(),bid,sid,cid,{[f]:v})); }
+  // Choisir un produit ecrit le libelle ET l'identifiant d'un seul coup : les
+  // laisser diverger, c'est revenir a un choix rattache par son nom.
+  setChoiceFields(bid,sid,cid,patch){ if(!this.api)return; this.apply(this.api.updateChoice(this.pid(),bid,sid,cid,patch)); }
   toggleChoiceActive(bid,sid,cid){ if(!this.api)return; this.apply(this.api.toggleChoice(this.pid(),bid,sid,cid)); }
   pickImage(bid,sid,cid){ if(!this.api)return; this.apply(this.api.cycleImage(this.pid(),bid,sid,cid)); this.printJob('Bibliothèque média · public/assets/**'); }
 
@@ -1950,9 +1957,13 @@ class Component extends DCLogic {
         up:()=>this.moveSlot(AB.id,s.id,-1), down:()=>this.moveSlot(AB.id,s.id,1), del:()=>this.removeSlot(AB.id,s.id),
         sActStyle:switchS(s.active), sActKnob:knobS(s.active), sActToggle:()=>this.setSlotField(AB.id,s.id,'active',!s.active), real:true, ph:false, cardStyle:'border:.5px solid var(--color-border-tertiary);border-radius:11px;padding:13px;background:var(--color-background-secondary)'+(s.active?'':';opacity:.5'),
         invalid, invalidMsg:'Étape requise sans choix actif — bloquera la commande client', addChoice:()=>this.addChoice(AB.id,s.id), miniInput, sqBtn,
-        choices:s.choices.map(c=>{ const cImg=choiceCatImg(c.label); return ({ id:c.id, label:c.label, setLabel:e=>this.setChoiceField(AB.id,s.id,c.id,'label',e.target.value),
+        choices:s.choices.map(c=>{ const cImg=choiceCatImg(c.label); return ({ id:c.id, label:c.label,
+          // Un choix sans produit rattaché est signalé À L'ÉCRAN : sans cela,
+          // le défaut se reproduit en silence et ne se voit qu'en base, une
+          // fois les commandes passées.
+          noProduct:(c.product_id==null), setLabel:e=>this.setChoiceField(AB.id,s.id,c.id,'label',e.target.value),
           openPicker:()=>this.setState({choicePickerFor:c.id,choiceSearch:''}), pickerOpen:(S.choicePickerFor===c.id), choiceSearch:S.choiceSearch||'', setChoiceSearch:e=>{ const v=e.target.value; this.setState({choiceSearch:v}); },
-          options:(S.choicePickerFor===c.id)?flatProds.filter(pp=>pp.name.toLowerCase().includes((S.choiceSearch||'').toLowerCase())||pp.cat.toLowerCase().includes((S.choiceSearch||'').toLowerCase())).map(pp=>({name:pp.name,catLabel:pp.cat,style:'display:flex;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer',pick:()=>{ this.setChoiceField(AB.id,s.id,c.id,'label',pp.name); this.setState({choicePickerFor:null}); }})):[],
+          options:(S.choicePickerFor===c.id)?flatProds.filter(pp=>pp.name.toLowerCase().includes((S.choiceSearch||'').toLowerCase())||pp.cat.toLowerCase().includes((S.choiceSearch||'').toLowerCase())).map(pp=>({name:pp.name,catLabel:pp.cat,style:'display:flex;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer',pick:()=>{ this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:(typeof pp.id==='number'?pp.id:null)}); this.setState({choicePickerFor:null}); }})):[],
           delta:c.delta, setDelta:e=>this.setChoiceField(AB.id,s.id,c.id,'delta',parseFloat(e.target.value)||0),
           cost:(c.cost!=null?c.cost:0), setCost:e=>this.setChoiceField(AB.id,s.id,c.id,'cost',parseFloat(e.target.value)||0),
           imgStyle:(cImg?catBox(cImg,38,false):imgBox(c.img)), imgLabel:(cImg?'':(c.img?'':'＋')), pick:()=>this.pickImage(AB.id,s.id,c.id),
