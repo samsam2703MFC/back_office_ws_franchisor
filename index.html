@@ -846,7 +846,14 @@
                 <sc-if value="{{ s.real }}" hint-placeholder-val="{{ true }}">
                 <div style="{{ s.cardStyle }}">
                   <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
-                    <input type="text" value="{{ s.label }}" onChange="{{ s.setLabel }}" style="{{ s.miniInput }};flex:1;background:var(--color-surface)"/>
+                    <input type="text" value="{{ s.label }}" onChange="{{ s.setLabel }}" placeholder="Libellé affiché au client" style="{{ s.miniInput }};flex:1;background:var(--color-surface)"/>
+                    <!-- La CATEGORIE borne les produits proposes aux choix de cette
+                         etape : on ne peut plus offrir de la biscuiterie dans une
+                         etape « Boissons ». Le libelle a gauche reste libre, pour
+                         le client (« Votre boisson »). -->
+                    <select value="{{ s.catSel }}" onChange="{{ s.setCat }}" title="{{ s.catTitle }}" style="{{ s.miniInput }};flex:1;min-width:150px;background:var(--color-surface);cursor:pointer">
+                      <sc-for list="{{ s.catOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+                    </select>
                     <div style="display:flex;align-items:center;gap:6px"><span style="font:500 10px var(--font-ui);color:var(--color-text-muted)">Active</span><button onClick="{{ s.sActToggle }}" style="{{ s.sActStyle }}"><span style="{{ s.sActKnob }}"></span></button></div>
                     <button onClick="{{ s.up }}" style="{{ s.sqBtn }}">↑</button>
                     <button onClick="{{ s.down }}" style="{{ s.sqBtn }}">↓</button>
@@ -882,10 +889,8 @@
                                utilisera pour le stock, le prix et les allergènes. -->
                           <div style="position:absolute;z-index:70;top:100%;left:0;margin-top:5px;width:320px;max-width:92vw;background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.16);padding:11px;display:flex;flex-direction:column;gap:9px">
                             <div>
-                              <label style="display:block;font:600 9.5px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:5px">Catégorie</label>
-                              <select value="{{ c.catSel }}" onChange="{{ c.setCat }}" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:8px 9px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text);cursor:pointer">
-                                <sc-for list="{{ c.catOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
-                              </select>
+                              <label style="display:block;font:600 9.5px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:5px">Rechercher</label>
+                              <input type="text" value="{{ c.searchQ }}" onInput="{{ c.setSearch }}" placeholder="Nom du produit ou identifiant…" style="width:100%;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:8px 9px;font:500 12.5px var(--font-ui);background:var(--color-surface);color:var(--color-text)"/>
                             </div>
                             <div>
                               <label style="display:block;font:600 9.5px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:5px">Produit actif</label>
@@ -1553,7 +1558,10 @@ class Component extends DCLogic {
     if(!m||!(window.__FR&&window.__FR.base))return;
     const payload={ productId:pid, menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
       bundles:(m.bundles||[]).map(bu=>({ name:bu.name, description:bu.description, price_modifier:bu.price_modifier, active:bu.active,
-        slots:(bu.slots||[]).map(s=>({ label:s.label, required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
+        // cat_id : la categorie dont proviennent les choix de cette etape. Le
+        // libelle reste libre pour l'affichage client, mais il ne decide plus
+        // de rien — c'est la categorie qui borne les produits proposes.
+        slots:(bu.slots||[]).map(s=>({ label:s.label, cat_id:(s.cat_id!=null?s.cat_id:null), required:s.required, kind:s.kind, min_select:s.min_select, max_select:s.max_select, active:s.active,
           // product_id : la DONNEE PORTEE par le choix. Le libelle n'est qu'un
           // affichage — sans l'identifiant, la commande ne pouvait pas relier le
           // choix a un produit (ni stock, ni prix, ni allergenes).
@@ -1969,6 +1977,14 @@ class Component extends DCLogic {
         select:()=>this.setState({activeBundle:b.id}) }; });
     const editSlots=AB?AB.slots.map(s=>{ const acs=s.choices.filter(c=>c.active); const invalid=s.required&&acs.length===0;
       return { id:s.id, label:s.label, setLabel:e=>this.setSlotField(AB.id,s.id,'label',e.target.value),
+        // Categorie de l'etape — source des produits proposes a ses choix.
+        catSel:(s.cat_id!=null?String(s.cat_id):''),
+        catOpts:[{value:'',label:'— Catégorie (tout le catalogue) —'}].concat(
+          CATALOG.filter(cc=>cc.id!=null).map(cc=>({value:String(cc.id),label:cc.cat}))),
+        setCat:e=>{ const v=parseInt(e.target.value,10);
+          this.setSlotField(AB.id,s.id,'cat_id',(isFinite(v)&&v>0)?v:null); },
+        catTitle:(s.cat_id!=null)?'Les choix de cette étape viennent de cette catégorie'
+                                 :'Aucune catégorie : les choix peuvent venir de tout le catalogue',
         reqStyle:switchS(s.required), reqKnob:knobS(s.required), reqToggle:()=>this.setSlotField(AB.id,s.id,'required',!s.required),
         single:s.kind==='single', multi:s.kind==='multi', singleStyle:segStyle(s.kind==='single'), multiStyle:segStyle(s.kind==='multi'),
         setSingle:()=>this.setSlotKind(AB.id,s.id,'single'), setMulti:()=>this.setSlotKind(AB.id,s.id,'multi'),
@@ -1986,22 +2002,29 @@ class Component extends DCLogic {
           // ici la liste vient du catalogue, donc l'identifiant produit existe
           // toujours. À l'ouverture, la catégorie du produit déjà rattaché est
           // pré-sélectionnée — on retrouve son contexte sans le chercher.
-          openPicker:()=>{ const cur=flatProds.find(pp=>c.product_id!=null&&pp.pid===+c.product_id);
-            this.setState({choicePickerFor:c.id, choiceCat:(cur?cur.cat:'')}); },
+          /* Les produits proposés suivent la CATÉGORIE DE L'ÉTAPE : on ne peut
+             plus offrir de la biscuiterie dans une étape « Boissons ». Une
+             recherche filtre la liste quand la catégorie en compte beaucoup.
+             Sans catégorie sur l'étape, tout le catalogue reste proposé — comme
+             avant, mais l'étape le signale. */
+          openPicker:()=>this.setState({choicePickerFor:c.id, choiceSearch:''}),
           pickerOpen:(S.choicePickerFor===c.id),
-          catSel:(S.choicePickerFor===c.id)?(S.choiceCat||''):'',
-          catOpts:[{value:'',label:'— Choisir une catégorie —'}].concat(CATALOG.map(cc=>({value:cc.cat,label:cc.cat}))),
-          setCat:e=>this.setState({choiceCat:e.target.value}),
+          searchQ:S.choiceSearch||'',
+          setSearch:e=>this.setState({choiceSearch:e.target.value}),
           prodSel:(c.product_id!=null?String(c.product_id):''),
-          prodOpts:(()=>{ const cat=S.choiceCat||'';
-            const list=flatProds.filter(pp=>pp.pid!=null&&pp.active&&(!cat||pp.cat===cat));
-            return [{value:'',label:cat?'— Choisir un produit —':'— Choisissez d’abord une catégorie —'}]
+          prodOpts:(()=>{ const q=(S.choiceSearch||'').trim().toLowerCase();
+            const slotCat=(s.cat_id!=null)?(CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat:null;
+            const list=flatProds.filter(pp=>pp.pid!=null&&pp.active
+              &&(!slotCat||pp.cat===slotCat)
+              &&(!q||pp.name.toLowerCase().indexOf(q)>=0||String(pp.pid).indexOf(q)>=0));
+            return [{value:'',label:list.length?'— Choisir un produit —':'Aucun produit actif dans cette catégorie'}]
               .concat(list.map(pp=>({value:String(pp.pid),label:pp.name+' · #'+pp.pid}))); })(),
           setProd:e=>{ const v=parseInt(e.target.value,10); if(!v) return;
             const pp=flatProds.find(x=>x.pid===v); if(!pp) return;
             this.setChoiceFields(AB.id,s.id,c.id,{label:pp.name, product_id:pp.pid});
             this.setState({choicePickerFor:null}); },
-          pickHint:(S.choiceCat?('Produits actifs de « '+S.choiceCat+' »'):'Les produits proposés sont ceux du catalogue, actifs uniquement.'),
+          pickHint:(s.cat_id!=null)?('Produits actifs de « '+((CATALOG.find(cc=>String(cc.id)===String(s.cat_id))||{}).cat||'')+' »')
+                                   :'Cette étape n’a pas de catégorie — tout le catalogue est proposé.',
           delta:c.delta, setDelta:e=>this.setChoiceField(AB.id,s.id,c.id,'delta',parseFloat(e.target.value)||0),
           cost:(c.cost!=null?c.cost:0), setCost:e=>this.setChoiceField(AB.id,s.id,c.id,'cost',parseFloat(e.target.value)||0),
           imgStyle:(cImg?catBox(cImg,38,false):imgBox(c.img)), imgLabel:(cImg?'':(c.img?'':'＋')), pick:()=>this.pickImage(AB.id,s.id,c.id),
