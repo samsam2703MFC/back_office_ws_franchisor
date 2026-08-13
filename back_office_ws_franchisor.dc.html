@@ -56,7 +56,7 @@
   <aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">
       <img src="img/logo.png" alt="L'Atelier" style="width:100%;max-width:206px;height:auto;display:block"/>
-      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b3</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b4</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;text-decoration:none;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>Retour à l'ERP</span></a>
@@ -986,7 +986,7 @@
         </sc-if>
         <sc-if value="{{ wizIs1 }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;flex-direction:column;gap:14px">
-            <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Nom de la catégorie</span><input value="{{ wizName }}" onInput="{{ wizSetName }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)"></label>
+            <div style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Catégorie</span><div style="border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:10px 12px;font:600 13px var(--font-ui);color:var(--color-text);background:var(--color-background-secondary)">{{ wizCatName }}</div><span style="font:11px var(--font-ui);color:var(--color-text-muted)">Nom géré par l'ERP — non modifiable ici.</span></div>
             <div><span class="t-admin-label">Saison par défaut</span><div style="display:flex;gap:7px;margin-top:7px;flex-wrap:wrap"><sc-for list="{{ wizSeasonOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div>
             <div style="font:11.5px/1.5 var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:9px;padding:10px 12px">Édition des sous-catégories (renommer / réordonner) : à venir dans une prochaine version.</div>
           </div>
@@ -1079,7 +1079,6 @@ class Component extends DCLogic {
     this.setState(st=>({wizProps:{...st.wizProps,[k]:nx}})); }
   wizSetPriceMode(m){ this.setState(st=>({wizPrice:{...st.wizPrice,mode:m}})); }
   wizSetPriceVal(e){ const v=e.target.value; this.setState(st=>({wizPrice:{...st.wizPrice,val:v}})); }
-  wizSetName(e){ const v=e.target.value; this.setState({wizName:v}); }
   wizSetSeason(v){ this.setState({wizSeason:v}); }
   wizNext(){ this.setState(st=>({wizStep:Math.min(3,st.wizStep+1)})); }
   wizBack(){ this.setState(st=>({wizStep:Math.max(0,st.wizStep-1)})); }
@@ -1095,16 +1094,10 @@ class Component extends DCLogic {
       if(P.menu!=='keep'){ const on=P.menu==='on'; if(this.api){ this.api.ensureProduct(pmid,p.nom,p.prix,c.cat); menuDb=this.api.setProductOverride(pmid,on?'on':'off'); } if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:on?'on':'off'}); }
       if(PR.mode!=='keep'){ const cur=(flags['prix_'+ci+'_'+pi]!==undefined?parseFloat(flags['prix_'+ci+'_'+pi]):p.prix)||0; let np=cur; if(PR.mode==='set') np=parseFloat(String(PR.val).replace(',','.'))||0; else if(PR.mode==='pct'){ const pct=parseFloat(String(PR.val).replace(',','.'))||0; np=Math.round(cur*(1+pct/100)*100)/100; } flags['prix_'+ci+'_'+pi]=np; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,price:np}); }
     });
-    let renamed=false;
-    if(st.wizName && st.wizName!==c.cat && c.id!=null){ this.frPost('/franchisor/category',{id:c.id,name:st.wizName});
-      // Reflète le nouveau nom TOUT DE SUITE dans la liste (sinon l'écran garde
-      // l'ancien libellé jusqu'au rechargement et on croit que le renommage n'a
-      // pas marché). Le rechargement re-synchronisera depuis le serveur.
-      try{ if(window.BOServer){ const cat=window.BOServer.table('catalog'); if(cat[ci]){ cat[ci].cat=st.wizName; window.BOServer.save('catalog',cat); } } }catch(e){}
-      renamed=true; }
+    // Le nom de catégorie vient de l'ERP : la console ne le modifie PAS.
     const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length+(PR.mode!=='keep'?1:0);
     this.setState({flags,menus:menuDb,wizBusy:false,wizOpen:false});
-    this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s)'+(renamed?' · catégorie renommée en « '+st.wizName+' »':''));
+    this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s)');
   }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
@@ -1830,7 +1823,7 @@ class Component extends DCLogic {
       wizStart:()=>this.wizStart(), wizClose:()=>this.wizClose(), wizNext:()=>this.wizNext(), wizBack:()=>this.wizBack(), wizApply:()=>this.wizApply(), wizBusy:!!S.wizBusy,
       wizSelAll:()=>this.wizSelAll(), wizSelNone:()=>this.wizSelNone(),
       wizOpen:S.wizOpen, wizIs0:S.wizStep===0, wizIs1:S.wizStep===1, wizIs2:S.wizStep===2, wizIs3:S.wizStep===3, wizShowNext:S.wizStep<3, wizShowApply:S.wizStep===3,
-      wizName:S.wizName||'', wizSetName:(e)=>this.wizSetName(e), wizSetPriceVal:(e)=>this.wizSetPriceVal(e),
+      wizSetPriceVal:(e)=>this.wizSetPriceVal(e),
       wizPartAll:S.wizPart==='all', wizPartSel:S.wizPart==='sel', wizSetPartAll:()=>this.wizSetPart('all'), wizSetPartSel:()=>this.wizSetPart('sel'), wizPartAllBg:S.wizPart==='all'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSelBg:S.wizPart==='sel'?'border-color:var(--color-primary);background:#fbe9eb':'',
       wizCanNext:(S.wizStep!==0)||(S.wizCatIdx!=null),
       ...(function(self,S){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); const c=(S.wizCatIdx!=null)?CATALOG[S.wizCatIdx]:null;
