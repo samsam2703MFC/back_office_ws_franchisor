@@ -95,7 +95,30 @@
       <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
-      <a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;text-decoration:none;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>Retour à l'ERP</span></a>
+      <!-- Recherche profonde : les écrans et leurs explications -->
+      <div style="position:relative;z-index:2600;margin-bottom:6px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:11px;top:10px;color:var(--color-text-muted);pointer-events:none"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input value="{{ dsQuery }}" onInput="{{ dsSetQuery }}" onKeyDown="{{ dsKey }}" onFocus="{{ dsFocus }}" placeholder="Rechercher un écran…" aria-label="Recherche dans la console marque" style="width:100%;box-sizing:border-box;padding:9px 28px 9px 32px;border-radius:8px;border:.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text);font:500 12px var(--font-ui);outline:none"/>
+        <sc-if value="{{ dsHasQuery }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ dsClear }}" title="Effacer la recherche" style="position:absolute;right:5px;top:6px;width:22px;height:22px;border:none;border-radius:6px;background:transparent;color:var(--color-text-muted);cursor:pointer;font:600 14px/1 var(--font-ui)">×</button>
+        </sc-if>
+      </div>
+      <sc-if value="{{ dsOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ dsClear }}" style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:2400;background:transparent"></div>
+        <div style="position:fixed;left:270px;top:150px;width:min(470px,calc(100vw - 300px));max-height:min(560px,calc(100vh - 186px));overflow-y:auto;z-index:2500;background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;box-shadow:0 18px 46px rgba(0,0,0,.22);padding:8px">
+          <div style="padding:6px 12px 8px;font:600 10px var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-muted)">{{ dsCountLabel }}</div>
+          <sc-for list="{{ dsResults }}" as="r" hint-placeholder-count="4">
+            <button onClick="{{ r.go }}" onMouseEnter="{{ r.hover }}" style="{{ r.style }}">
+              <span style="font:600 9.5px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-muted)">{{ r.path }}</span>
+              <span style="{{ r.titleStyle }}">{{ r.title }}</span>
+              <span style="font:400 11px/1.45 var(--font-ui);color:var(--color-text-muted)">{{ r.desc }}</span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ dsEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px;font:400 12px/1.5 var(--font-ui);color:var(--color-text-muted)">Aucun écran ne correspond à « {{ dsQuery }} ». Essayez un mot du métier : catalogue, voucher, chalandise, prospect…</div>
+          </sc-if>
+        </div>
+      </sc-if>
       <sc-for list="{{ navBlocks }}" as="b" hint-placeholder-count="3">
         <sc-if value="{{ b.plain }}" hint-placeholder-val="{{ true }}"><div style="margin:14px 8px 6px;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-muted)">{{ b.label }}</div></sc-if>
         <sc-if value="{{ b.collapsible }}" hint-placeholder-val="{{ false }}"><button onClick="{{ b.toggle }}" style="{{ b.headStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="{{ b.chevStyle }}"><path d="M9 6l6 6-6 6"/></svg><span style="flex:1;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase">{{ b.label }}</span></button></sc-if>
@@ -121,7 +144,7 @@
         <span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pageSub }}</span>
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex:none">
-        <span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap">jeu. 17 juil. 2026</span>
+        <span style="font:400 12px var(--font-ui);color:var(--color-text-muted);white-space:nowrap">{{ todayLabel }}</span>
       </div>
     </header>
 
@@ -1225,6 +1248,28 @@ class Component extends DCLogic {
   state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
+
+  // ===== Recherche profonde =====
+  // Une entrée par écran atteignable. Le libellé et l'explication viennent des
+  // tables `titles`/`subs` de renderVals : un écran documenté une fois est
+  // cherchable, sans dupliquer un seul libellé. `k` n'ajoute que les mots du
+  // métier que l'écran n'affiche pas lui-même.
+  searchDefs(){ return [
+    {s:'dash',g:'Pilotage',k:'accueil consolide reseau kpi ca boutiques chiffres'},
+    {s:'boutiques',g:'Pilotage',k:'point de vente magasin identite branding webshop franchise succursale'},
+    {s:'catalogue',g:'Pilotage',k:'produit categorie prix photo saison portion i18n whitelist'},
+    {s:'menus',g:'Pilotage',k:'formule bundle slot choix composition marge'},
+    {s:'promos',g:'Pilotage',k:'bon code voucher reduction campagne regle prix'},
+    {s:'crosssell',g:'Pilotage',k:'vente croisee panier suggestion association periode creneau'},
+    {s:'geo',g:'Pilotage',k:'carte client repartition code postal commune densite'},
+    {s:'trace',g:'Pilotage',k:'flux client magasin frequente chalandise couleur'},
+    {s:'prospects',g:'Pilotage',k:'candidat developpement implantation orientation attente'},
+    {s:'avis',g:'Pilotage',k:'note etoile commentaire satisfaction produit negatif retour feedback'},
+    {s:'comms',g:'Paramétrage',k:'email modele transactionnel gabarit message'},
+    {s:'users',g:'Paramétrage',k:'compte role rbac portee droit acces utilisateur'},
+    {s:'zones',g:'Paramétrage',k:'chalandise code postal primaire exclusif territoire'},
+    {s:'audit',g:'Paramétrage',k:'journal trace action sensible historique qui a fait quoi'},
+  ]; }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
   // Chargement des contours de codes postaux : UNE fois, tôt, indépendant de l'écran (pas de course).
@@ -1765,8 +1810,6 @@ class Component extends DCLogic {
 
     const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin',avis:'Avis clients'};
     const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées',avis:'Satisfaction produits · avis clients par boutique'};
-
-    const scopeOpts=[{value:'__all',label:'Réseau (14 boutiques)'},{value:'bxl',label:'Bruxelles-Centre'},{value:'and',label:'Anderlecht'},{value:'ucc',label:'Uccle'}];
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
     // la valeur hydratée depuis /franchisor/params.
     const paramVal=(cle)=>{ const ov=(S.paramOv||{}); if(ov[cle]!==undefined)return String(ov[cle]); const p=(SRV('params')||[]).find(x=>x&&x.cle===cle); return p?String(p.val):undefined; };
@@ -2185,7 +2228,44 @@ class Component extends DCLogic {
       return { label:f.label, ph:f.ph||'', value:val, onInput, options:f.options||[], inputStyle:inputBase, areaStyle:inputBase+';min-height:96px;resize:vertical;font-family:var(--font-ui)',
         isSelect:f.type==='select', isNumber:f.type==='number', isArea:f.type==='area', isChecks:f.type==='checks', isBool:f.type==='bool', checkOpts, boolStyle, boolKnob, boolToggle, isText:f.type!=='select'&&f.type!=='number'&&f.type!=='area'&&f.type!=='checks'&&f.type!=='bool' }; }):[];
 
+    // ===== Recherche profonde (barre de nav) =====
+    // Tous les mots saisis doivent être trouvés, en début de mot, sans accents.
+    const dsNorm=(v)=>String(v==null?'':v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const dsQuery=S.dsQuery||'';
+    const dsTokens=dsNorm(dsQuery).split(/[^a-z0-9]+/).filter(Boolean);
+    const dsFind=(hay,tk)=>{ let at=hay.indexOf(tk);
+      while(at>=0){ if(at===0||!/[a-z0-9]/.test(hay.charAt(at-1))) return true; at=hay.indexOf(tk,at+1); }
+      return false; };
+    const dsEntries=this.searchDefs().map(d=>({...d,label:titles[d.s]||d.s,desc:subs[d.s]||''}));
+    const dsScore=(e)=>{ const fields=[[e.label,120],[e.k,70],[e.g,45],[e.desc,45]]; let total=0;
+      for(let i=0;i<dsTokens.length;i++){ const tk=dsTokens[i]; let best=0;
+        for(let j=0;j<fields.length;j++){ const hay=dsNorm(fields[j][0]);
+          if(hay&&dsFind(hay,tk)) best=Math.max(best,fields[j][1]); }
+        if(!best) return 0; total+=best; }
+      return total; };
+    const dsRanked=dsTokens.length
+      ? dsEntries.map(e=>({e,sc:dsScore(e)})).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,12) : [];
+    const dsSel=dsRanked.length?Math.max(0,Math.min(S.dsIdx||0,dsRanked.length-1)):0;
+    const dsClear=()=>this.setState({dsQuery:'',dsOpen:false,dsIdx:0});
+    const dsResults=dsRanked.map((x,i)=>{ const e=x.e, on=i===dsSel;
+      return { path:e.g, title:e.label, desc:e.desc, hover:()=>this.setState({dsIdx:i}),
+        go:()=>this.setState({screen:e.s,dsQuery:'',dsOpen:false,dsIdx:0}),
+        style:'display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;border:none;cursor:pointer;padding:9px 12px;border-radius:9px;background:'+(on?'var(--color-background-secondary)':'transparent'),
+        titleStyle:'font:600 12.5px var(--font-ui);color:'+(on?'var(--color-primary)':'var(--color-text)') }; });
+    const dsKey=(ev)=>{ const n=dsResults.length, k=ev.key;
+      if(k==='ArrowDown'){ if(ev.preventDefault) ev.preventDefault(); this.setState({dsOpen:true,dsIdx:n?(dsSel+1)%n:0}); }
+      else if(k==='ArrowUp'){ if(ev.preventDefault) ev.preventDefault(); this.setState({dsOpen:true,dsIdx:n?(dsSel-1+n)%n:0}); }
+      else if(k==='Enter'){ const r=dsResults[dsSel]; if(r) r.go(); }
+      else if(k==='Escape') dsClear(); };
+
     return {
+      dsQuery, dsResults, dsKey, dsClear,
+      dsSetQuery:(ev)=>this.setState({dsQuery:ev.target.value,dsOpen:true,dsIdx:0}),
+      dsFocus:()=>{ if(this.state.dsQuery) this.setState({dsOpen:true}); },
+      dsOpen:!!(S.dsOpen&&dsTokens.length), dsHasQuery:!!dsQuery,
+      dsEmpty:dsTokens.length>0&&dsResults.length===0,
+      dsCountLabel:dsResults.length?(dsResults.length+' résultat'+(dsResults.length>1?'s':'')):'Aucun résultat',
+      todayLabel:new Date().toLocaleDateString('fr-BE',{weekday:'short',day:'numeric',month:'short',year:'numeric'}),
       navBlocks, pageTitle:titles[S.screen], pageSub:subs[S.screen],
       tableBadge, srcHint, pencilStyle, porteeBadge, langBadge,
       profileOpen:!!S.profileOpen, profileParams, openProfile:()=>this.openProfile(), closeProfile:()=>this.closeProfile(),
