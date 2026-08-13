@@ -148,6 +148,7 @@
             <input type="text" value="{{ catSearch }}" onChange="{{ setCatSearch }}" placeholder="Rechercher un produit ou une catégorie…" style="flex:1;min-width:0;border:none;background:transparent;outline:none;font:500 12.5px var(--font-ui);color:var(--color-text)"/>
             <sc-if value="{{ catSearchActive }}" hint-placeholder-val="{{ false }}"><button onClick="{{ clearCatSearch }}" style="border:none;background:transparent;cursor:pointer;color:var(--color-text-muted);font:600 11px var(--font-ui);padding:2px 6px;flex:none">Effacer</button></sc-if>
           </div>
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Filtres</span><sc-for list="{{ catFilterChips }}" as="cf" hint-placeholder-count="5"><button onClick="{{ cf.toggle }}" style="{{ cf.style }}">{{ cf.label }}</button></sc-for></div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Saison</span><sc-for list="{{ seasonChips }}" as="sc" hint-placeholder-count="3"><button onClick="{{ sc.pick }}" style="{{ sc.style }}">{{ sc.label }}</button></sc-for></div>
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -1416,6 +1417,17 @@ class Component extends DCLogic {
     const catTree=[];
     const activeOnly=S.flags['catActiveOnly']!==undefined?S.flags['catActiveOnly']:true;
     const seasonFilter=S.seasonFilter||'';
+    // Filtres catalogue (chips) : webshop / actif / obligatoire / office / menu (ET).
+    const CF={ web:!!S.flags['catF_web'], actif:!!S.flags['catF_actif'], obl:!!S.flags['catF_obl'], office:!!S.flags['catF_office'], menu:!!S.flags['catF_menu'] };
+    const CFon=CF.web||CF.actif||CF.obl||CF.office||CF.menu;
+    const _pMenuOn=(c,ci,p,pi)=>{ const pm=p.id||('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')); const rm=this.api?this.api.resolveMenu(pm):{effective:0}; const inStore=!!(S.menus||{})[pm]; const catDef=this.api?!!this.api.getCategoryDefault(c.cat):false; return inStore?(rm.effective===1):catDef; };
+    const _cfOK=(c,ci,p,pi)=>{ if(!CFon) return true;
+      const bwOn=(S.flags['bw_'+ci+'_'+pi]!==undefined?S.flags['bw_'+ci+'_'+pi]:p.bw);
+      if((CF.web||CF.actif)&&!bwOn) return false;
+      if(CF.office){ const odOn=(S.flags['od_'+ci+'_'+pi]!==undefined?S.flags['od_'+ci+'_'+pi]:(p.od!==undefined?p.od:true)); if(!odOn) return false; }
+      if(CF.obl){ const bmOn=(S.flags['bm_'+ci+'_'+pi]!==undefined?S.flags['bm_'+ci+'_'+pi]:p.bm); if(!bmOn) return false; }
+      if(CF.menu&&!_pMenuOn(c,ci,p,pi)) return false;
+      return true; };
     // Recherche catalogue — filtre par nom de produit, de sous-catégorie ou de catégorie.
     const catQuery=(S.catSearch||'').trim().toLowerCase();
     // Toggle minimaliste « Tout déplier / Tout replier » — pilote tous les flags catO_/subOpen_.
@@ -1454,6 +1466,7 @@ class Component extends DCLogic {
       const coffOn=S.flags['catOff_'+ci]!==undefined?S.flags['catOff_'+ci]:true;
       const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
       if(activeOnly&&!cwOn) return;
+      if(CFon && !c.prods.some((pp,ppi)=>_cfOK(c,ci,pp,ppi)&&(!activeOnly||(S.flags['bw_'+ci+'_'+ppi]!==undefined?S.flags['bw_'+ci+'_'+ppi]:pp.bw))&&(!seasonFilter||pp.saison===seasonFilter))) return;
       catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbWeb+' en ligne',open,caret:open?'▾':'▸',
         menuDefStyle:swL(menuDefOn,RUBY,HCAT),menuDefKnob:knL(menuDefOn,HCAT),
         catWebStyle:swL(cwOn,RUBY,HCAT),catWebKnob:knL(cwOn,HCAT),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
@@ -1465,6 +1478,7 @@ class Component extends DCLogic {
       let lastSub=null;
       c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
         if(activeOnly&&!bw.on) return;
+        if(!_cfOK(c,ci,p,pi)) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
         if(catQuery&&!prodVisible(p)) return;
         // Sous-catégorie : en-tête repliable + toggles de pilotage (mêmes que la
@@ -1685,7 +1699,7 @@ class Component extends DCLogic {
       profName:'Sophie Renard', profRole:'Admin réseau · Siège', profInit:'SR',
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
-      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
+      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catFilterChips:[['web','Webshop'],['actif','Actif'],['obl','Obligatoire'],['office','Office'],['menu','Menu']].map(o=>{ const k=o[0], on=!!S.flags['catF_'+k]; return {label:o[1], active:on, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), toggle:()=>this.setState(st=>({flags:{...st.flags,['catF_'+k]:!st.flags['catF_'+k]}})) }; }), catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
