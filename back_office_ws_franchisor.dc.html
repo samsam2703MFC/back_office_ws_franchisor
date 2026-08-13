@@ -56,7 +56,7 @@
   <aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">
       <img src="img/logo.png" alt="L'Atelier" style="width:100%;max-width:206px;height:auto;display:block"/>
-      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b2</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b3</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;text-decoration:none;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>Retour à l'ERP</span></a>
@@ -1095,10 +1095,16 @@ class Component extends DCLogic {
       if(P.menu!=='keep'){ const on=P.menu==='on'; if(this.api){ this.api.ensureProduct(pmid,p.nom,p.prix,c.cat); menuDb=this.api.setProductOverride(pmid,on?'on':'off'); } if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:on?'on':'off'}); }
       if(PR.mode!=='keep'){ const cur=(flags['prix_'+ci+'_'+pi]!==undefined?parseFloat(flags['prix_'+ci+'_'+pi]):p.prix)||0; let np=cur; if(PR.mode==='set') np=parseFloat(String(PR.val).replace(',','.'))||0; else if(PR.mode==='pct'){ const pct=parseFloat(String(PR.val).replace(',','.'))||0; np=Math.round(cur*(1+pct/100)*100)/100; } flags['prix_'+ci+'_'+pi]=np; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,price:np}); }
     });
-    if(st.wizName && st.wizName!==c.cat && c.id!=null) this.frPost('/franchisor/category',{id:c.id,name:st.wizName});
+    let renamed=false;
+    if(st.wizName && st.wizName!==c.cat && c.id!=null){ this.frPost('/franchisor/category',{id:c.id,name:st.wizName});
+      // Reflète le nouveau nom TOUT DE SUITE dans la liste (sinon l'écran garde
+      // l'ancien libellé jusqu'au rechargement et on croit que le renommage n'a
+      // pas marché). Le rechargement re-synchronisera depuis le serveur.
+      try{ if(window.BOServer){ const cat=window.BOServer.table('catalog'); if(cat[ci]){ cat[ci].cat=st.wizName; window.BOServer.save('catalog',cat); } } }catch(e){}
+      renamed=true; }
     const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length+(PR.mode!=='keep'?1:0);
     this.setState({flags,menus:menuDb,wizBusy:false,wizOpen:false});
-    this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s) appliquée(s)');
+    this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s)'+(renamed?' · catégorie renommée en « '+st.wizName+' »':''));
   }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
