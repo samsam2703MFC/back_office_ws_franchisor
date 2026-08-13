@@ -56,7 +56,7 @@
   <aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">
       <img src="img/logo.png" alt="L'Atelier" style="width:100%;max-width:206px;height:auto;display:block"/>
-      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b5</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b6</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;text-decoration:none;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>Retour à l'ERP</span></a>
@@ -996,7 +996,7 @@
             <sc-if value="{{ wizPartSel }}" hint-placeholder-val="{{ false }}">
               <div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="t-admin-label">Produits concernés · {{ wizSelCount }} sélectionné(s)</span><div style="display:flex;gap:6px"><button onClick="{{ wizSelAll }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Tout</button><button onClick="{{ wizSelNone }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Aucun</button></div></div><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
             </sc-if>
-            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — interrupteur laissé sur « inchangé » = propriété non modifiée.</div>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — choix binaire par propriété. Un produit <b>Obligatoire</b> reste vendable sur au moins un canal (Webshop ou Livraison bureau).</div>
             <sc-for list="{{ wizPropRows }}" as="pr" hint-placeholder-count="4">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div style="min-width:0"><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div><span style="{{ pr.tagStyle }};margin-top:5px">{{ pr.tagTxt }}</span></div><div style="display:inline-flex;border:.5px solid var(--color-border-secondary);border-radius:9px;overflow:hidden;flex:none"><sc-for list="{{ pr.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for></div></div>
             </sc-for>
@@ -1059,6 +1059,15 @@ class Component extends DCLogic {
   wizSetPart(v){ this.setState({wizPart:v}); }
   wizToggleSel(pi){ this.setState(st=>{ const s={...st.wizSel}; s[pi]=!s[pi]; return {wizSel:s}; }); }
   wizSetProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
+  // Choix binaire d'une propriété, avec l'invariant OBLIGATOIRE : un produit
+  // obligatoire doit rester vendable sur AU MOINS un canal (Webshop OU Livraison
+  // bureau). Si le choix ferme les deux canaux d'un produit obligatoire, on en
+  // rouvre un d'office (le serveur applique la même règle par produit).
+  wizPickProp(k,v){ this.setState(st=>{ const p={...st.wizProps,[k]:v};
+    if(p.obl==='on' && p.web==='off' && p.office==='off'){
+      if(k==='obl') p.web='on'; else if(k==='web') p.office='on'; else p.web='on';
+    }
+    return {wizProps:p}; }); }
   wizSelAll(){ const c=this._wizCat(); if(!c) return; const s={}; c.prods.forEach((p,i)=>{ s[i]=true; }); this.setState({wizSel:s}); }
   wizSelNone(){ this.setState({wizSel:{}}); }
   // Agrégat de l'état ACTUEL d'une propriété sur les produits en portée :
@@ -1837,10 +1846,13 @@ class Component extends DCLogic {
             : a.on===a.tot ? {txt:'actuel · tous activés',col:'#2d6a3e',bg:'#eaf5ec'}
             : a.off===a.tot ? {txt:'actuel · tous désactivés',col:'#8a8a8a',bg:'#f0f0f0'}
             : {txt:'mixte · '+a.on+'/'+a.tot+' activés',col:'#8a5a00',bg:'#fdf3e7'};
-          // Choix EXPLICITE à 3 états — « Inchangé » par défaut : ne touche pas la
-          // propriété. « Activer » / « Désactiver » l'imposent à tous les produits en portée.
-          const seg=(active,col)=>'border:none;cursor:pointer;padding:7px 13px;font:600 11.5px var(--font-ui);white-space:nowrap;'+(active?('background:'+col+';color:#fff'):'background:transparent;color:var(--color-text-muted)');
-          const opts=[['keep','Inchangé','#8a8a8a'],['on','Activer','#2d6a3e'],['off','Désactiver','#8D1D2C']].map(v=>({label:v[1], style:seg(cur===v[0], v[2]), pick:()=>self.wizSetProp(k,v[0])}));
+          // Choix BINAIRE : Activer / Désactiver. Le segment de l'état ACTUEL est
+          // pré-sélectionné (mixte : aucun) ; seules les propriétés réellement
+          // cliquées sont écrites à l'application.
+          const aggState=(a.tot>0&&a.on===a.tot)?'on':((a.tot>0&&a.off===a.tot)?'off':null);
+          const shown = cur!=='keep' ? cur : aggState;
+          const seg=(active,col)=>'border:none;cursor:pointer;padding:7px 14px;font:600 11.5px var(--font-ui);white-space:nowrap;'+(active?('background:'+col+';color:#fff'):'background:transparent;color:var(--color-text-muted)');
+          const opts=[['on','Activer','#2d6a3e'],['off','Désactiver','#8D1D2C']].map(v=>({label:v[1], style:seg(shown===v[0], v[2]), pick:()=>self.wizPickProp(k,v[0])}));
           return { label:o[1], hint:o[2], tagTxt:tag.txt, tagStyle:'display:inline-block;border-radius:999px;padding:3px 9px;font:600 10px var(--font-ui);color:'+tag.col+';background:'+tag.bg, opts }; });
         const priceOpts=[['keep','Inchangé'],['set','Fixer €'],['pct','±%']].map(v=>({label:v[1], style:chip(S.wizPrice.mode===v[0]), pick:()=>self.wizSetPriceMode(v[0])}));
         const seasonOpts=[['','Toute l\'année'],['Été','Été'],['Noël','Noël']].map(v=>({label:v[1], style:chip((S.wizSeason||'')===v[0]), pick:()=>self.wizSetSeason(v[0])}));
