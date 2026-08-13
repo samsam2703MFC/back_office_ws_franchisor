@@ -140,7 +140,7 @@
       <!-- CATALOGUE -->
       <sc-if value="{{ isCatalogue }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_products · product_categories · ws_season ← ERP (lecture)</span><span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Prix réf. & gouvernance éditables · catalogue synchronisé ERP</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_products · product_categories · ws_season ← ERP (lecture)</span><span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Prix réf. & gouvernance éditables · catalogue synchronisé ERP</span><button onClick="{{ wizStart }}" style="flex:none;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:9px 15px;font:600 12px var(--font-ui);cursor:pointer">✨ Assistant catégorie</button></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
           <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop</strong> = click &amp; collect (« ruby ») · <strong>Bureau</strong> = livraison bureau (« apricot »), canal indépendant · <strong>Obligatoire</strong> verrouille l'assortiment franchisé · adoption = % boutiques</div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:9px 12px">
@@ -960,11 +960,74 @@
       </div>
     </div>
   </sc-if>
+  <!-- ASSISTANT CATÉGORIE (wizard fil d'Ariane) -->
+  <sc-if value="{{ wizOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(34,34,34,.45);display:flex;align-items:center;justify-content:center;z-index:2100;padding:16px">
+      <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px;width:720px;max-width:96vw;max-height:90vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.28)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div class="t-section-title" style="font-size:18px">Assistant catégorie</div><button onClick="{{ wizClose }}" style="background:transparent;border:none;font:600 16px var(--font-ui);cursor:pointer;color:var(--color-text-muted)">✕</button></div>
+        <div style="display:flex;align-items:center;gap:8px;margin:12px 0 18px;flex-wrap:wrap">
+          <span style="{{ wizStep0Style }}">1 · Portée</span><span style="color:var(--color-border-secondary)">→</span>
+          <span style="{{ wizStep1Style }}">2 · Identité</span><span style="color:var(--color-border-secondary)">→</span>
+          <span style="{{ wizStep2Style }}">3 · Propriétés</span><span style="color:var(--color-border-secondary)">→</span>
+          <span style="{{ wizStep3Style }}">4 · Validation</span>
+        </div>
+        <sc-if value="{{ wizIs0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div><span class="t-admin-label">Catégorie à gérer</span><div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">
+              <sc-for list="{{ wizCatOpts }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.pick }}" style="{{ o.style }}"><span>{{ o.name }}</span><span style="font:600 11px var(--font-mono,monospace);opacity:.7">{{ o.n }}</span></button></sc-for>
+            </div></div>
+            <div><span class="t-admin-label">Portée de la modification</span>
+              <div onClick="{{ wizSetPartAll }}" style="margin-top:8px;border:.5px solid var(--color-border-secondary);border-radius:10px;padding:11px 13px;cursor:pointer;{{ wizPartAllBg }}">
+                <div style="font:600 12.5px var(--font-ui)">Catégorie entière</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Cascade sur tous les produits</div></div>
+              <div onClick="{{ wizSetPartSel }}" style="margin-top:8px;border:.5px solid var(--color-border-secondary);border-radius:10px;padding:11px 13px;cursor:pointer;{{ wizPartSelBg }}">
+                <div style="font:600 12.5px var(--font-ui)">Une partie — sélection</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Choisir les produits à l'étape 3</div></div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ wizIs1 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <label style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Nom de la catégorie</span><input value="{{ wizName }}" onInput="{{ wizSetName }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 12px;font:13px var(--font-ui)"></label>
+            <div><span class="t-admin-label">Saison par défaut</span><div style="display:flex;gap:7px;margin-top:7px;flex-wrap:wrap"><sc-for list="{{ wizSeasonOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div>
+            <div style="font:11.5px/1.5 var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:9px;padding:10px 12px">Édition des sous-catégories (renommer / réordonner) : à venir dans une prochaine version.</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ wizIs2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ wizPartSel }}" hint-placeholder-val="{{ false }}">
+              <div><span class="t-admin-label">Produits concernés</span><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
+            </sc-if>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — « Inchangé » ne modifie pas la propriété.</div>
+            <sc-for list="{{ wizPropRows }}" as="pr" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div></div><div style="display:flex;gap:6px"><sc-for list="{{ pr.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for></div></div>
+            </sc-for>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0"><div style="font:600 13px var(--font-ui)">Prix réf.</div><div style="display:flex;gap:6px;align-items:center"><sc-for list="{{ wizPriceOpts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><sc-if value="{{ wizPriceNeedsVal }}" hint-placeholder-val="{{ false }}"><input value="{{ wizPriceVal }}" onInput="{{ wizSetPriceVal }}" placeholder="{{ wizPriceHint }}" style="width:88px;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:7px 9px;font:12.5px var(--font-ui)"></sc-if></div></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ wizIs3 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--color-background-secondary);border-radius:10px;padding:12px 14px;font:13px/1.6 var(--font-ui)">Catégorie <b>{{ wizCatName }}</b> · portée : <b>{{ wizScopeN }}</b> produit(s) impacté(s).</div>
+            <span class="t-admin-label">Changements à appliquer</span>
+            <sc-if value="{{ wizNoChange }}" hint-placeholder-val="{{ false }}"><div style="font:12.5px var(--font-ui);color:var(--color-text-muted);padding:6px 0">Aucune propriété modifiée (tout « Inchangé »).</div></sc-if>
+            <sc-for list="{{ wizChanges }}" as="ch" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:.5px solid var(--color-border-tertiary);font:13px var(--font-ui)"><span style="{{ ch.icStyle }}">{{ ch.ic }}</span><div><b>{{ ch.label }}</b> → {{ ch.val }}</div></div></sc-for>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:10px 12px;font:12px var(--font-ui);color:#6b4420">Écriture serveur par produit (POST /franchisor/product) + journalisée.</div>
+          </div>
+        </sc-if>
+        <div style="display:flex;gap:10px;justify-content:space-between;margin-top:20px">
+          <button onClick="{{ wizBack }}" style="{{ wizBackStyle }}">← Précédent</button>
+          <div style="display:flex;gap:10px">
+            <button onClick="{{ wizClose }}" style="background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer">Annuler</button>
+            <sc-if value="{{ wizShowNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ wizNext }}" style="{{ wizNextStyle }}">Suivant →</button></sc-if>
+            <sc-if value="{{ wizShowApply }}" hint-placeholder-val="{{ false }}"><button onClick="{{ wizApply }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 22px;font:600 12.5px var(--font-ui);cursor:pointer">✓ Appliquer</button></sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'}, wizPrice:{mode:'keep',val:''}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
@@ -988,6 +1051,37 @@ class Component extends DCLogic {
       .catch(e=>this.setState({avData:null,avLoading:false,avErr:(e===401||e===403)?('Accès refusé (HTTP '+e+') — jeton admin invalide ou absent.'):('Chargement des avis en échec (HTTP '+e+').')})); }
   avStars(n){ n=Math.max(0,Math.min(5,Math.round(+n||0))); return {sf:'★'.repeat(n), se:'☆'.repeat(5-n)}; }
   avDateFmt(s){ if(!s) return ''; const m=String(s).replace('T',' ').match(/^(\d{4})-(\d{2})-(\d{2})[ ](\d{2}):(\d{2})/); return m?(m[1]+'-'+m[2]+'-'+m[3]+' '+m[4]+':'+m[5]):String(s); }
+  // ===== Assistant catégorie (wizard) — porte sur une catégorie existante =====
+  wizStart(){ this.setState({wizOpen:true,wizStep:0,wizCatIdx:null,wizPart:'all',wizSel:{},wizName:'',wizSeason:'',wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'},wizPrice:{mode:'keep',val:''},wizBusy:false}); }
+  wizClose(){ this.setState({wizOpen:false}); }
+  _wizCat(i){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); return CATALOG[i!=null?i:this.state.wizCatIdx]||null; }
+  wizPickCat(i){ const c=this._wizCat(i)||{}; this.setState({wizCatIdx:i,wizName:c.cat||'',wizSel:{}}); }
+  wizSetPart(v){ this.setState({wizPart:v}); }
+  wizToggleSel(pi){ this.setState(st=>{ const s={...st.wizSel}; s[pi]=!s[pi]; return {wizSel:s}; }); }
+  wizSetProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
+  wizSetPriceMode(m){ this.setState(st=>({wizPrice:{...st.wizPrice,mode:m}})); }
+  wizSetPriceVal(e){ const v=e.target.value; this.setState(st=>({wizPrice:{...st.wizPrice,val:v}})); }
+  wizSetName(e){ const v=e.target.value; this.setState({wizName:v}); }
+  wizSetSeason(v){ this.setState({wizSeason:v}); }
+  wizNext(){ this.setState(st=>({wizStep:Math.min(3,st.wizStep+1)})); }
+  wizBack(){ this.setState(st=>({wizStep:Math.max(0,st.wizStep-1)})); }
+  wizScopeIdx(){ const st=this.state; const c=this._wizCat(); if(!c) return []; const all=c.prods.map((p,pi)=>pi); return st.wizPart==='sel'?all.filter(pi=>st.wizSel[pi]):all; }
+  wizApply(){ if(this.state.wizBusy) return; const st=this.state; const ci=st.wizCatIdx; const c=this._wizCat(); if(!c){ this.printJob('⚠ Sélectionnez une catégorie'); return; }
+    const idxs=this.wizScopeIdx(); const P=st.wizProps, PR=st.wizPrice; const slug=(s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    this.setState({wizBusy:true});
+    const flags={...st.flags}; let menuDb=st.menus;
+    idxs.forEach(pi=>{ const p=c.prods[pi]; const pmid=p.id||('cat-'+slug(p.nom));
+      if(P.web!=='keep'){ const on=P.web==='on'; flags['bw_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:on?1:0}); }
+      if(P.office!=='keep'){ const on=P.office==='on'; flags['od_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:on?1:0}); }
+      if(P.obl!=='keep'){ const on=P.obl==='on'; flags['bm_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:on?1:0}); }
+      if(P.menu!=='keep'){ const on=P.menu==='on'; if(this.api){ this.api.ensureProduct(pmid,p.nom,p.prix,c.cat); menuDb=this.api.setProductOverride(pmid,on?'on':'off'); } if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:on?'on':'off'}); }
+      if(PR.mode!=='keep'){ const cur=(flags['prix_'+ci+'_'+pi]!==undefined?parseFloat(flags['prix_'+ci+'_'+pi]):p.prix)||0; let np=cur; if(PR.mode==='set') np=parseFloat(String(PR.val).replace(',','.'))||0; else if(PR.mode==='pct'){ const pct=parseFloat(String(PR.val).replace(',','.'))||0; np=Math.round(cur*(1+pct/100)*100)/100; } flags['prix_'+ci+'_'+pi]=np; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,price:np}); }
+    });
+    if(st.wizName && st.wizName!==c.cat && c.id!=null) this.frPost('/franchisor/category',{id:c.id,name:st.wizName});
+    const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length+(PR.mode!=='keep'?1:0);
+    this.setState({flags,menus:menuDb,wizBusy:false,wizOpen:false});
+    this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s) appliquée(s)');
+  }
   geoEnsure(){ if(this.state.screen!=='geo') return;
     const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!window.__CPGEO && !this._geoLoading && fr.base){ this._geoLoading=true;
@@ -1709,6 +1803,35 @@ class Component extends DCLogic {
       isProspects:S.screen==='prospects',
       isTrace:S.screen==='trace',
       isAvis:S.screen==='avis',
+      wizStart:()=>this.wizStart(), wizClose:()=>this.wizClose(), wizNext:()=>this.wizNext(), wizBack:()=>this.wizBack(), wizApply:()=>this.wizApply(), wizBusy:!!S.wizBusy,
+      wizOpen:S.wizOpen, wizIs0:S.wizStep===0, wizIs1:S.wizStep===1, wizIs2:S.wizStep===2, wizIs3:S.wizStep===3, wizShowNext:S.wizStep<3, wizShowApply:S.wizStep===3,
+      wizName:S.wizName||'', wizSetName:(e)=>this.wizSetName(e), wizSetPriceVal:(e)=>this.wizSetPriceVal(e),
+      wizPartAll:S.wizPart==='all', wizPartSel:S.wizPart==='sel', wizSetPartAll:()=>this.wizSetPart('all'), wizSetPartSel:()=>this.wizSetPart('sel'), wizPartAllBg:S.wizPart==='all'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSelBg:S.wizPart==='sel'?'border-color:var(--color-primary);background:#fbe9eb':'',
+      wizCanNext:(S.wizStep!==0)||(S.wizCatIdx!=null),
+      ...(function(self,S){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); const c=(S.wizCatIdx!=null)?CATALOG[S.wizCatIdx]:null;
+        const stepStyle=(n)=>{ const on=S.wizStep===n, done=S.wizStep>n; return 'display:inline-flex;align-items:center;border-radius:999px;padding:5px 11px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':(done?'background:#eaf5ec;color:#2d6a3e':'background:var(--color-background-secondary);color:var(--color-text-muted)')); };
+        const catOpts=CATALOG.map((cc,i)=>{ const sel=i===S.wizCatIdx; return {name:cc.cat, n:(cc.prods||[]).length, sel, pick:()=>self.wizPickCat(i),
+          style:'display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;cursor:pointer;border-radius:9px;padding:9px 11px;font:600 12.5px var(--font-ui);border:.5px solid '+(sel?'var(--color-primary)':'var(--color-border-tertiary)')+';'+(sel?'background:#fbe9eb;color:var(--color-primary)':'background:#fff;color:var(--color-text)') }; });
+        const prods=c?c.prods.map((p,pi)=>{ const on=!!S.wizSel[pi]; return {nom:p.nom, on, toggle:()=>self.wizToggleSel(pi),
+          ckStyle:'width:16px;height:16px;border-radius:4px;flex:none;border:1.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';'+(on?'background:var(--color-primary)':'background:#fff'),
+          rowStyle:'display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:.5px solid var(--color-border-tertiary);cursor:pointer;font:'+(on?'600':'400')+' 12.5px var(--font-ui);color:var(--color-text)' }; }):[];
+        const scopeN=c?(S.wizPart==='sel'?c.prods.filter((p,pi)=>S.wizSel[pi]).length:c.prods.length):0;
+        const chip=(active)=>'border:none;cursor:pointer;border-radius:8px;padding:6px 12px;font:600 11.5px var(--font-ui);'+(active?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)');
+        const propRows=[['web','Webshop','en ligne'],['office','Livraison bureau','B2B'],['obl','Obligatoire','whitelist marque'],['menu','Menu','formules']].map(o=>{ const k=o[0], cur=S.wizProps[k]||'keep';
+          return {label:o[1], hint:o[2], opts:[['keep','Inchangé'],['on','Oui'],['off','Non']].map(v=>({label:v[1], style:chip(cur===v[0]), pick:()=>self.wizSetProp(k,v[0])})) }; });
+        const priceOpts=[['keep','Inchangé'],['set','Fixer €'],['pct','±%']].map(v=>({label:v[1], style:chip(S.wizPrice.mode===v[0]), pick:()=>self.wizSetPriceMode(v[0])}));
+        const seasonOpts=[['','Toute l\'année'],['Été','Été'],['Noël','Noël']].map(v=>({label:v[1], style:chip((S.wizSeason||'')===v[0]), pick:()=>self.wizSetSeason(v[0])}));
+        const lbl={web:'Webshop',office:'Livraison bureau',obl:'Obligatoire',menu:'Menu'};
+        const changes=['web','office','obl','menu'].filter(k=>(S.wizProps[k]||'keep')!=='keep').map(k=>{ const on=S.wizProps[k]==='on'; return {label:lbl[k], val:on?'activé':'désactivé',
+          icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);'+(on?'background:#eaf5ec;color:#2d6a3e':'background:#fbe9eb;color:#8D1D2C'), ic:on?'✓':'✕' }; });
+        if(S.wizPrice.mode!=='keep') changes.push({label:'Prix réf.', val:(S.wizPrice.mode==='set'?('fixé à '+(S.wizPrice.val||'—')+' €'):((S.wizPrice.val||'—')+' %')), icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);background:#fbf1e3;color:#C87A3F', ic:'€'});
+        return { wizStep0Style:stepStyle(0), wizStep1Style:stepStyle(1), wizStep2Style:stepStyle(2), wizStep3Style:stepStyle(3),
+          wizCatOpts:catOpts, wizHasCat:!!c, wizCatName:c?c.cat:'', wizCatCount:c?c.prods.length:0,
+          wizProds:prods, wizScopeN:scopeN, wizPropRows:propRows, wizPriceOpts:priceOpts, wizSeasonOpts:seasonOpts,
+          wizPriceVal:S.wizPrice.val||'', wizPriceNeedsVal:S.wizPrice.mode==='set'||S.wizPrice.mode==='pct', wizPriceHint:S.wizPrice.mode==='pct'?'ex. +10 ou -5':'ex. 3,50',
+          wizChanges:changes, wizNoChange:changes.length===0,
+          wizNextStyle:'background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 20px;font:600 12.5px var(--font-ui);cursor:pointer'+(((S.wizStep===0)&&(S.wizCatIdx==null))?';opacity:.45;pointer-events:none':''),
+          wizBackStyle:'background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer'+(S.wizStep===0?';visibility:hidden':'') }; })(this,S),
       avScopeBadge:'Franchiseur · réseau',
       avShop:S.avShop||'', avSetShop:(e)=>this.avSetShop(e), avRefresh:()=>this.avRefresh(),
       avLoading:!!S.avLoading, avErr:S.avErr||'', avHasErr:!!S.avErr,
