@@ -1,0 +1,19 @@
+# Console marque — en-têtes de cache.
+#
+# POURQUOI : le composant DC (assistant catégorie, cartes de chalandise,
+# traçabilité…) est INLINE dans index.html. Si index.html est mis en cache
+# (navigateur ou cache/reverse-proxy en amont), TOUTE l'app se fige sur une
+# version antérieure — un déploiement réussi n'apparaît jamais côté client,
+# et même un Ctrl+Shift+R ne suffit pas. On interdit donc le cache des .html.
+# Les scripts/CSS portent déjà un ?v=... : eux peuvent rester en cache.
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>

@@ -48,6 +48,9 @@ jobs:
           # index.html (carte des zones, cycle de vie, cache-busting…) n'était
           # JAMAIS déployé.
           cp index.html site/index.html
+          # Interdit la mise en cache de index.html (composant DC inline) — sans
+          # ça, un déploiement réussi n'apparaît jamais côté navigateur/reverse-proxy.
+          cp .htaccess site/.htaccess
           # Garde-fou : ne jamais déployer une page vide/absente.
           test -s site/index.html || (echo 'ERREUR : index.html absent ou vide'; exit 1)
           cp -r _ds site/
@@ -104,3 +107,23 @@ jobs:
           done
           if [ "$fail" = "0" ]; then echo "ALL ASSETS OK"; else echo "ASSET CHECK FAILED"; exit 1; fi
           REMOTE
+
+      - name: Diagnostic cache — vue PUBLIQUE depuis le runner (hors réseau client)
+        run: |
+          # Le runner GitHub n'est PAS derrière le cache/réseau du client : ce qu'il
+          # voit ici, c'est ce que le SERVEUR (ou un reverse-proxy en amont) sert
+          # réellement. Si le bouton est présent ici mais absent côté utilisateur,
+          # le cache est dans SON navigateur/réseau.
+          HOST="${{ secrets.SSH_HOST }}"
+          URL="http://$HOST/webshop/backoffice_franchisor/"
+          echo "== en-têtes de cache servis publiquement =="
+          curl -sI "$URL?nocache=$GITHUB_RUN_ID" | grep -iE 'cache-control|expires|pragma|age|x-cache|via|server' || true
+          code=$(curl -s -o /tmp/pub.html -w "%{http_code}" "$URL?nocache=$GITHUB_RUN_ID" || echo 000)
+          echo "== GET $URL → HTTP $code =="
+          if grep -q 'Assistant catégorie' /tmp/pub.html; then
+            echo "✅ Vue PUBLIQUE : bouton « Assistant catégorie » présent → le serveur sert la nouvelle version."
+            echo "   → Si l'utilisateur ne le voit pas : cache navigateur/réseau côté client (tester navigation privée / autre appareil / données mobiles)."
+          else
+            echo "⚠ Vue PUBLIQUE : bouton ABSENT → un cache/reverse-proxy en amont du serveur sert une version antérieure."
+          fi
+          grep -q 'build 2026-08-13·b2' /tmp/pub.html && echo "✅ build 2026-08-13·b2 servi publiquement." || echo "⚠ build b2 absent de la vue publique."
