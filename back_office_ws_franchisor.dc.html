@@ -994,11 +994,11 @@
         <sc-if value="{{ wizIs2 }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;flex-direction:column;gap:14px">
             <sc-if value="{{ wizPartSel }}" hint-placeholder-val="{{ false }}">
-              <div><span class="t-admin-label">Produits concernés</span><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
+              <div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="t-admin-label">Produits concernés · {{ wizSelCount }} sélectionné(s)</span><div style="display:flex;gap:6px"><button onClick="{{ wizSelAll }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Tout</button><button onClick="{{ wizSelNone }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Aucun</button></div></div><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
             </sc-if>
-            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — « Inchangé » ne modifie pas la propriété.</div>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — interrupteur laissé sur « inchangé » = propriété non modifiée.</div>
             <sc-for list="{{ wizPropRows }}" as="pr" hint-placeholder-count="4">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div></div><div style="display:flex;gap:6px"><sc-for list="{{ pr.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div style="min-width:0"><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div><span style="{{ pr.tagStyle }};margin-top:5px">{{ pr.tagTxt }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none"><div onClick="{{ pr.flip }}" style="{{ pr.switchStyle }}"><span style="{{ pr.knobStyle }}"></span></div><div style="display:flex;align-items:center;gap:8px"><span style="font:600 10.5px var(--font-ui);color:{{ pr.decCol }}">{{ pr.decTxt }}</span><button onClick="{{ pr.reset }}" style="{{ pr.resetStyle }}">annuler</button></div></div></div>
             </sc-for>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0"><div style="font:600 13px var(--font-ui)">Prix réf.</div><div style="display:flex;gap:6px;align-items:center"><sc-for list="{{ wizPriceOpts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><sc-if value="{{ wizPriceNeedsVal }}" hint-placeholder-val="{{ false }}"><input value="{{ wizPriceVal }}" onInput="{{ wizSetPriceVal }}" placeholder="{{ wizPriceHint }}" style="width:88px;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:7px 9px;font:12.5px var(--font-ui)"></sc-if></div></div>
           </div>
@@ -1059,6 +1059,24 @@ class Component extends DCLogic {
   wizSetPart(v){ this.setState({wizPart:v}); }
   wizToggleSel(pi){ this.setState(st=>{ const s={...st.wizSel}; s[pi]=!s[pi]; return {wizSel:s}; }); }
   wizSetProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
+  wizSelAll(){ const c=this._wizCat(); if(!c) return; const s={}; c.prods.forEach((p,i)=>{ s[i]=true; }); this.setState({wizSel:s}); }
+  wizSelNone(){ this.setState({wizSel:{}}); }
+  // Agrégat de l'état ACTUEL d'une propriété sur les produits en portée :
+  // combien sont activés / désactivés → alimente le tag « Mixte / tous ✓ ».
+  _wizPropAgg(k){ const c=this._wizCat(); const st=this.state; if(!c) return {on:0,off:0,unk:0,tot:0}; const F=st.flags||{}; const ci=st.wizCatIdx;
+    const idx=st.wizPart==='sel'?c.prods.map((p,i)=>i).filter(i=>st.wizSel[i]):c.prods.map((p,i)=>i);
+    const val=(pi)=>{ const p=c.prods[pi];
+      if(k==='web'){ const f=F['bw_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.bw; }
+      if(k==='office'){ const f=F['od_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.od; }
+      if(k==='obl'){ const f=F['bm_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.bm; }
+      if(k==='menu'){ try{ if(this.api){ const pmid=p.id||('cat-'+String(p.nom||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')); return !!this.api.resolveMenu(pmid).effective; } }catch(e){} return null; }
+      return null; };
+    let on=0,off=0,unk=0; idx.forEach(pi=>{ const v=val(pi); if(v===null)unk++; else if(v)on++; else off++; }); return {on,off,unk,tot:idx.length}; }
+  // Bascule tri-état : inchangé → (sens naturel selon l'agrégat) → autre → inchangé.
+  wizFlipProp(k){ const cur=this.state.wizProps[k]||'keep'; let nx;
+    if(cur==='on') nx='off'; else if(cur==='off') nx='keep';
+    else { const a=this._wizPropAgg(k); nx=(a.tot>0&&a.on===a.tot)?'off':'on'; }
+    this.setState(st=>({wizProps:{...st.wizProps,[k]:nx}})); }
   wizSetPriceMode(m){ this.setState(st=>({wizPrice:{...st.wizPrice,mode:m}})); }
   wizSetPriceVal(e){ const v=e.target.value; this.setState(st=>({wizPrice:{...st.wizPrice,val:v}})); }
   wizSetName(e){ const v=e.target.value; this.setState({wizName:v}); }
@@ -1804,6 +1822,7 @@ class Component extends DCLogic {
       isTrace:S.screen==='trace',
       isAvis:S.screen==='avis',
       wizStart:()=>this.wizStart(), wizClose:()=>this.wizClose(), wizNext:()=>this.wizNext(), wizBack:()=>this.wizBack(), wizApply:()=>this.wizApply(), wizBusy:!!S.wizBusy,
+      wizSelAll:()=>this.wizSelAll(), wizSelNone:()=>this.wizSelNone(),
       wizOpen:S.wizOpen, wizIs0:S.wizStep===0, wizIs1:S.wizStep===1, wizIs2:S.wizStep===2, wizIs3:S.wizStep===3, wizShowNext:S.wizStep<3, wizShowApply:S.wizStep===3,
       wizName:S.wizName||'', wizSetName:(e)=>this.wizSetName(e), wizSetPriceVal:(e)=>this.wizSetPriceVal(e),
       wizPartAll:S.wizPart==='all', wizPartSel:S.wizPart==='sel', wizSetPartAll:()=>this.wizSetPart('all'), wizSetPartSel:()=>this.wizSetPart('sel'), wizPartAllBg:S.wizPart==='all'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSelBg:S.wizPart==='sel'?'border-color:var(--color-primary);background:#fbe9eb':'',
@@ -1817,8 +1836,24 @@ class Component extends DCLogic {
           rowStyle:'display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:.5px solid var(--color-border-tertiary);cursor:pointer;font:'+(on?'600':'400')+' 12.5px var(--font-ui);color:var(--color-text)' }; }):[];
         const scopeN=c?(S.wizPart==='sel'?c.prods.filter((p,pi)=>S.wizSel[pi]).length:c.prods.length):0;
         const chip=(active)=>'border:none;cursor:pointer;border-radius:8px;padding:6px 12px;font:600 11.5px var(--font-ui);'+(active?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)');
-        const propRows=[['web','Webshop','en ligne'],['office','Livraison bureau','B2B'],['obl','Obligatoire','whitelist marque'],['menu','Menu','formules']].map(o=>{ const k=o[0], cur=S.wizProps[k]||'keep';
-          return {label:o[1], hint:o[2], opts:[['keep','Inchangé'],['on','Oui'],['off','Non']].map(v=>({label:v[1], style:chip(cur===v[0]), pick:()=>self.wizSetProp(k,v[0])})) }; });
+        const propRows=[['web','Webshop','visible sur la boutique en ligne'],['office','Livraison bureau','commande B2B au bureau'],['obl','Obligatoire','imposé par la marque (whitelist)'],['menu','Menu','disponible dans les formules']].map(o=>{
+          const k=o[0], cur=S.wizProps[k]||'keep', a=self._wizPropAgg(k), committed=cur!=='keep';
+          const tag = a.tot===0 ? {txt:'aucun produit',col:'#8a8a8a',bg:'#f0f0f0'}
+            : a.unk===a.tot ? {txt:'état inconnu',col:'#8a8a8a',bg:'#f0f0f0'}
+            : a.on===a.tot ? {txt:'actuel · tous activés',col:'#2d6a3e',bg:'#eaf5ec'}
+            : a.off===a.tot ? {txt:'actuel · tous désactivés',col:'#8a8a8a',bg:'#f0f0f0'}
+            : {txt:'mixte · '+a.on+'/'+a.tot+' activés',col:'#8a5a00',bg:'#fdf3e7'};
+          const pos = cur==='on'?'on':(cur==='off'?'off':(a.tot>0&&a.on===a.tot?'on':(a.tot>0&&a.off===a.tot?'off':'mix')));
+          const trackBg = pos==='mix' ? 'linear-gradient(90deg,#e6c48a 0 50%,#bcd7c1 50% 100%)' : (pos==='on'?'var(--color-primary)':'#c9c9c9');
+          const knobLeft = pos==='on'?'22px':(pos==='off'?'2px':'12px');
+          const switchStyle='position:relative;width:44px;height:24px;border-radius:999px;cursor:pointer;flex:none;background:'+trackBg+';opacity:'+(committed?'1':'.55')+';box-shadow:'+(committed?'0 0 0 2px rgba(141,29,44,.18)':'none');
+          const knobStyle='position:absolute;top:2px;left:'+knobLeft+';width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)';
+          const decTxt = cur==='on'?'→ activer pour tous':(cur==='off'?'→ désactiver pour tous':'inchangé');
+          const decCol = cur==='on'?'#2d6a3e':(cur==='off'?'#8D1D2C':'var(--color-text-muted)');
+          return { label:o[1], hint:o[2], tagTxt:tag.txt, tagStyle:'display:inline-block;border-radius:999px;padding:3px 9px;font:600 10px var(--font-ui);color:'+tag.col+';background:'+tag.bg,
+            switchStyle, knobStyle, decTxt, decCol, committed,
+            flip:()=>self.wizFlipProp(k), reset:()=>self.wizSetProp(k,'keep'),
+            resetStyle:'background:transparent;border:none;cursor:pointer;font:600 10px var(--font-ui);color:var(--color-text-muted);text-decoration:underline;padding:0;'+(committed?'':'visibility:hidden') }; });
         const priceOpts=[['keep','Inchangé'],['set','Fixer €'],['pct','±%']].map(v=>({label:v[1], style:chip(S.wizPrice.mode===v[0]), pick:()=>self.wizSetPriceMode(v[0])}));
         const seasonOpts=[['','Toute l\'année'],['Été','Été'],['Noël','Noël']].map(v=>({label:v[1], style:chip((S.wizSeason||'')===v[0]), pick:()=>self.wizSetSeason(v[0])}));
         const lbl={web:'Webshop',office:'Livraison bureau',obl:'Obligatoire',menu:'Menu'};
@@ -1827,7 +1862,7 @@ class Component extends DCLogic {
         if(S.wizPrice.mode!=='keep') changes.push({label:'Prix réf.', val:(S.wizPrice.mode==='set'?('fixé à '+(S.wizPrice.val||'—')+' €'):((S.wizPrice.val||'—')+' %')), icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);background:#fbf1e3;color:#C87A3F', ic:'€'});
         return { wizStep0Style:stepStyle(0), wizStep1Style:stepStyle(1), wizStep2Style:stepStyle(2), wizStep3Style:stepStyle(3),
           wizCatOpts:catOpts, wizHasCat:!!c, wizCatName:c?c.cat:'', wizCatCount:c?c.prods.length:0,
-          wizProds:prods, wizScopeN:scopeN, wizPropRows:propRows, wizPriceOpts:priceOpts, wizSeasonOpts:seasonOpts,
+          wizProds:prods, wizScopeN:scopeN, wizSelCount:(c?c.prods.filter((p,pi)=>S.wizSel[pi]).length:0), wizPropRows:propRows, wizPriceOpts:priceOpts, wizSeasonOpts:seasonOpts,
           wizPriceVal:S.wizPrice.val||'', wizPriceNeedsVal:S.wizPrice.mode==='set'||S.wizPrice.mode==='pct', wizPriceHint:S.wizPrice.mode==='pct'?'ex. +10 ou -5':'ex. 3,50',
           wizChanges:changes, wizNoChange:changes.length===0,
           wizNextStyle:'background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 20px;font:600 12.5px var(--font-ui);cursor:pointer'+(((S.wizStep===0)&&(S.wizCatIdx==null))?';opacity:.45;pointer-events:none':''),
