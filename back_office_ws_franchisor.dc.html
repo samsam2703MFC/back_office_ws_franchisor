@@ -56,7 +56,7 @@
   <aside style="background:var(--color-surface);border-right:.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:18px 20px 15px;border-bottom:.5px solid var(--color-border-tertiary)">
       <img src="img/logo.png" alt="L'Atelier" style="width:100%;max-width:206px;height:auto;display:block"/>
-      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b6</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-primary)"></span><span style="font:600 10px/1 var(--font-ui);letter-spacing:.09em;text-transform:uppercase;color:var(--color-primary)">Console marque · Siège</span><span style="font:600 9px/1 var(--font-ui);letter-spacing:.04em;color:var(--color-text-muted);opacity:.7;margin-left:2px" title="Version déployée">build 2026-08-13·b7</span></div>
     </div>
     <nav class="lz" style="flex:1;overflow-y:auto;padding:10px 12px 20px;display:flex;flex-direction:column;gap:3px">
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px;border-radius:8px;text-decoration:none;background:var(--color-background-secondary);color:var(--color-text-muted);font:500 12px/1 var(--font-ui)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 19l-7-7 7-7"/><path d="M3 12h18"/></svg><span>Retour à l'ERP</span></a>
@@ -978,9 +978,14 @@
             </div></div>
             <div><span class="t-admin-label">Portée de la modification</span>
               <div onClick="{{ wizSetPartAll }}" style="margin-top:8px;border:.5px solid var(--color-border-secondary);border-radius:10px;padding:11px 13px;cursor:pointer;{{ wizPartAllBg }}">
-                <div style="font:600 12.5px var(--font-ui)">Catégorie entière</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Cascade sur tous les produits</div></div>
+                <div style="font:600 12.5px var(--font-ui)">Catégorie entière</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Tous les produits de la catégorie</div></div>
+              <div onClick="{{ wizSetPartSub }}" style="margin-top:8px;border:.5px solid var(--color-border-secondary);border-radius:10px;padding:11px 13px;cursor:pointer;{{ wizPartSubBg }}">
+                <div style="font:600 12.5px var(--font-ui)">Une sous-catégorie</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Cibler les produits d'une sous-catégorie</div></div>
               <div onClick="{{ wizSetPartSel }}" style="margin-top:8px;border:.5px solid var(--color-border-secondary);border-radius:10px;padding:11px 13px;cursor:pointer;{{ wizPartSelBg }}">
-                <div style="font:600 12.5px var(--font-ui)">Une partie — sélection</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Choisir les produits à l'étape 3</div></div>
+                <div style="font:600 12.5px var(--font-ui)">Une sélection de produits</div><div style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Choisir les produits à l'étape 3</div></div>
+              <sc-if value="{{ wizPartSub }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:10px"><span class="t-admin-label">Sous-catégorie ciblée</span><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"><sc-for list="{{ wizSubOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }} · {{ s.n }}</button></sc-for><sc-if value="{{ wizNoSub }}" hint-placeholder-val="{{ false }}"><span style="font:11.5px var(--font-ui);color:var(--color-text-muted)">Aucune sous-catégorie dans cette catégorie.</span></sc-if></div></div>
+              </sc-if>
             </div>
           </div>
         </sc-if>
@@ -988,7 +993,7 @@
           <div style="display:flex;flex-direction:column;gap:14px">
             <div style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Catégorie</span><div style="border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:10px 12px;font:600 13px var(--font-ui);color:var(--color-text);background:var(--color-background-secondary)">{{ wizCatName }}</div><span style="font:11px var(--font-ui);color:var(--color-text-muted)">Nom géré par l'ERP — non modifiable ici.</span></div>
             <div><span class="t-admin-label">Saison par défaut</span><div style="display:flex;gap:7px;margin-top:7px;flex-wrap:wrap"><sc-for list="{{ wizSeasonOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div>
-            <div style="font:11.5px/1.5 var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:9px;padding:10px 12px">Édition des sous-catégories (renommer / réordonner) : à venir dans une prochaine version.</div>
+            <div style="font:11.5px/1.5 var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:9px;padding:10px 12px">Pour piloter une sous-catégorie précise, choisissez « Une sous-catégorie » à l'étape 1.</div>
           </div>
         </sc-if>
         <sc-if value="{{ wizIs2 }}" hint-placeholder-val="{{ false }}">
@@ -996,11 +1001,10 @@
             <sc-if value="{{ wizPartSel }}" hint-placeholder-val="{{ false }}">
               <div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="t-admin-label">Produits concernés · {{ wizSelCount }} sélectionné(s)</span><div style="display:flex;gap:6px"><button onClick="{{ wizSelAll }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Tout</button><button onClick="{{ wizSelNone }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Aucun</button></div></div><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
             </sc-if>
-            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>Appliqué à {{ wizScopeN }} produit(s)</b> — choix binaire par propriété. Un produit <b>Obligatoire</b> reste vendable sur au moins un canal (Webshop ou Livraison bureau).</div>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>{{ wizScopeLabel }}</b> · appliqué à <b>{{ wizScopeN }}</b> produit(s) — choix binaire par propriété. Un produit <b>Obligatoire</b> reste vendable sur au moins un canal (Webshop ou Livraison bureau).</div>
             <sc-for list="{{ wizPropRows }}" as="pr" hint-placeholder-count="4">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div style="min-width:0"><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div><span style="{{ pr.tagStyle }};margin-top:5px">{{ pr.tagTxt }}</span></div><div style="display:inline-flex;border:.5px solid var(--color-border-secondary);border-radius:9px;overflow:hidden;flex:none"><sc-for list="{{ pr.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for></div></div>
             </sc-for>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0"><div style="font:600 13px var(--font-ui)">Prix réf.</div><div style="display:flex;gap:6px;align-items:center"><sc-for list="{{ wizPriceOpts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><sc-if value="{{ wizPriceNeedsVal }}" hint-placeholder-val="{{ false }}"><input value="{{ wizPriceVal }}" onInput="{{ wizSetPriceVal }}" placeholder="{{ wizPriceHint }}" style="width:88px;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:7px 9px;font:12.5px var(--font-ui)"></sc-if></div></div>
           </div>
         </sc-if>
         <sc-if value="{{ wizIs3 }}" hint-placeholder-val="{{ false }}">
@@ -1027,7 +1031,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'}, wizPrice:{mode:'keep',val:''}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
@@ -1052,11 +1056,14 @@ class Component extends DCLogic {
   avStars(n){ n=Math.max(0,Math.min(5,Math.round(+n||0))); return {sf:'★'.repeat(n), se:'☆'.repeat(5-n)}; }
   avDateFmt(s){ if(!s) return ''; const m=String(s).replace('T',' ').match(/^(\d{4})-(\d{2})-(\d{2})[ ](\d{2}):(\d{2})/); return m?(m[1]+'-'+m[2]+'-'+m[3]+' '+m[4]+':'+m[5]):String(s); }
   // ===== Assistant catégorie (wizard) — porte sur une catégorie existante =====
-  wizStart(){ this.setState({wizOpen:true,wizStep:0,wizCatIdx:null,wizPart:'all',wizSel:{},wizName:'',wizSeason:'',wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'},wizPrice:{mode:'keep',val:''},wizBusy:false}); }
+  wizStart(){ this.setState({wizOpen:true,wizStep:0,wizCatIdx:null,wizPart:'all',wizSubId:null,wizSel:{},wizName:'',wizSeason:'',wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'},wizBusy:false}); }
   wizClose(){ this.setState({wizOpen:false}); }
   _wizCat(i){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); return CATALOG[i!=null?i:this.state.wizCatIdx]||null; }
   wizPickCat(i){ const c=this._wizCat(i)||{}; this.setState({wizCatIdx:i,wizName:c.cat||'',wizSel:{}}); }
-  wizSetPart(v){ this.setState({wizPart:v}); }
+  wizSetPart(v){ const patch={wizPart:v};
+    if(v==='sub' && this.state.wizSubId==null){ const c=this._wizCat(); if(c){ const first=c.prods.find(p=>p.sub_id!=null); if(first) patch.wizSubId=String(first.sub_id); } }
+    this.setState(patch); }
+  wizPickSub(id){ this.setState({wizSubId:String(id)}); }
   wizToggleSel(pi){ this.setState(st=>{ const s={...st.wizSel}; s[pi]=!s[pi]; return {wizSel:s}; }); }
   wizSetProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
   // Choix binaire d'une propriété, avec l'invariant OBLIGATOIRE : un produit
@@ -1073,7 +1080,7 @@ class Component extends DCLogic {
   // Agrégat de l'état ACTUEL d'une propriété sur les produits en portée :
   // combien sont activés / désactivés → alimente le tag « Mixte / tous ✓ ».
   _wizPropAgg(k){ const c=this._wizCat(); const st=this.state; if(!c) return {on:0,off:0,unk:0,tot:0}; const F=st.flags||{}; const ci=st.wizCatIdx;
-    const idx=st.wizPart==='sel'?c.prods.map((p,i)=>i).filter(i=>st.wizSel[i]):c.prods.map((p,i)=>i);
+    const idx=st.wizPart==='sel'?c.prods.map((p,i)=>i).filter(i=>st.wizSel[i]):(st.wizPart==='sub'?c.prods.map((p,i)=>i).filter(i=>String(c.prods[i].sub_id)===String(st.wizSubId)):c.prods.map((p,i)=>i));
     const val=(pi)=>{ const p=c.prods[pi];
       if(k==='web'){ const f=F['bw_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.bw; }
       if(k==='office'){ const f=F['od_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.od; }
@@ -1081,14 +1088,15 @@ class Component extends DCLogic {
       if(k==='menu'){ try{ if(this.api){ const pmid=p.id||('cat-'+String(p.nom||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')); return !!this.api.resolveMenu(pmid).effective; } }catch(e){} return null; }
       return null; };
     let on=0,off=0,unk=0; idx.forEach(pi=>{ const v=val(pi); if(v===null)unk++; else if(v)on++; else off++; }); return {on,off,unk,tot:idx.length}; }
-  wizSetPriceMode(m){ this.setState(st=>({wizPrice:{...st.wizPrice,mode:m}})); }
-  wizSetPriceVal(e){ const v=e.target.value; this.setState(st=>({wizPrice:{...st.wizPrice,val:v}})); }
   wizSetSeason(v){ this.setState({wizSeason:v}); }
   wizNext(){ this.setState(st=>({wizStep:Math.min(3,st.wizStep+1)})); }
   wizBack(){ this.setState(st=>({wizStep:Math.max(0,st.wizStep-1)})); }
-  wizScopeIdx(){ const st=this.state; const c=this._wizCat(); if(!c) return []; const all=c.prods.map((p,pi)=>pi); return st.wizPart==='sel'?all.filter(pi=>st.wizSel[pi]):all; }
+  wizScopeIdx(){ const st=this.state; const c=this._wizCat(); if(!c) return []; const all=c.prods.map((p,pi)=>pi);
+    if(st.wizPart==='sel') return all.filter(pi=>st.wizSel[pi]);
+    if(st.wizPart==='sub') return all.filter(pi=>String(c.prods[pi].sub_id)===String(st.wizSubId));
+    return all; }
   wizApply(){ if(this.state.wizBusy) return; const st=this.state; const ci=st.wizCatIdx; const c=this._wizCat(); if(!c){ this.printJob('⚠ Sélectionnez une catégorie'); return; }
-    const idxs=this.wizScopeIdx(); const P=st.wizProps, PR=st.wizPrice; const slug=(s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    const idxs=this.wizScopeIdx(); const P=st.wizProps; const slug=(s)=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-');
     this.setState({wizBusy:true});
     const flags={...st.flags}; let menuDb=st.menus;
     idxs.forEach(pi=>{ const p=c.prods[pi]; const pmid=p.id||('cat-'+slug(p.nom));
@@ -1096,10 +1104,10 @@ class Component extends DCLogic {
       if(P.office!=='keep'){ const on=P.office==='on'; flags['od_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:on?1:0}); }
       if(P.obl!=='keep'){ const on=P.obl==='on'; flags['bm_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:on?1:0}); }
       if(P.menu!=='keep'){ const on=P.menu==='on'; if(this.api){ this.api.ensureProduct(pmid,p.nom,p.prix,c.cat); menuDb=this.api.setProductOverride(pmid,on?'on':'off'); } if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:on?'on':'off'}); }
-      if(PR.mode!=='keep'){ const cur=(flags['prix_'+ci+'_'+pi]!==undefined?parseFloat(flags['prix_'+ci+'_'+pi]):p.prix)||0; let np=cur; if(PR.mode==='set') np=parseFloat(String(PR.val).replace(',','.'))||0; else if(PR.mode==='pct'){ const pct=parseFloat(String(PR.val).replace(',','.'))||0; np=Math.round(cur*(1+pct/100)*100)/100; } flags['prix_'+ci+'_'+pi]=np; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,price:np}); }
     });
-    // Le nom de catégorie vient de l'ERP : la console ne le modifie PAS.
-    const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length+(PR.mode!=='keep'?1:0);
+    // Le nom de catégorie vient de l'ERP : la console ne le modifie PAS. Le prix
+    // se gère produit par produit sur l'écran Catalogue, pas dans l'assistant.
+    const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length;
     this.setState({flags,menus:menuDb,wizBusy:false,wizOpen:false});
     this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s)');
   }
@@ -1827,8 +1835,9 @@ class Component extends DCLogic {
       wizStart:()=>this.wizStart(), wizClose:()=>this.wizClose(), wizNext:()=>this.wizNext(), wizBack:()=>this.wizBack(), wizApply:()=>this.wizApply(), wizBusy:!!S.wizBusy,
       wizSelAll:()=>this.wizSelAll(), wizSelNone:()=>this.wizSelNone(),
       wizOpen:S.wizOpen, wizIs0:S.wizStep===0, wizIs1:S.wizStep===1, wizIs2:S.wizStep===2, wizIs3:S.wizStep===3, wizShowNext:S.wizStep<3, wizShowApply:S.wizStep===3,
-      wizSetPriceVal:(e)=>this.wizSetPriceVal(e),
-      wizPartAll:S.wizPart==='all', wizPartSel:S.wizPart==='sel', wizSetPartAll:()=>this.wizSetPart('all'), wizSetPartSel:()=>this.wizSetPart('sel'), wizPartAllBg:S.wizPart==='all'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSelBg:S.wizPart==='sel'?'border-color:var(--color-primary);background:#fbe9eb':'',
+      wizPartAll:S.wizPart==='all', wizPartSub:S.wizPart==='sub', wizPartSel:S.wizPart==='sel',
+      wizSetPartAll:()=>this.wizSetPart('all'), wizSetPartSub:()=>this.wizSetPart('sub'), wizSetPartSel:()=>this.wizSetPart('sel'),
+      wizPartAllBg:S.wizPart==='all'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSubBg:S.wizPart==='sub'?'border-color:var(--color-primary);background:#fbe9eb':'', wizPartSelBg:S.wizPart==='sel'?'border-color:var(--color-primary);background:#fbe9eb':'',
       wizCanNext:(S.wizStep!==0)||(S.wizCatIdx!=null),
       ...(function(self,S){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); const c=(S.wizCatIdx!=null)?CATALOG[S.wizCatIdx]:null;
         const stepStyle=(n)=>{ const on=S.wizStep===n, done=S.wizStep>n; return 'display:inline-flex;align-items:center;border-radius:999px;padding:5px 11px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':(done?'background:#eaf5ec;color:#2d6a3e':'background:var(--color-background-secondary);color:var(--color-text-muted)')); };
@@ -1837,8 +1846,13 @@ class Component extends DCLogic {
         const prods=c?c.prods.map((p,pi)=>{ const on=!!S.wizSel[pi]; return {nom:p.nom, on, toggle:()=>self.wizToggleSel(pi),
           ckStyle:'width:16px;height:16px;border-radius:4px;flex:none;border:1.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';'+(on?'background:var(--color-primary)':'background:#fff'),
           rowStyle:'display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:.5px solid var(--color-border-tertiary);cursor:pointer;font:'+(on?'600':'400')+' 12.5px var(--font-ui);color:var(--color-text)' }; }):[];
-        const scopeN=c?(S.wizPart==='sel'?c.prods.filter((p,pi)=>S.wizSel[pi]).length:c.prods.length):0;
         const chip=(active)=>'border:none;cursor:pointer;border-radius:8px;padding:6px 12px;font:600 11.5px var(--font-ui);'+(active?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)');
+        // Sous-catégories de la catégorie courante (déduites des produits).
+        const subMap={}; if(c) c.prods.forEach(p=>{ if(p.sub_id!=null){ const id=String(p.sub_id); if(!subMap[id]) subMap[id]={id,label:p.sub||('Sous-cat #'+id),n:0}; subMap[id].n++; } });
+        const subOpts=Object.keys(subMap).map(id=>subMap[id]).map(sc=>({label:sc.label, n:sc.n, pick:()=>self.wizPickSub(sc.id), style:chip(String(S.wizSubId)===sc.id)}));
+        const scopeN=c?(S.wizPart==='sel'?c.prods.filter((p,pi)=>S.wizSel[pi]).length:(S.wizPart==='sub'?c.prods.filter(p=>String(p.sub_id)===String(S.wizSubId)).length:c.prods.length)):0;
+        const subSel=(S.wizPart==='sub'&&c)?(c.prods.find(p=>String(p.sub_id)===String(S.wizSubId))||{}).sub:'';
+        const scopeLabel=S.wizPart==='sub'?('Sous-catégorie « '+(subSel||'—')+' »'):(S.wizPart==='sel'?'Sélection de produits':'Catégorie entière');
         const propRows=[['web','Webshop','visible sur la boutique en ligne'],['office','Livraison bureau','commande B2B au bureau'],['obl','Obligatoire','imposé par la marque (whitelist)'],['menu','Menu','disponible dans les formules']].map(o=>{
           const k=o[0], cur=S.wizProps[k]||'keep', a=self._wizPropAgg(k);
           const tag = a.tot===0 ? {txt:'aucun produit',col:'#8a8a8a',bg:'#f0f0f0'}
@@ -1854,16 +1868,13 @@ class Component extends DCLogic {
           const seg=(active,col)=>'border:none;cursor:pointer;padding:7px 14px;font:600 11.5px var(--font-ui);white-space:nowrap;'+(active?('background:'+col+';color:#fff'):'background:transparent;color:var(--color-text-muted)');
           const opts=[['on','Activer','#2d6a3e'],['off','Désactiver','#8D1D2C']].map(v=>({label:v[1], style:seg(shown===v[0], v[2]), pick:()=>self.wizPickProp(k,v[0])}));
           return { label:o[1], hint:o[2], tagTxt:tag.txt, tagStyle:'display:inline-block;border-radius:999px;padding:3px 9px;font:600 10px var(--font-ui);color:'+tag.col+';background:'+tag.bg, opts }; });
-        const priceOpts=[['keep','Inchangé'],['set','Fixer €'],['pct','±%']].map(v=>({label:v[1], style:chip(S.wizPrice.mode===v[0]), pick:()=>self.wizSetPriceMode(v[0])}));
         const seasonOpts=[['','Toute l\'année'],['Été','Été'],['Noël','Noël']].map(v=>({label:v[1], style:chip((S.wizSeason||'')===v[0]), pick:()=>self.wizSetSeason(v[0])}));
         const lbl={web:'Webshop',office:'Livraison bureau',obl:'Obligatoire',menu:'Menu'};
         const changes=['web','office','obl','menu'].filter(k=>(S.wizProps[k]||'keep')!=='keep').map(k=>{ const on=S.wizProps[k]==='on'; return {label:lbl[k], val:on?'activé':'désactivé',
           icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);'+(on?'background:#eaf5ec;color:#2d6a3e':'background:#fbe9eb;color:#8D1D2C'), ic:on?'✓':'✕' }; });
-        if(S.wizPrice.mode!=='keep') changes.push({label:'Prix réf.', val:(S.wizPrice.mode==='set'?('fixé à '+(S.wizPrice.val||'—')+' €'):((S.wizPrice.val||'—')+' %')), icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);background:#fbf1e3;color:#C87A3F', ic:'€'});
         return { wizStep0Style:stepStyle(0), wizStep1Style:stepStyle(1), wizStep2Style:stepStyle(2), wizStep3Style:stepStyle(3),
           wizCatOpts:catOpts, wizHasCat:!!c, wizCatName:c?c.cat:'', wizCatCount:c?c.prods.length:0,
-          wizProds:prods, wizScopeN:scopeN, wizSelCount:(c?c.prods.filter((p,pi)=>S.wizSel[pi]).length:0), wizPropRows:propRows, wizPriceOpts:priceOpts, wizSeasonOpts:seasonOpts,
-          wizPriceVal:S.wizPrice.val||'', wizPriceNeedsVal:S.wizPrice.mode==='set'||S.wizPrice.mode==='pct', wizPriceHint:S.wizPrice.mode==='pct'?'ex. +10 ou -5':'ex. 3,50',
+          wizProds:prods, wizScopeN:scopeN, wizScopeLabel:scopeLabel, wizSubOpts:subOpts, wizNoSub:subOpts.length===0, wizSelCount:(c?c.prods.filter((p,pi)=>S.wizSel[pi]).length:0), wizPropRows:propRows, wizSeasonOpts:seasonOpts,
           wizChanges:changes, wizNoChange:changes.length===0,
           wizNextStyle:'background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:10px 20px;font:600 12.5px var(--font-ui);cursor:pointer'+(((S.wizStep===0)&&(S.wizCatIdx==null))?';opacity:.45;pointer-events:none':''),
           wizBackStyle:'background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer'+(S.wizStep===0?';visibility:hidden':'') }; })(this,S),
