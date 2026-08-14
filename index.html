@@ -2395,7 +2395,17 @@ class Component extends DCLogic {
     const menuMode=S.menuMode||'list';
     const _cats=menusDB._categories||{};
     const menuKeys=Object.keys(menusDB).filter(k=>k!=='_categories');
-    const availableMenus=menuKeys.map(id=>{ const mm=menusDB[id]; const r2=this.api?this.api.resolveMenu(id):{effective:0,origin:'default'}; const nb=(mm.bundles||[]).length; return {id,mm,r2,nb}; }).filter(x=>x.r2.effective||x.nb>0).map(x=>({ id:x.id, name:x.mm.productName, category:x.mm.category||'—', nbLabel:x.nb+(x.nb>1?' formules':' formule'), originText:(x.r2.effective?'Oui':'Non')+' · '+(x.r2.origin==='override'?'forcé':'hérité'), originBadge:pill(x.r2.effective?'#eaf5ec':'#fbe9eb',x.r2.effective?'#2d7a3e':'var(--color-primary)'), rowClick:()=>this.setState({menuMode:'edit',menuProductId:x.id,sel:{},menuCreate:false}), delMenu:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'}); this.printJob('✖ Menu supprimé (formules incluses)'); } }));
+    const availableMenus=menuKeys.map(id=>{ const mm=menusDB[id]; const r2=this.api?this.api.resolveMenu(id):{effective:0,origin:'default'}; const nb=(mm.bundles||[]).length; return {id,mm,r2,nb}; }).filter(x=>x.r2.effective||x.nb>0).map(x=>({ id:x.id, name:x.mm.productName, category:x.mm.category||'—', nbLabel:x.nb+(x.nb>1?' formules':' formule'), originText:(x.r2.effective?'Oui':'Non')+' · '+(x.r2.origin==='override'?'forcé':'hérité'), originBadge:pill(x.r2.effective?'#eaf5ec':'#fbe9eb',x.r2.effective?'#2d7a3e':'var(--color-primary)'), rowClick:()=>this.setState({menuMode:'edit',menuProductId:x.id,sel:{},menuCreate:false}), delMenu:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation();
+        /* La suppression PART AU SERVEUR d'abord : l'effacement local seul
+           faisait revenir le menu au rechargement (il vivait toujours en
+           base). L'écran ne retire sa copie que si le serveur a dit oui. */
+        const nid=parseInt(x.id,10);
+        if(!nid){ if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'}); this.printJob('✖ Menu (local) supprimé'); return; }
+        this.frPost('/franchisor/menu-delete',{product_id:nid}).then(ok=>{
+          if(!ok) return;
+          if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'});
+          this.printJob('✖ Menu supprimé en base (formules et déclencheurs inclus)');
+        }); } }));
     const createCats=Object.keys(_cats).map(cn=>{ const on=!!_cats[cn].menu_default; return {name:cn, defStyle:switchS(on), defKnob:knobS(on), toggle:()=>{ if(this.api)this.setState({menus:this.api.setCategoryDefault(cn,on?0:1)}); } }; });
     const cq=(S.menuCreateSearch||'').toLowerCase();
     const createProducts=flatProds.filter(p=>p.name.toLowerCase().includes(cq)||p.cat.toLowerCase().includes(cq)).map(p=>({ name:p.name, catLabel:p.cat, pick:()=>{ if(!this.api)return; this.api.ensureProduct(p.id,p.name,p.price,p.cat); const db=this.api.setProductOverride(p.id,'on'); this.setState({menus:db,menuMode:'edit',menuProductId:p.id,sel:{},menuCreate:false}); } }));
