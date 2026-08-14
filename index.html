@@ -872,13 +872,29 @@
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 18px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
             <div style="{{ catSelWrap }}">
-              <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Catégorie déclencheuse</label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <select value="{{ triggerCatValue }}" onChange="{{ setTriggerCat }}" style="flex:1;min-width:0;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 11px;font:500 12.5px var(--font-ui);color:var(--color-text);background:var(--color-surface)">
-                  <sc-for list="{{ triggerCats }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
-                </select>
-                <button onClick="{{ commitCat }}" style="{{ catValStyle }}" title="Valider la catégorie"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></button>
+              <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Sous-catégories déclencheuses · multi</label>
+              <sc-if value="{{ trigTreeEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="font:500 11px var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:8px;padding:10px 12px">Aucune catégorie armée « Menu ». Activez la bascule Menu d'une catégorie dans l'écran Catalogue : elle apparaîtra ici avec ses sous-catégories.</div>
+              </sc-if>
+              <div style="max-height:190px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding-right:4px">
+                <sc-for list="{{ trigTree }}" as="g" hint-placeholder-count="2">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onClick="{{ g.catToggle }}">
+                      <span style="{{ g.catBox }}">{{ g.catMark }}</span>
+                      <span style="font:600 11.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;color:var(--color-text)">{{ g.catLabel }}</span>
+                      <span style="font:400 10px var(--font-ui);color:var(--color-text-muted)">toute la catégorie</span>
+                    </div>
+                    <sc-if value="{{ g.hasSubs }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0 22px">
+                        <sc-for list="{{ g.subs }}" as="sb" hint-placeholder-count="3">
+                          <button onClick="{{ sb.toggle }}" style="{{ sb.style }}"><span style="{{ sb.box }}">{{ sb.mark }}</span>{{ sb.label }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
               </div>
+              <div style="margin-top:6px;font:500 10px var(--font-ui);color:var(--color-text-muted)">Cocher une sous-catégorie = ses produits seulement · cocher la catégorie = tous ses produits. Les coches se cumulent, l'enregistrement est immédiat.</div>
             </div>
             <div style="{{ forcedWrap }}">
               <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Produit déclencheur</label>
@@ -1884,6 +1900,8 @@ class Component extends DCLogic {
         const j=await r.json().catch(()=>null);
         if(!r.ok){ this.printJob('⚠ Non enregistré — '+((j&&(j.error||j.message))||('HTTP '+r.status))); return false; }
         this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base');
+        // La réponse est rendue à l'appelant (truthy) : saveMenu a besoin du
+        // productId créé par le serveur pour un menu né à l'écran.
         // ÉDITION CATALOGUE → l'écran se resynchronise TOUT SEUL sur la base.
         // Le catalogue était chargé une fois au boot : un produit activé dans
         // l'écran Catalogue restait invisible du constructeur de menus (« Aucun
@@ -1894,7 +1912,7 @@ class Component extends DCLogic {
           clearTimeout(this._catRefetchT);
           this._catRefetchT=setTimeout(()=>this.refetchCatalog(), 800);
         }
-        return true;
+        return j||true;
       })
       .catch(()=>{ this.printJob('⚠ Non enregistré — réseau indisponible'); return false; }); }
   /* Re-télécharge /franchisor/catalog et remplace la table en mémoire. Les
@@ -1935,7 +1953,7 @@ class Component extends DCLogic {
   // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
   saveMenu(db){ const menus=db||this.state.menus, pid=this.pid(), m=menus&&menus[pid];
     if(!m||!(window.__FR&&window.__FR.base))return;
-    const payload={ productId:pid, menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
+    const payload={ productId:pid, productName:m.productName||'', menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
       bundles:(m.bundles||[]).map(bu=>({ name:bu.name, description:bu.description, price_modifier:bu.price_modifier, active:bu.active,
         // cat_id : la categorie dont proviennent les choix de cette etape. Le
         // libelle reste libre pour l'affichage client, mais il ne decide plus
@@ -1945,7 +1963,17 @@ class Component extends DCLogic {
           // affichage — sans l'identifiant, la commande ne pouvait pas relier le
           // choix a un produit (ni stock, ni prix, ni allergenes).
           choices:(s.choices||[]).map(c=>({ label:c.label, product_id:(c.product_id!=null?c.product_id:null), img:c.img, delta:c.delta, cost:c.cost, active:c.active })) })) })) };
-    clearTimeout(this._menuT); this._menuT=setTimeout(()=>this.frPost('/franchisor/menu',payload),700); }
+    clearTimeout(this._menuT); this._menuT=setTimeout(()=>this.frPost('/franchisor/menu',payload).then(r=>{
+      /* MENU NÉ À L'ÉCRAN : le serveur vient de créer le produit-menu réel et
+         rend son identifiant. On remplace l'identifiant local (menu-xxx) par
+         le vrai — sinon les écritures suivantes (déclencheurs compris)
+         resteraient orphelines. */
+      if(r&&r.productId&&String(r.productId)!==String(pid)&&this.api&&this.api.renameProduct){
+        const db=this.api.renameProduct(pid,String(r.productId));
+        const st={menus:db}; if(this.state.menuProductId===pid) st.menuProductId=String(r.productId);
+        this.setState(st);
+      }
+    }),700); }
   addBundle(){ if(!this.api)return; const cur=this.state.menus&&this.state.menus[this.pid()]; if(cur&&cur.bundles.length>=3){ this.printJob('Maximum 3 formules par produit'); return; } const r=this.api.addBundle(this.pid()); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule créée'); }
   duplicateBundle(id){ if(!this.api)return; const r=this.api.duplicateBundle(this.pid(),id); this.setState({menus:r.db,activeBundle:r.id||this.state.activeBundle}); this.saveMenu(r.db); this.printJob('✔ Formule dupliquée (étapes + choix)'); }
   toggleBundleActive(id){ if(!this.api)return; this.apply(this.api.toggleBundle(this.pid(),id)); }
@@ -2381,7 +2409,39 @@ class Component extends DCLogic {
     const catIsMenu=this.api?!!this.api.getCategoryDefault(M.category):false;
     const trigLock=(S.trigLock&&S.trigLock.id===pid0)?S.trigLock.side:null;
     const catCommitted=trigLock==='cat'; const prodCommitted=trigLock==='prod';
-    const hasTrigger=!!trigLock;
+    /* DÉCLENCHEURS MULTI (ws_bundle_triggers, 0078) — servis par
+       /franchisor/menus dans M.triggers : chaque entrée = une catégorie, ou
+       une catégorie ET une sous-catégorie. L'écriture est un REMPLACEMENT
+       COMPLET (la route efface puis réécrit) : ajouter ou retirer une puce
+       renvoie la liste entière. Le POST exige un menu déjà EN BASE (un menu
+       « brouillon » créé à l'écran n'a pas encore de formule serveur — le
+       serveur répond pourquoi, printJob l'affiche). */
+    const trigList=Array.isArray(M.triggers)?M.triggers:[];
+    const pushTriggers=(list)=>{ const pidN=parseInt(pid0,10);
+      if(!pidN){ this.printJob('⚠ Le menu s’enregistre en base — réessayez dans une seconde.'); return; }
+      this.frPost('/franchisor/menu-triggers',{product_id:pidN,triggers:list.map(t=>({cat_id:t.cat_id,sub_cat_id:t.sub_cat_id!=null?t.sub_cat_id:null}))})
+        .then(ok=>{ if(ok&&this.api) this.setState({menus:this.api.updateProduct(pid0,{triggers:list})}); }); };
+    /* L'ARBRE À COCHER : seulement les catégories armées « Menu » (bascule
+       Menu = 1 dans l'écran Catalogue — c'est le filtre demandé), plus toute
+       catégorie qu'un déclencheur existant référence encore, pour pouvoir la
+       décocher. Cocher la catégorie couvre tous ses produits ; cocher des
+       sous-catégories les couvre seules — les deux s'excluent par catégorie
+       (cocher l'une retire l'autre), les catégories se cumulent entre elles. */
+    const _box=(on)=>'display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;flex:none;border:1.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'var(--color-surface)')+';color:#fff;font:700 10px var(--font-ui)';
+    const trigTree=(CATALOG||[]).filter(c=>c.id!=null&&((this.api?!!this.api.getCategoryDefault(c.cat):false)||trigList.some(t=>t.cat_id===c.id))).map(c=>{
+      const catOn=trigList.some(t=>t.cat_id===c.id&&t.sub_cat_id==null);
+      const subs=(c.subs||[]).map(sb=>{ const on=trigList.some(t=>t.cat_id===c.id&&t.sub_cat_id===sb.id);
+        return { label:sb.label, mark:on?'✓':'', box:_box(on)+';margin-right:6px',
+          style:'display:inline-flex;align-items:center;border:none;cursor:pointer;border-radius:14px;padding:4px 10px 4px 5px;font:600 10.5px var(--font-ui);'+(on?'background:#fbe9eb;color:var(--color-primary)':'background:var(--color-background-secondary);color:var(--color-text-muted)'),
+          toggle:()=>{ const rest=trigList.filter(t=>!(t.cat_id===c.id&&(t.sub_cat_id==null||t.sub_cat_id===sb.id)));
+            pushTriggers(on?trigList.filter(t=>!(t.cat_id===c.id&&t.sub_cat_id===sb.id))
+                           :rest.concat([{cat_id:c.id,sub_cat_id:sb.id,cat:c.cat,sub:sb.label}])); } }; });
+      return { catLabel:c.cat, hasSubs:subs.length>0, subs, catMark:catOn?'✓':'', catBox:_box(catOn),
+        catToggle:()=>{ const rest=trigList.filter(t=>t.cat_id!==c.id);
+          pushTriggers(catOn?rest:rest.concat([{cat_id:c.id,sub_cat_id:null,cat:c.cat,sub:null}])); } };
+    });
+    const trigTreeEmpty=trigTree.length===0;
+        const hasTrigger=!!trigLock||trigList.length>0;
     const greyCat=prodCommitted; const greyForced=catCommitted;
     const catDraft=S.trigCatDraft!==undefined?S.trigCatDraft:(M.category||'');
     const prodDraft=S.trigProdDraft!==undefined?S.trigProdDraft:triggerProdVal;
@@ -2921,7 +2981,13 @@ class Component extends DCLogic {
       menuCreateSearch:S.menuCreateSearch||'', setMenuCreateSearch:e=>{ const v=e.target.value; this.setState({menuCreateSearch:v}); },
       menuNewName:S.menuNewName||'', setMenuNewName:e=>{ const v=e.target.value; this.setState({menuNewName:v}); },
       menuNewDesc:S.menuNewDesc||'', setMenuNewDesc:e=>{ const v=e.target.value; this.setState({menuNewDesc:v}); },
-      doCreateMenu:()=>{ if(!this.api)return; const nm=(S.menuNewName||'').trim(); if(!nm){ this.printJob('Nom du menu requis'); return; } const id='menu-'+Date.now().toString(36); this.api.ensureProduct(id,nm,0,''); this.api.setProductOverride(id,'on'); const db=this.api.updateProduct(id,{description:S.menuNewDesc||''}); this.setState({menus:db,menuMode:'edit',menuProductId:id,sel:{},menuCreate:false,menuNewName:'',menuNewDesc:''}); this.printJob('✔ Menu créé'); },
+      doCreateMenu:()=>{ if(!this.api)return; const nm=(S.menuNewName||'').trim(); if(!nm){ this.printJob('Nom du menu requis'); return; } const id='menu-'+Date.now().toString(36); this.api.ensureProduct(id,nm,0,''); this.api.setProductOverride(id,'on'); const db=this.api.updateProduct(id,{description:S.menuNewDesc||''}); this.setState({menus:db,menuMode:'edit',menuProductId:id,sel:{},menuCreate:false,menuNewName:'',menuNewDesc:''});
+        /* ENREGISTRÉ EN BASE TOUT DE SUITE : le serveur crée le produit-menu
+           et rend son identifiant — l'écran bascule dessus (saveMenu). Sans
+           ça, les déclencheurs cochés avant la première formule partaient
+           avec un identifiant d'écran que le serveur ne connaît pas. L'ordre
+           voulu est bien : déclencheurs d'abord, formules ensuite. */
+        this.saveMenu(db); this.printJob('✔ Menu créé — enregistrement en base…'); },
       catName:menuRes.category, catDefStyle:catDefToggle.style, catDefKnob:catDefToggle.knob, catDefToggle:catDefToggle.toggle,
       ovInherit, ovOn, ovOff, menuResBadge,
       triggerCats, triggerCatValue:M.category||'', setTriggerCat:e=>{ if(this.api)this.setState({menus:this.api.updateProduct(pid0,{category:e.target.value})}); },
@@ -2929,6 +2995,7 @@ class Component extends DCLogic {
       forcedStyle:switchS(forcedOn), forcedKnob:knobS(forcedOn), forcedToggle:()=>{ if(this.api)this.apply(this.api.setProductOverride(pid0,forcedOn?null:'on')); },
       menuForcedInfo:catIsMenu?'✓ Cette catégorie est toujours en menu':'Activer pour forcer ce produit en menu',
       catSelWrap:'opacity:'+(greyCat?'.4':'1')+(greyCat?';pointer-events:none':''), forcedWrap:'opacity:'+(greyForced?'.4':'1')+(greyForced?';pointer-events:none':''),
+      trigTree, trigTreeEmpty,
       triggerCatValue:catDraft, setTriggerCat:e=>this.setState({trigCatDraft:e.target.value}),
       catValStyle:vBtn(!!catDraft), catCommitted, commitCat:()=>{ if(!this.api)return; if(catCommitted){ const db=this.api.setProductOverride(pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!catDraft)return; this.api.setProductOverride(pid0,null); this.setState({menus:this.api.updateProduct(pid0,{category:catDraft}),trigProdDraft:'',trigLock:{id:pid0,side:'cat'}}); this.printJob('✔ Déclencheur : catégorie · '+catDraft); },
       prodValStyle:vBtn(!!prodDraft), prodCommitted, commitProd:()=>{ if(!this.api)return; if(prodCommitted){ const db=this.api.setProductOverride(prodDraft||pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!prodDraft)return; this.api.updateProduct(pid0,{category:''}); this.setState({menus:this.api.setProductOverride(prodDraft,'on'),menuProductId:prodDraft,sel:{},trigCatDraft:'',trigLock:{id:prodDraft,side:'prod'}}); this.printJob('✔ Déclencheur : produit'); },

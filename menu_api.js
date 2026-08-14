@@ -37,6 +37,8 @@ export function getBundles(pid) { const p = P(pid); return p ? clone(p) : null; 
 // --- product ---
 // Lazily create a store row for any catalogue product the admin opens.
 export function ensureProduct(pid, name, basePrice, category) { ensure(); if (!DB[pid]) { DB[pid] = { productName: name || pid, category: category || '', menuOverride: null, basePrice: basePrice || 0, baseCost: 0, bundles: [] }; } return persist(); }
+// Le serveur a créé le produit-menu réel : la fiche locale prend son id.
+export function renameProduct(oldId, newId) { ensure(); if (DB[oldId] && !DB[newId]) { DB[newId] = DB[oldId]; delete DB[oldId]; } return persist(); }
 export function updateProduct(pid, patch) { const p = P(pid); if (p) Object.assign(p, patch); return persist(); }
 export function deleteProduct(pid) { ensure(); if (DB[pid]) delete DB[pid]; return persist(); }
 export function deleteBundle(pid, bid) { const p = P(pid); if (p) { p.bundles = p.bundles.filter(function(b){ return b.id !== bid; }); p.bundles.forEach(function(b,i){ b.sort_order = i; }); } return persist(); }
