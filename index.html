@@ -774,6 +774,57 @@
             </div>
           </sc-for>
         </div>
+
+        <!-- Directives de réponse — avis Google (appliquées par la console franchisé) -->
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:4px">
+            <div class="t-section-title" style="font-size:15px">Directives de réponse — avis Google</div>
+            <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">ws_review_guidelines</span>
+            <button onClick="{{ rgAdd }}" style="margin-left:auto;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">+ Directive</button>
+          </div>
+          <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">Par tranche de note, le ton et les consignes que la console franchisé applique pour générer un brouillon de réponse à un avis Google. La publication reste manuelle : le franchisé relit, copie et colle la réponse sur Google.</div>
+          <sc-if value="{{ rgHasErr }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fbe9eb;border:.5px solid #f0cdd2;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#8D1D2C">⚠ {{ rgErr }}</div>
+          </sc-if>
+          <sc-if value="{{ rgEditing }}" hint-placeholder-val="{{ false }}">
+            <div style="border:.5px solid var(--color-border-secondary);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Note min (1–5)
+                  <input type="number" min="1" max="5" value="{{ rgE.note_min }}" onChange="{{ rgSetMin }}" style="width:90px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Note max (1–5)
+                  <input type="number" min="1" max="5" value="{{ rgE.note_max }}" onChange="{{ rgSetMax }}" style="width:90px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted);flex:1;min-width:220px">Ton (le sens de la réponse)
+                  <input value="{{ rgE.tone }}" onChange="{{ rgSetTone }}" placeholder="ex. Empathique et orienté solution, sans promesse commerciale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
+              </div>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Consignes (quoi dire, quoi ne jamais dire)
+                <textarea rows="3" onChange="{{ rgSetInstr }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical">{{ rgE.instructions }}</textarea></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Exemple du registre attendu (jamais recopié tel quel)
+                <textarea rows="2" onChange="{{ rgSetEx }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical">{{ rgE.example_reply }}</textarea></label>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button onClick="{{ rgCancel }}" style="background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">Annuler</button>
+                <button onClick="{{ rgSave }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">Enregistrer</button>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ rgHasList }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:.7fr 1.6fr 1fr .7fr auto;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Tranche</span><span class="t-admin-label">Ton</span><span class="t-admin-label">Contenu</span><span class="t-admin-label">Màj</span><span></span></div>
+            <sc-for list="{{ rgRows }}" as="g" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:.7fr 1.6fr 1fr .7fr auto;align-items:center;gap:8px;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
+                <span style="font:700 12.5px var(--font-ui);color:var(--color-text)">{{ g.tranche }}</span>
+                <span style="font:400 12.5px var(--font-ui);color:var(--color-text);min-width:0">{{ g.ton }}</span>
+                <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ g.extra }}</span>
+                <span style="font:400 11px var(--font-mono,monospace);color:var(--color-text-muted)">{{ g.maj }}</span>
+                <span style="display:inline-flex;gap:6px">
+                  <button onClick="{{ g.edit }}" style="background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:8px;padding:6px 11px;font:600 11.5px var(--font-ui);cursor:pointer">Éditer</button>
+                  <button onClick="{{ g.del }}" style="background:#fbe9eb;color:#8D1D2C;border:none;border-radius:8px;padding:6px 11px;font:600 11.5px var(--font-ui);cursor:pointer">Suppr.</button>
+                </span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ rgEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:20px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune directive — la génération côté franchisé le dira tant que la tranche de la note manque.</div>
+            </sc-if>
+          </sc-if>
+        </div>
       </div>
       </sc-if>
 
@@ -1347,7 +1398,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgEdit:null, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
 
@@ -1482,10 +1533,30 @@ class Component extends DCLogic {
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
     const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
     fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); }
   // ===== Avis clients (satisfaction) — serveur autoritaire, aucune donnée inventée =====
   avEnsure(){ if(this.state.screen!=='avis') return; const key=String(this.state.avShop||''); if(this._avKey===key && !this._avForce) return; this._avKey=key; this._avForce=false; this.avLoad(); }
   avRefresh(){ this._avForce=true; this.avEnsure(); }
+  // ===== Avis Google — directives de réponse (ws_review_guidelines) =====
+  // La marque écrit ICI le ton et les consignes ; la console franchisé les
+  // applique pour générer un brouillon de réponse à un avis Google. Aucun
+  // seed : la table naît vide et cet écran est sa seule source d'écriture.
+  rgEnsure(){ if(this.state.screen!=='avis') return; if(this._rgDone && !this._rgForce) return; this._rgDone=true; this._rgForce=false; this.rgLoad(); }
+  rgLoad(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this.setState({rgErr:'API non configurée — les directives vivent en base (ws_review_guidelines).',rgList:null,rgLoading:false}); return; }
+    this.setState({rgLoading:true,rgErr:''});
+    fetch(fr.base+'/franchisor/review-guidelines',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
+      .then(r=>r.json().then(j=>({ok:r.ok,j})).catch(()=>({ok:false,j:null})))
+      .then(x=>{ if(x.ok&&Array.isArray(x.j)) this.setState({rgList:x.j,rgErr:'',rgLoading:false});
+        else this.setState({rgList:null,rgLoading:false,rgErr:(x.j&&x.j.error)?String(x.j.error):'Chargement des directives en échec.'}); })
+      .catch(()=>this.setState({rgList:null,rgLoading:false,rgErr:'API injoignable (serveur ou réseau).'}));
+  }
+  rgSave(){ const g=this.state.rgEdit||{};
+    this.frPost('/franchisor/review-guideline',{id:(g.id||0),note_min:(parseInt(g.note_min,10)||0),note_max:(parseInt(g.note_max,10)||0),tone:String(g.tone||'').trim(),instructions:String(g.instructions||''),example_reply:String(g.example_reply||'')})
+      .then(ok=>{ if(ok){ this.setState({rgEdit:null}); this._rgForce=true; this.rgEnsure(); } });
+  }
+  rgDel(id){ this.frPost('/franchisor/review-guideline',{id:id,delete:true})
+      .then(ok=>{ if(ok){ this._rgForce=true; this.rgEnsure(); } }); }
   avSetShop(e){ this.setState({avShop:e.target.value}); }
   avLoad(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!fr.base){ this.setState({avErr:'API non configurée — écran serveur-autoritaire (aucune donnée locale).',avData:null,avLoading:false}); return; }
@@ -1947,7 +2018,7 @@ class Component extends DCLogic {
       .catch(()=>false); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
     // Cut-off delivery : signal au passage (toast, une fois par jour) et
     // compte à rebours du panneau tenu à jour quand le tableau de bord est
     // affiché. Calcul local (param + tables en mémoire), aucun fetch.
@@ -2887,6 +2958,26 @@ class Component extends DCLogic {
           wizBackStyle:'background:transparent;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:10px 18px;font:600 12.5px var(--font-ui);cursor:pointer'+(S.wizStep===0?';visibility:hidden':'') }; })(this,S),
       avScopeBadge:'Franchiseur · réseau',
       avShop:S.avShop||'', avSetShop:(e)=>this.avSetShop(e), avRefresh:()=>this.avRefresh(),
+      rgHasErr:!!S.rgErr, rgErr:S.rgErr||'',
+      rgHasList:Array.isArray(S.rgList),
+      rgEmpty:Array.isArray(S.rgList)&&S.rgList.length===0,
+      rgRows:(S.rgList||[]).map(g=>({
+        tranche:(g.note_min===g.note_max?String(g.note_min):(g.note_min+'–'+g.note_max))+' ★',
+        ton:g.tone||'—',
+        extra:[g.instructions?'consignes':null,g.example_reply?'exemple':null].filter(Boolean).join(' · ')||'ton seul',
+        maj:g.maj||'—',
+        edit:()=>this.setState({rgEdit:{id:g.id,note_min:g.note_min,note_max:g.note_max,tone:g.tone||'',instructions:g.instructions||'',example_reply:g.example_reply||''}}),
+        del:()=>this.rgDel(g.id),
+      })),
+      rgAdd:()=>this.setState({rgEdit:{id:0,note_min:1,note_max:2,tone:'',instructions:'',example_reply:''}}),
+      rgEditing:!!S.rgEdit, rgE:S.rgEdit||{},
+      rgSetMin:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,note_min:v}})); },
+      rgSetMax:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,note_max:v}})); },
+      rgSetTone:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,tone:v}})); },
+      rgSetInstr:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,instructions:v}})); },
+      rgSetEx:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,example_reply:v}})); },
+      rgCancel:()=>this.setState({rgEdit:null}),
+      rgSave:()=>this.rgSave(),
       avLoading:!!S.avLoading, avErr:S.avErr||'', avHasErr:!!S.avErr,
       avShopOpts:((S.avData&&S.avData.shops)||[]).map(s=>({id:String(s.id),label:s.name+(s.city?(' · '+s.city):''),sel:String(s.id)===String(S.avShop)})),
       ...(function(self,S){ const d=S.avData||{}; const t=d.totals||{total:0,liked:0,disliked:0,pending:0};
