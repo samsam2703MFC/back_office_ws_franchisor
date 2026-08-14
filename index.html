@@ -2293,7 +2293,7 @@ class Component extends DCLogic {
        serveur répond pourquoi, printJob l'affiche). */
     const trigList=Array.isArray(M.triggers)?M.triggers:[];
     const pushTriggers=(list)=>{ const pidN=parseInt(pid0,10);
-      if(!pidN){ this.printJob('⚠ Enregistrez d’abord une formule de ce menu (le serveur doit le connaître).'); return; }
+      if(!pidN){ this.printJob('⚠ Le menu s’enregistre en base — réessayez dans une seconde.'); return; }
       this.frPost('/franchisor/menu-triggers',{product_id:pidN,triggers:list.map(t=>({cat_id:t.cat_id,sub_cat_id:t.sub_cat_id!=null?t.sub_cat_id:null}))})
         .then(ok=>{ if(ok&&this.api) this.setState({menus:this.api.updateProduct(pid0,{triggers:list})}); }); };
     /* L'ARBRE À COCHER : seulement les catégories armées « Menu » (bascule
@@ -2847,7 +2847,13 @@ class Component extends DCLogic {
       menuCreateSearch:S.menuCreateSearch||'', setMenuCreateSearch:e=>{ const v=e.target.value; this.setState({menuCreateSearch:v}); },
       menuNewName:S.menuNewName||'', setMenuNewName:e=>{ const v=e.target.value; this.setState({menuNewName:v}); },
       menuNewDesc:S.menuNewDesc||'', setMenuNewDesc:e=>{ const v=e.target.value; this.setState({menuNewDesc:v}); },
-      doCreateMenu:()=>{ if(!this.api)return; const nm=(S.menuNewName||'').trim(); if(!nm){ this.printJob('Nom du menu requis'); return; } const id='menu-'+Date.now().toString(36); this.api.ensureProduct(id,nm,0,''); this.api.setProductOverride(id,'on'); const db=this.api.updateProduct(id,{description:S.menuNewDesc||''}); this.setState({menus:db,menuMode:'edit',menuProductId:id,sel:{},menuCreate:false,menuNewName:'',menuNewDesc:''}); this.printJob('✔ Menu créé'); },
+      doCreateMenu:()=>{ if(!this.api)return; const nm=(S.menuNewName||'').trim(); if(!nm){ this.printJob('Nom du menu requis'); return; } const id='menu-'+Date.now().toString(36); this.api.ensureProduct(id,nm,0,''); this.api.setProductOverride(id,'on'); const db=this.api.updateProduct(id,{description:S.menuNewDesc||''}); this.setState({menus:db,menuMode:'edit',menuProductId:id,sel:{},menuCreate:false,menuNewName:'',menuNewDesc:''});
+        /* ENREGISTRÉ EN BASE TOUT DE SUITE : le serveur crée le produit-menu
+           et rend son identifiant — l'écran bascule dessus (saveMenu). Sans
+           ça, les déclencheurs cochés avant la première formule partaient
+           avec un identifiant d'écran que le serveur ne connaît pas. L'ordre
+           voulu est bien : déclencheurs d'abord, formules ensuite. */
+        this.saveMenu(db); this.printJob('✔ Menu créé — enregistrement en base…'); },
       catName:menuRes.category, catDefStyle:catDefToggle.style, catDefKnob:catDefToggle.knob, catDefToggle:catDefToggle.toggle,
       ovInherit, ovOn, ovOff, menuResBadge,
       triggerCats, triggerCatValue:M.category||'', setTriggerCat:e=>{ if(this.api)this.setState({menus:this.api.updateProduct(pid0,{category:e.target.value})}); },
