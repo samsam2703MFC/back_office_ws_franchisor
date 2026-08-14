@@ -1411,6 +1411,12 @@ class Component extends DCLogic {
     const d=new Date();
     const dateFR=d.toLocaleDateString('fr-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     const cut=this.cutoffCfg();
+    /* CHARTE — polices _ds déployées avec la console ; URL ABSOLUES car le
+       document s'ouvre depuis un blob où le relatif ne résout plus. Police
+       indisponible => pile système, l'impression ne casse pas. */
+    const consoleBase=location.origin+location.pathname.replace(/[^/]*$/,'');
+    const dsFonts=consoleBase+'_ds/l-atelier-by-8504a4e3-7796-44da-b087-3fbd9dcb8dcd/fonts/';
+    const enTete='<div class="ph"><img src="'+esc(consoleBase+'img/logo.png')+'" alt=""><span class="ph-t">L’Atelier By — console marque</span><span class="ph-d">'+esc(dateFR)+'</span></div>';
     const shops=T('shops');
     const actives=shops.filter(s=>s&&s.act!==false&&s.act!==0);
     const nInact=shops.length-actives.length;
@@ -1438,11 +1444,18 @@ class Component extends DCLogic {
         +'→ « Lancer le run (1 document) » imprime les feuilles A4 par tournée (tournée → sites → bureau → départements → clients) et toutes les étiquettes (delivery sites, clients, colis) de cette boutique.</div>'
         +'</section>'); });
     return '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Run d’impression réseau — '+esc(dateFR)+'</title><style>'
-      +'@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;font:12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#222}'
+      +'@font-face{font-family:\'Gotham\';src:url(\''+dsFonts+'Gotham_Book.otf\');font-weight:400;font-display:swap}'
+      +'@font-face{font-family:\'Gotham\';src:url(\''+dsFonts+'Gotham_Medium.otf\');font-weight:600;font-display:swap}'
+      +'@font-face{font-family:\'Vank\';src:url(\''+dsFonts+'GC_Vank.ttf\');font-weight:400;font-display:swap}'
+      +'@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;font:12px/1.5 \'Gotham\',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#222}'
       +'.bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}'
       +'.bar button{border:none;background:#8D1D2C;color:#fff;border-radius:8px;padding:9px 16px;font:600 13px inherit;cursor:pointer}'
       +'@media print{.no-print{display:none}}'
-      +'.page{page-break-after:always;padding:6mm 8mm}h1{font-size:17px;margin:0 0 1mm}.sub{color:#666;font-size:11px;margin-bottom:4mm}'
+      +'.ph{display:flex;align-items:center;gap:4mm;border-bottom:1.5px solid #8D1D2C;padding-bottom:2.5mm;margin-bottom:3.5mm}'
+      +'.ph img{height:9mm}.ph-t{font-weight:600;font-size:12px;letter-spacing:.02em}.ph-d{margin-left:auto;color:#666;font-size:10.5px}'
+      +'.page{page-break-after:always;padding:6mm 8mm}'
+      +'h1{font-family:\'Vank\',\'Gotham\',serif;font-weight:400;font-size:21px;color:#8D1D2C;margin:0 0 1mm}'
+      +'.sub{color:#666;font-size:11px;margin-bottom:4mm}'
       +'table{width:100%;border-collapse:collapse}th,td{border:.5px solid #ccc;padding:1.6mm 2.2mm;text-align:left;font-size:11px}'
       +'th{background:#f4f1ec;font-size:9px;text-transform:uppercase;letter-spacing:.05em}'
       +'.note{border:.6px solid #bbb;border-radius:2mm;padding:3mm;margin:0 0 4mm;font-size:11.5px;line-height:1.55}'
@@ -1452,7 +1465,7 @@ class Component extends DCLogic {
       +'.mono{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}'
       +'a{color:#8D1D2C}'
       +'</style></head><body><div class="no-print bar"><strong>Run d’impression réseau — '+esc(dateFR)+'</strong><button onclick="window.print()">Imprimer</button></div>'
-      +out.join('')+'</body></html>'; }
+      +out.map(x=>x.replace('<section class="page">','<section class="page">'+enTete)).join('')+'</body></html>'; }
   /* OUVERTURE AU CLIC — après coup l'onglet serait bloqué comme popup.
      Bloqué malgré tout ⇒ téléchargement, et on le dit. */
   runCutoff(){ const html=this.cutoffDocHtml();
