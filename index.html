@@ -854,13 +854,24 @@
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:14px 18px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">
             <div style="{{ catSelWrap }}">
-              <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Catégorie déclencheuse</label>
+              <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Catégories / sous-catégories déclencheuses · multi</label>
+              <sc-if value="{{ hasTrigChips }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+                  <sc-for list="{{ trigChips }}" as="t" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:6px;background:#fbe9eb;color:var(--color-primary);border-radius:16px;padding:4px 6px 4px 11px;font:600 11px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" title="Retirer ce déclencheur" style="border:none;background:transparent;color:inherit;cursor:pointer;font:700 12px var(--font-ui);padding:0 3px">×</button></span>
+                  </sc-for>
+                </div>
+              </sc-if>
               <div style="display:flex;align-items:center;gap:8px">
-                <select value="{{ triggerCatValue }}" onChange="{{ setTriggerCat }}" style="flex:1;min-width:0;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 11px;font:500 12.5px var(--font-ui);color:var(--color-text);background:var(--color-surface)">
-                  <sc-for list="{{ triggerCats }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+                <select value="{{ trigAddCatValue }}" onChange="{{ setTrigAddCat }}" style="flex:1.2;min-width:0;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 11px;font:500 12.5px var(--font-ui);color:var(--color-text);background:var(--color-surface)">
+                  <sc-for list="{{ trigAddCatOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
                 </select>
-                <button onClick="{{ commitCat }}" style="{{ catValStyle }}" title="Valider la catégorie"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></button>
+                <select value="{{ trigAddSubValue }}" onChange="{{ setTrigAddSub }}" style="flex:1;min-width:0;border:.5px solid var(--color-border-secondary);border-radius:8px;padding:9px 11px;font:500 12.5px var(--font-ui);color:var(--color-text);background:var(--color-surface)">
+                  <sc-for list="{{ trigAddSubOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+                </select>
+                <button onClick="{{ addTrigger }}" style="{{ trigAddStyle }}" title="Ajouter ce déclencheur"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg></button>
               </div>
+              <div style="margin-top:6px;font:500 10px var(--font-ui);color:var(--color-text-muted)">Une entrée = une catégorie entière, ou une catégorie ET une sous-catégorie. Plusieurs entrées se cumulent.</div>
             </div>
             <div style="{{ forcedWrap }}">
               <label style="display:block;font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-bottom:6px">Produit déclencheur</label>
@@ -2256,7 +2267,32 @@ class Component extends DCLogic {
     const catIsMenu=this.api?!!this.api.getCategoryDefault(M.category):false;
     const trigLock=(S.trigLock&&S.trigLock.id===pid0)?S.trigLock.side:null;
     const catCommitted=trigLock==='cat'; const prodCommitted=trigLock==='prod';
-    const hasTrigger=!!trigLock;
+    /* DÉCLENCHEURS MULTI (ws_bundle_triggers, 0078) — servis par
+       /franchisor/menus dans M.triggers : chaque entrée = une catégorie, ou
+       une catégorie ET une sous-catégorie. L'écriture est un REMPLACEMENT
+       COMPLET (la route efface puis réécrit) : ajouter ou retirer une puce
+       renvoie la liste entière. Le POST exige un menu déjà EN BASE (un menu
+       « brouillon » créé à l'écran n'a pas encore de formule serveur — le
+       serveur répond pourquoi, printJob l'affiche). */
+    const trigList=Array.isArray(M.triggers)?M.triggers:[];
+    const pushTriggers=(list)=>{ const pidN=parseInt(pid0,10);
+      if(!pidN){ this.printJob('⚠ Enregistrez d’abord une formule de ce menu (le serveur doit le connaître).'); return; }
+      this.frPost('/franchisor/menu-triggers',{product_id:pidN,triggers:list.map(t=>({cat_id:t.cat_id,sub_cat_id:t.sub_cat_id!=null?t.sub_cat_id:null}))})
+        .then(ok=>{ if(ok&&this.api) this.setState({menus:this.api.updateProduct(pid0,{triggers:list})}); }); };
+    const trigChips=trigList.map((t,i)=>({ label:(t.cat||('#'+t.cat_id))+(t.sub?(' › '+t.sub):''),
+      remove:()=>pushTriggers(trigList.filter((_,j)=>j!==i)) }));
+    const trigAddCatOpts=[{value:'',label:'— Catégorie… —'}].concat((CATALOG||[]).filter(c=>c.id!=null).map(c=>({value:String(c.id),label:c.cat})));
+    const trigAddCatSel=S.trigAddCat||'';
+    const _trigCat=(CATALOG||[]).find(c=>String(c.id)===trigAddCatSel);
+    const trigAddSubOpts=[{value:'',label:'— Toute la catégorie —'}].concat(((_trigCat&&_trigCat.subs)||[]).map(sb=>({value:String(sb.id),label:'ET · '+sb.label})));
+    const trigAddSubSel=S.trigAddSub||'';
+    const addTrigger=()=>{ if(!trigAddCatSel) return;
+      const cid=parseInt(trigAddCatSel,10), sid=trigAddSubSel?parseInt(trigAddSubSel,10):null;
+      if(trigList.some(t=>t.cat_id===cid&&(t.sub_cat_id!=null?t.sub_cat_id:null)===sid)){ this.printJob('Déclencheur déjà présent'); return; }
+      const sb=sid&&_trigCat?(_trigCat.subs||[]).find(x=>String(x.id)===trigAddSubSel):null;
+      pushTriggers(trigList.concat([{cat_id:cid,sub_cat_id:sid,cat:_trigCat?_trigCat.cat:'',sub:sb?sb.label:null}]));
+      this.setState({trigAddCat:'',trigAddSub:''}); };
+    const hasTrigger=!!trigLock||trigList.length>0;
     const greyCat=prodCommitted; const greyForced=catCommitted;
     const catDraft=S.trigCatDraft!==undefined?S.trigCatDraft:(M.category||'');
     const prodDraft=S.trigProdDraft!==undefined?S.trigProdDraft:triggerProdVal;
@@ -2795,6 +2831,10 @@ class Component extends DCLogic {
       forcedStyle:switchS(forcedOn), forcedKnob:knobS(forcedOn), forcedToggle:()=>{ if(this.api)this.apply(this.api.setProductOverride(pid0,forcedOn?null:'on')); },
       menuForcedInfo:catIsMenu?'✓ Cette catégorie est toujours en menu':'Activer pour forcer ce produit en menu',
       catSelWrap:'opacity:'+(greyCat?'.4':'1')+(greyCat?';pointer-events:none':''), forcedWrap:'opacity:'+(greyForced?'.4':'1')+(greyForced?';pointer-events:none':''),
+      hasTrigChips:trigChips.length>0, trigChips,
+      trigAddCatOpts, trigAddCatValue:trigAddCatSel, setTrigAddCat:e=>this.setState({trigAddCat:e.target.value,trigAddSub:''}),
+      trigAddSubOpts, trigAddSubValue:trigAddSubSel, setTrigAddSub:e=>this.setState({trigAddSub:e.target.value}),
+      addTrigger, trigAddStyle:vBtn(!!trigAddCatSel),
       triggerCatValue:catDraft, setTriggerCat:e=>this.setState({trigCatDraft:e.target.value}),
       catValStyle:vBtn(!!catDraft), catCommitted, commitCat:()=>{ if(!this.api)return; if(catCommitted){ const db=this.api.setProductOverride(pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!catDraft)return; this.api.setProductOverride(pid0,null); this.setState({menus:this.api.updateProduct(pid0,{category:catDraft}),trigProdDraft:'',trigLock:{id:pid0,side:'cat'}}); this.printJob('✔ Déclencheur : catégorie · '+catDraft); },
       prodValStyle:vBtn(!!prodDraft), prodCommitted, commitProd:()=>{ if(!this.api)return; if(prodCommitted){ const db=this.api.setProductOverride(prodDraft||pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!prodDraft)return; this.api.updateProduct(pid0,{category:''}); this.setState({menus:this.api.setProductOverride(prodDraft,'on'),menuProductId:prodDraft,sel:{},trigCatDraft:'',trigLock:{id:prodDraft,side:'prod'}}); this.printJob('✔ Déclencheur : produit'); },
