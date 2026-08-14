@@ -2408,7 +2408,17 @@ class Component extends DCLogic {
     const menuMode=S.menuMode||'list';
     const _cats=menusDB._categories||{};
     const menuKeys=Object.keys(menusDB).filter(k=>k!=='_categories');
-    const availableMenus=menuKeys.map(id=>{ const mm=menusDB[id]; const r2=this.api?this.api.resolveMenu(id):{effective:0,origin:'default'}; const nb=(mm.bundles||[]).length; return {id,mm,r2,nb}; }).filter(x=>x.r2.effective||x.nb>0).map(x=>({ id:x.id, name:x.mm.productName, category:x.mm.category||'—', nbLabel:x.nb+(x.nb>1?' formules':' formule'), originText:(x.r2.effective?'Oui':'Non')+' · '+(x.r2.origin==='override'?'forcé':'hérité'), originBadge:pill(x.r2.effective?'#eaf5ec':'#fbe9eb',x.r2.effective?'#2d7a3e':'var(--color-primary)'), rowClick:()=>this.setState({menuMode:'edit',menuProductId:x.id,sel:{},menuCreate:false}), delMenu:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'}); this.printJob('✖ Menu supprimé (formules incluses)'); } }));
+    const availableMenus=menuKeys.map(id=>{ const mm=menusDB[id]; const r2=this.api?this.api.resolveMenu(id):{effective:0,origin:'default'}; const nb=(mm.bundles||[]).length; return {id,mm,r2,nb}; }).filter(x=>x.r2.effective||x.nb>0).map(x=>({ id:x.id, name:x.mm.productName, category:x.mm.category||'—', nbLabel:x.nb+(x.nb>1?' formules':' formule'), originText:(x.r2.effective?'Oui':'Non')+' · '+(x.r2.origin==='override'?'forcé':'hérité'), originBadge:pill(x.r2.effective?'#eaf5ec':'#fbe9eb',x.r2.effective?'#2d7a3e':'var(--color-primary)'), rowClick:()=>this.setState({menuMode:'edit',menuProductId:x.id,sel:{},menuCreate:false}), delMenu:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation();
+        /* La suppression PART AU SERVEUR d'abord : l'effacement local seul
+           faisait revenir le menu au rechargement (il vivait toujours en
+           base). L'écran ne retire sa copie que si le serveur a dit oui. */
+        const nid=parseInt(x.id,10);
+        if(!nid){ if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'}); this.printJob('✖ Menu (local) supprimé'); return; }
+        this.frPost('/franchisor/menu-delete',{product_id:nid}).then(ok=>{
+          if(!ok) return;
+          if(this.api)this.setState({menus:this.api.deleteProduct(x.id),menuMode:'list'});
+          this.printJob('✖ Menu supprimé en base (formules et déclencheurs inclus)');
+        }); } }));
     const createCats=Object.keys(_cats).map(cn=>{ const on=!!_cats[cn].menu_default; return {name:cn, defStyle:switchS(on), defKnob:knobS(on), toggle:()=>{ if(this.api)this.setState({menus:this.api.setCategoryDefault(cn,on?0:1)}); } }; });
     const cq=(S.menuCreateSearch||'').toLowerCase();
     const createProducts=flatProds.filter(p=>p.name.toLowerCase().includes(cq)||p.cat.toLowerCase().includes(cq)).map(p=>({ name:p.name, catLabel:p.cat, pick:()=>{ if(!this.api)return; this.api.ensureProduct(p.id,p.name,p.price,p.cat); const db=this.api.setProductOverride(p.id,'on'); this.setState({menus:db,menuMode:'edit',menuProductId:p.id,sel:{},menuCreate:false}); } }));
@@ -2443,8 +2453,8 @@ class Component extends DCLogic {
     const _box=(on)=>'display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;flex:none;border:1.5px solid '+(on?'var(--color-primary)':'var(--color-border-secondary)')+';background:'+(on?'var(--color-primary)':'var(--color-surface)')+';color:#fff;font:700 10px var(--font-ui)';
     const trigTree=(CATALOG||[]).filter(c=>c.id!=null&&((this.api?!!this.api.getCategoryDefault(c.cat):false)||trigList.some(t=>t.cat_id===c.id))).map(c=>{
       const catOn=trigList.some(t=>t.cat_id===c.id&&t.sub_cat_id==null);
-      const subs=(c.subs||[]).map(sb=>{ const on=trigList.some(t=>t.cat_id===c.id&&t.sub_cat_id===sb.id);
-        return { label:sb.label, mark:on?'✓':'', box:_box(on)+';margin-right:6px',
+      const subs=(c.subs||[]).map(sb=>{ const tr=trigList.find(t=>t.cat_id===c.id&&t.sub_cat_id===sb.id); const on=!!tr;
+        return { label:sb.label+(tr&&tr.article_id!=null?(' → '+(tr.article||('#'+tr.article_id))):''), mark:on?'✓':'', box:_box(on)+';margin-right:6px',
           style:'display:inline-flex;align-items:center;border:none;cursor:pointer;border-radius:14px;padding:4px 10px 4px 5px;font:600 10.5px var(--font-ui);'+(on?'background:#fbe9eb;color:var(--color-primary)':'background:var(--color-background-secondary);color:var(--color-text-muted)'),
           toggle:()=>{ const rest=trigList.filter(t=>!(t.cat_id===c.id&&(t.sub_cat_id==null||t.sub_cat_id===sb.id)));
             pushTriggers(on?trigList.filter(t=>!(t.cat_id===c.id&&t.sub_cat_id===sb.id))
@@ -2454,6 +2464,25 @@ class Component extends DCLogic {
           pushTriggers(catOn?rest:rest.concat([{cat_id:c.id,sub_cat_id:null,cat:c.cat,sub:null}])); } };
     });
     const trigTreeEmpty=trigTree.length===0;
+    /* RAFFINEUR « PRODUIT DÉCLENCHEUR » (0081) : disponible seulement quand UN
+       seul déclencheur est coché — son périmètre fournit la liste d'articles.
+       Choisir un article restreint le déclencheur à lui seul ; « Tout le
+       périmètre » retire la restriction. À 0 ou 2+ coches, le sélecteur est
+       grisé : on ne saurait pas dire de quel périmètre viendraient les
+       articles. */
+    const trigOne=trigList.length===1?trigList[0]:null;
+    const _trigOneCat=trigOne?(CATALOG||[]).find(c=>c.id===trigOne.cat_id):null;
+    const trigArtOpts=[{value:'',label:'— Tout le périmètre —'}].concat(
+      trigOne&&_trigOneCat?_trigOneCat.prods
+        .filter(p=>p.id!=null&&(trigOne.sub_cat_id==null||p.sub_id===trigOne.sub_cat_id))
+        .map(p=>({value:String(p.id),label:p.nom})):[]);
+    const trigArtVal=trigOne&&trigOne.article_id!=null?String(trigOne.article_id):(S.trigArtDraft||'');
+    const trigArtApply=()=>{ if(!trigOne) return;
+      const v=S.trigArtDraft!==undefined?S.trigArtDraft:trigArtVal;
+      const aid=v?parseInt(v,10):null;
+      const art=aid&&_trigOneCat?_trigOneCat.prods.find(p=>String(p.id)===String(aid)):null;
+      pushTriggers([Object.assign({},trigOne,{article_id:aid,article:art?art.nom:null})]);
+      this.setState({trigArtDraft:undefined}); };
         const hasTrigger=!!trigLock||trigList.length>0;
     const greyCat=prodCommitted; const greyForced=catCommitted;
     const catDraft=S.trigCatDraft!==undefined?S.trigCatDraft:(M.category||'');
@@ -3006,14 +3035,19 @@ class Component extends DCLogic {
       triggerCats, triggerCatValue:M.category||'', setTriggerCat:e=>{ if(this.api)this.setState({menus:this.api.updateProduct(pid0,{category:e.target.value})}); },
       triggerProducts, hasTriggerProducts:triggerProducts.length>0,
       forcedStyle:switchS(forcedOn), forcedKnob:knobS(forcedOn), forcedToggle:()=>{ if(this.api)this.apply(this.api.setProductOverride(pid0,forcedOn?null:'on')); },
-      menuForcedInfo:catIsMenu?'✓ Cette catégorie est toujours en menu':'Activer pour forcer ce produit en menu',
-      catSelWrap:'opacity:'+(greyCat?'.4':'1')+(greyCat?';pointer-events:none':''), forcedWrap:'opacity:'+(greyForced?'.4':'1')+(greyForced?';pointer-events:none':''),
+      menuForcedInfo:(trigList.length===0?'Cochez d’abord un déclencheur à gauche.'
+        :(trigList.length>1?'Plusieurs déclencheurs cochés — le choix d’un article est impossible.'
+        :(trigOne&&trigOne.article_id!=null?('✓ Restreint à « '+(trigOne.article||('#'+trigOne.article_id))+' »')
+        :'Optionnel : restreindre ce déclencheur à un seul article de son périmètre.'))),
+      catSelWrap:'opacity:'+(greyCat?'.4':'1')+(greyCat?';pointer-events:none':''),
+      forcedWrap:'opacity:'+(trigList.length===1?'1':'.4')+(trigList.length===1?'':';pointer-events:none'),
       trigTree, trigTreeEmpty,
       triggerCatValue:catDraft, setTriggerCat:e=>this.setState({trigCatDraft:e.target.value}),
       catValStyle:vBtn(!!catDraft), catCommitted, commitCat:()=>{ if(!this.api)return; if(catCommitted){ const db=this.api.setProductOverride(pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!catDraft)return; this.api.setProductOverride(pid0,null); this.setState({menus:this.api.updateProduct(pid0,{category:catDraft}),trigProdDraft:'',trigLock:{id:pid0,side:'cat'}}); this.printJob('✔ Déclencheur : catégorie · '+catDraft); },
-      prodValStyle:vBtn(!!prodDraft), prodCommitted, commitProd:()=>{ if(!this.api)return; if(prodCommitted){ const db=this.api.setProductOverride(prodDraft||pid0,null); this.setState({menus:db,trigLock:null}); this.printJob('↩ Déclencheur annulé'); return; } if(!prodDraft)return; this.api.updateProduct(pid0,{category:''}); this.setState({menus:this.api.setProductOverride(prodDraft,'on'),menuProductId:prodDraft,sel:{},trigCatDraft:'',trigLock:{id:prodDraft,side:'prod'}}); this.printJob('✔ Déclencheur : produit'); },
+      prodValStyle:vBtn(!!trigOne), prodCommitted, commitProd:trigArtApply,
       hasTrigger, step3Wrap:'opacity:'+(hasTrigger?'1':'.45')+(hasTrigger?'':';pointer-events:none'), step3Lock:!hasTrigger,
-      triggerProdOptions:triggerProdOpts, triggerProdValue:prodDraft, setTriggerProd:e=>this.setState({trigProdDraft:e.target.value}),
+      triggerProdOptions:trigArtOpts, triggerProdValue:(S.trigArtDraft!==undefined?S.trigArtDraft:trigArtVal),
+      setTriggerProd:e=>this.setState({trigArtDraft:e.target.value}),
       _oldProd:0,
       canAddBundle:M.bundles.length<3, bundleCount:M.bundles.length,
       menuBaseCost:(M.baseCost!=null?M.baseCost:0), setMenuBaseCost:e=>{ if(this.api)this.apply(this.api.updateProduct(pid0,{baseCost:parseFloat(e.target.value)||0})); },
