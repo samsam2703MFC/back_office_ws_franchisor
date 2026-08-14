@@ -201,7 +201,7 @@
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span style="{{ tableBadge }}">ws_products · product_categories · ws_season ← ERP (lecture)</span><span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Prix réf. & gouvernance éditables · catalogue synchronisé ERP</span><button onClick="{{ wizStart }}" style="flex:none;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:9px 15px;font:600 12px var(--font-ui);cursor:pointer">✨ Assistant catégorie</button></div>
         <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
-          <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop</strong> = click &amp; collect (« ruby ») · <strong>Bureau</strong> = livraison bureau (« apricot »), canal indépendant · <strong>Obligatoire</strong> verrouille l'assortiment franchisé · adoption = % boutiques</div>
+          <div style="font:400 11px/1.5 var(--font-ui);color:var(--color-text-muted);margin-bottom:12px"><strong>Prix réf.</strong> conseillé réseau · <strong>Webshop</strong> = click &amp; collect (« ruby ») · <strong>Bureau</strong> = livraison bureau (« apricot »), canal indépendant · <strong>Actif</strong> = publié au catalogue (désactivé = brouillon, nulle part) · adoption = % boutiques</div>
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:9px 12px">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" stroke-width="2" style="flex:none"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
             <input type="text" value="{{ catSearch }}" onChange="{{ setCatSearch }}" placeholder="Rechercher un produit ou une catégorie…" style="flex:1;min-width:0;border:none;background:transparent;outline:none;font:500 12.5px var(--font-ui);color:var(--color-text)"/>
@@ -212,17 +212,17 @@
             <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:600 9px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-muted);margin-right:2px">Saison</span><sc-for list="{{ seasonChips }}" as="sc" hint-placeholder-count="3"><button onClick="{{ sc.pick }}" style="{{ sc.style }}">{{ sc.label }}</button></sc-for></div>
             <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
               <button onClick="{{ toggleAllCats }}" title="Déplier ou replier toutes les catégories" style="border:none;background:transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font:600 11px var(--font-ui);color:var(--color-text-muted);padding:4px 6px"><span style="font-size:10px;color:var(--color-primary);width:9px;text-align:center">{{ allCatsCaret }}</span>{{ allCatsLabel }}</button>
-              <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs webshop uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
+              <div style="display:flex;align-items:center;gap:8px"><span style="font:500 11px var(--font-ui);color:var(--color-text-muted)">Produits actifs uniquement</span><button onClick="{{ catFilterToggle }}" style="{{ catFilterStyle }}"><span style="{{ catFilterKnob }}"></span></button></div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Catégorie / produit</span><span class="t-admin-label" style="text-align:right">Prix réf.</span><div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 12px"><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label" style="text-align:center">Bureau</span></div><span class="t-admin-label" style="text-align:center">Oblig.</span><span class="t-admin-label" style="text-align:center">Menu</span><span class="t-admin-label">Adoption</span><span></span></div>
+          <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Catégorie / produit</span><span class="t-admin-label" style="text-align:right">Prix réf.</span><div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 12px"><span class="t-admin-label" style="text-align:center">Webshop</span><span class="t-admin-label" style="text-align:center">Bureau</span></div><span class="t-admin-label" style="text-align:center">Actif</span><span class="t-admin-label" style="text-align:center">Menu</span><span class="t-admin-label">Adoption</span><span></span></div>
           <sc-for list="{{ catTree }}" as="r" hint-placeholder-count="8">
             <sc-if value="{{ r.isCat }}" hint-placeholder-val="{{ true }}">
               <div style="display:grid;grid-template-columns:2.2fr .85fr 1.5fr .8fr .8fr .95fr 40px;align-items:center;padding:11px 6px;background:var(--color-background-secondary);border-radius:8px;margin-top:8px">
                 <div onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><span style="width:14px;color:var(--color-text-muted);flex:none;font-size:11px">{{ r.caret }}</span><span style="font:600 13px var(--font-ui);text-transform:uppercase;letter-spacing:.05em;color:var(--color-text)">{{ r.cat }}</span></div>
                 <span></span>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:16px;padding:4px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.catWebToggle }}" style="{{ r.catWebStyle }}"><span style="{{ r.catWebKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.catOffToggle }}" style="{{ r.catOffStyle }}"><span style="{{ r.catOffKnob }}"></span></button></div></div>
-                <div onClick="{{ r.catOblToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catOblStyle }}"><span style="{{ r.catOblKnob }}"></span></button></div>
+                <div onClick="{{ r.catAcToggle }}" style="display:flex;justify-content:center"><button style="{{ r.catAcStyle }}"><span style="{{ r.catAcKnob }}"></span></button></div>
                 <div onClick="{{ r.menuDefToggle }}" style="display:flex;justify-content:center"><button style="{{ r.menuDefStyle }}"><span style="{{ r.menuDefKnob }}"></span></button></div>
                 <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ r.count }}</span>
                 <span></span>
@@ -233,7 +233,7 @@
                 <div onClick="{{ r.subToggle }}" style="display:flex;align-items:center;gap:7px;cursor:pointer;min-width:0;padding-left:12px"><span style="width:10px;color:var(--color-text-muted);font-size:9px">{{ r.subCaret }}</span><span style="font:600 12px var(--font-ui);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)">{{ r.subLabel }}</span></div>
                 <span></span>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-surface);border-radius:14px;padding:3px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.subWebToggle }}" style="{{ r.subWebStyle }}"><span style="{{ r.subWebKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.subOffToggle }}" style="{{ r.subOffStyle }}"><span style="{{ r.subOffKnob }}"></span></button></div></div>
-                <div style="display:flex;justify-content:center"><button onClick="{{ r.subOblToggle }}" style="{{ r.subOblStyle }}"><span style="{{ r.subOblKnob }}"></span></button></div>
+                <div style="display:flex;justify-content:center"><button onClick="{{ r.subAcToggle }}" style="{{ r.subAcStyle }}"><span style="{{ r.subAcKnob }}"></span></button></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.subMenuToggle }}" style="{{ r.subMenuStyle }}"><span style="{{ r.subMenuKnob }}"></span></button></div>
                 <span></span><span></span>
               </div>
@@ -243,7 +243,7 @@
                 <div style="display:flex;align-items:center;gap:8px;min-width:0;padding-left:24px"><span style="font:500 11px var(--font-ui);color:var(--color-text)">{{ r.nom }}</span><sc-if value="{{ r.photoMissing }}" hint-placeholder-val="{{ false }}"><span title="Aucune photo produit — déposer {id}.png|jpg dans assets/product_pictures/" style="display:inline-flex;align-items:center;gap:4px;font:600 8.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;color:#b26a00;background:#fdf3e3;border-radius:10px;padding:2px 7px;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/><path d="M1 1l22 22"/></svg>Sans photo</span></sc-if><sc-if value="{{ r.hasSaison }}" hint-placeholder-val="{{ false }}"><span style="{{ r.saisonPill }};display:inline-flex;align-items:center;gap:4px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5L19 19M19 5l-2.5 2.5M7.5 16.5L5 19"/><circle cx="12" cy="12" r="3.5"/></svg>{{ r.saison }}</span></sc-if><sc-if value="{{ r.hasPort }}" hint-placeholder-val="{{ false }}"><span title="{{ r.portTitle }}" style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;background:#eef3fb;color:#2a5a9e;font:700 8.5px var(--font-ui);text-transform:uppercase;letter-spacing:.04em;cursor:help;flex:none">◔ Portions</span></sc-if></div>
                 <div style="display:flex;justify-content:flex-end"><input type="number" step="0.01" value="{{ r.prix }}" onChange="{{ r.setPrix }}" style="width:70px;text-align:right;border:.5px solid var(--color-border-secondary);border-radius:7px;padding:6px 7px;font:600 12px var(--font-ui);color:var(--color-text);background:var(--color-surface)"/></div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;background:var(--color-background-secondary);border-radius:16px;padding:4px 6px;margin:0 6px"><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBw }}" style="{{ r.bwStyle }}"><span style="{{ r.bwKnob }}"></span></button></div><div style="display:flex;justify-content:center"><button onClick="{{ r.toggleOd }}" style="{{ r.odStyle }}"><span style="{{ r.odKnob }}"></span></button></div></div>
-                <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleBm }}" style="{{ r.bmStyle }}"><span style="{{ r.bmKnob }}"></span></button></div>
+                <div style="display:flex;justify-content:center"><button onClick="{{ r.toggleAc }}" style="{{ r.acStyle }}"><span style="{{ r.acKnob }}"></span></button></div>
                 <div style="display:flex;justify-content:center"><button onClick="{{ r.mnToggle }}" style="{{ r.mnStyle }}"><span style="{{ r.mnKnob }}"></span></button></div>
                 <div style="display:flex;align-items:center;gap:7px"><div style="flex:1;height:7px;background:var(--color-background-secondary);border-radius:5px;overflow:hidden"><div style="width:{{ r.adPct }};height:100%;background:{{ r.adColor }};border-radius:5px"></div></div><span style="font:600 10px var(--font-ui);color:var(--color-text-muted);width:30px;text-align:right">{{ r.adPct }}</span></div>
                 <div style="display:flex;justify-content:flex-end"><button onClick="{{ r.edit }}" style="{{ pencilStyle }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20h3l11-11-3-3L4 17z"/><path d="M14 5l3 3"/></svg></button></div>
@@ -1283,7 +1283,7 @@
             <sc-if value="{{ wizPartSel }}" hint-placeholder-val="{{ false }}">
               <div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="t-admin-label">Produits concernés · {{ wizSelCount }} sélectionné(s)</span><div style="display:flex;gap:6px"><button onClick="{{ wizSelAll }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Tout</button><button onClick="{{ wizSelNone }}" style="background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:7px;padding:4px 10px;font:600 10.5px var(--font-ui);cursor:pointer;color:var(--color-text)">Aucun</button></div></div><div style="margin-top:6px;border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:4px 12px;max-height:200px;overflow:auto"><sc-for list="{{ wizProds }}" as="p" hint-placeholder-count="5"><div onClick="{{ p.toggle }}" style="{{ p.rowStyle }}"><span style="{{ p.ckStyle }}"></span>{{ p.nom }}</div></sc-for></div></div>
             </sc-if>
-            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>{{ wizScopeLabel }}</b> · appliqué à <b>{{ wizScopeN }}</b> produit(s) — choix binaire par propriété. Un produit <b>Obligatoire</b> reste vendable sur au moins un canal (Webshop ou Livraison bureau).</div>
+            <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:9px;padding:9px 12px;font:12px var(--font-ui);color:#6b4420"><b>{{ wizScopeLabel }}</b> · appliqué à <b>{{ wizScopeN }}</b> produit(s) — choix binaire par propriété — chaque propriété est une colonne de ws_products. <b>Actif</b> désactivé = brouillon : le produit disparaît partout, quels que soient les canaux.</div>
             <sc-for list="{{ wizPropRows }}" as="pr" hint-placeholder-count="4">
               <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:.5px solid var(--color-border-tertiary)"><div style="min-width:0"><div style="font:600 13px var(--font-ui)">{{ pr.label }}</div><div style="font:11px var(--font-ui);color:var(--color-text-muted)">{{ pr.hint }}</div><span style="{{ pr.tagStyle }};margin-top:5px">{{ pr.tagTxt }}</span></div><div style="display:inline-flex;border:.5px solid var(--color-border-secondary);border-radius:9px;overflow:hidden;flex:none"><sc-for list="{{ pr.opts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.pick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for></div></div>
             </sc-for>
@@ -1313,7 +1313,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
 
@@ -1360,7 +1360,7 @@ class Component extends DCLogic {
   avStars(n){ n=Math.max(0,Math.min(5,Math.round(+n||0))); return {sf:'★'.repeat(n), se:'☆'.repeat(5-n)}; }
   avDateFmt(s){ if(!s) return ''; const m=String(s).replace('T',' ').match(/^(\d{4})-(\d{2})-(\d{2})[ ](\d{2}):(\d{2})/); return m?(m[1]+'-'+m[2]+'-'+m[3]+' '+m[4]+':'+m[5]):String(s); }
   // ===== Assistant catégorie (wizard) — porte sur une catégorie existante =====
-  wizStart(){ this.setState({wizOpen:true,wizStep:0,wizCatIdx:null,wizPart:'all',wizSubId:null,wizSel:{},wizName:'',wizSeason:'',wizProps:{web:'keep',office:'keep',obl:'keep',menu:'keep'},wizBusy:false}); }
+  wizStart(){ this.setState({wizOpen:true,wizStep:0,wizCatIdx:null,wizPart:'all',wizSubId:null,wizSel:{},wizName:'',wizSeason:'',wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'},wizBusy:false}); }
   wizClose(){ this.setState({wizOpen:false}); }
   _wizCat(i){ const CATALOG=(window.BOServer?window.BOServer.table('catalog'):[]); return CATALOG[i!=null?i:this.state.wizCatIdx]||null; }
   wizPickCat(i){ const c=this._wizCat(i)||{}; this.setState({wizCatIdx:i,wizName:c.cat||'',wizSel:{}}); }
@@ -1370,15 +1370,10 @@ class Component extends DCLogic {
   wizPickSub(id){ this.setState({wizSubId:String(id)}); }
   wizToggleSel(pi){ this.setState(st=>{ const s={...st.wizSel}; s[pi]=!s[pi]; return {wizSel:s}; }); }
   wizSetProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
-  // Choix binaire d'une propriété, avec l'invariant OBLIGATOIRE : un produit
-  // obligatoire doit rester vendable sur AU MOINS un canal (Webshop OU Livraison
-  // bureau). Si le choix ferme les deux canaux d'un produit obligatoire, on en
-  // rouvre un d'office (le serveur applique la même règle par produit).
-  wizPickProp(k,v){ this.setState(st=>{ const p={...st.wizProps,[k]:v};
-    if(p.obl==='on' && p.web==='off' && p.office==='off'){
-      if(k==='obl') p.web='on'; else if(k==='web') p.office='on'; else p.web='on';
-    }
-    return {wizProps:p}; }); }
+  // Choix binaire d'une propriété. L'invariant « un produit obligatoire garde
+  // au moins un canal » est parti avec brand_mandatory (migration 0073 du
+  // webshop) : fermer les deux canaux est un état licite — publié, invendu.
+  wizPickProp(k,v){ this.setState(st=>({wizProps:{...st.wizProps,[k]:v}})); }
   wizSelAll(){ const c=this._wizCat(); if(!c) return; const s={}; c.prods.forEach((p,i)=>{ s[i]=true; }); this.setState({wizSel:s}); }
   wizSelNone(){ this.setState({wizSel:{}}); }
   // Agrégat de l'état ACTUEL d'une propriété sur les produits en portée :
@@ -1386,9 +1381,9 @@ class Component extends DCLogic {
   _wizPropAgg(k){ const c=this._wizCat(); const st=this.state; if(!c) return {on:0,off:0,unk:0,tot:0}; const F=st.flags||{}; const ci=st.wizCatIdx;
     const idx=st.wizPart==='sel'?c.prods.map((p,i)=>i).filter(i=>st.wizSel[i]):(st.wizPart==='sub'?c.prods.map((p,i)=>i).filter(i=>String(c.prods[i].sub_id)===String(st.wizSubId)):c.prods.map((p,i)=>i));
     const val=(pi)=>{ const p=c.prods[pi];
-      if(k==='web'){ const f=F['bw_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.bw; }
+      if(k==='web'){ const f=F['bw_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.cc; }
       if(k==='office'){ const f=F['od_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.od; }
-      if(k==='obl'){ const f=F['bm_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.bm; }
+      if(k==='actif'){ const f=F['ac_'+ci+'_'+pi]; return f!==undefined?!!f:!!p.active; }
       if(k==='menu'){ try{ if(this.api){ const pmid=p.id||('cat-'+String(p.nom||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')); return !!this.api.resolveMenu(pmid).effective; } }catch(e){} return null; }
       return null; };
     let on=0,off=0,unk=0; idx.forEach(pi=>{ const v=val(pi); if(v===null)unk++; else if(v)on++; else off++; }); return {on,off,unk,tot:idx.length}; }
@@ -1404,14 +1399,14 @@ class Component extends DCLogic {
     this.setState({wizBusy:true});
     const flags={...st.flags}; let menuDb=st.menus;
     idxs.forEach(pi=>{ const p=c.prods[pi]; const pmid=p.id||('cat-'+slug(p.nom));
-      if(P.web!=='keep'){ const on=P.web==='on'; flags['bw_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:on?1:0}); }
+      if(P.web!=='keep'){ const on=P.web==='on'; flags['bw_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,click_and_collect:on?1:0}); }
       if(P.office!=='keep'){ const on=P.office==='on'; flags['od_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:on?1:0}); }
-      if(P.obl!=='keep'){ const on=P.obl==='on'; flags['bm_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:on?1:0}); }
+      if(P.actif!=='keep'){ const on=P.actif==='on'; flags['ac_'+ci+'_'+pi]=on; if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:on?1:0}); }
       if(P.menu!=='keep'){ const on=P.menu==='on'; if(this.api){ this.api.ensureProduct(pmid,p.nom,p.prix,c.cat); menuDb=this.api.setProductOverride(pmid,on?'on':'off'); } if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:on?'on':'off'}); }
     });
     // Le nom de catégorie vient de l'ERP : la console ne le modifie PAS. Le prix
     // se gère produit par produit sur l'écran Catalogue, pas dans l'assistant.
-    const nChg=['web','office','obl','menu'].filter(k=>P[k]!=='keep').length;
+    const nChg=['web','office','actif','menu'].filter(k=>P[k]!=='keep').length;
     this.setState({flags,menus:menuDb,wizBusy:false,wizOpen:false});
     this.printJob('✔ Assistant : '+idxs.length+' produit(s) · '+nChg+' propriété(s)');
   }
@@ -1967,13 +1962,15 @@ class Component extends DCLogic {
     const seasonFilter=S.seasonFilter||'';
     // Filtres catalogue (chips) : webshop / actif / obligatoire / office / menu (ET).
     const CF={ web:!!S.flags['catF_web'], actif:!!S.flags['catF_actif'], obl:!!S.flags['catF_obl'], office:!!S.flags['catF_office'], menu:!!S.flags['catF_menu'] };
-    const CFon=CF.web||CF.actif||CF.obl||CF.office||CF.menu;
+    const CFon=CF.web||CF.actif||CF.office||CF.menu;
     const _pMenuOn=(c,ci,p,pi)=>{ const pm=p.id||('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-')); const rm=this.api?this.api.resolveMenu(pm):{effective:0}; const inStore=!!(S.menus||{})[pm]; const catDef=this.api?!!this.api.getCategoryDefault(c.cat):false; return inStore?(rm.effective===1):catDef; };
     const _cfOK=(c,ci,p,pi)=>{ if(!CFon) return true;
-      const bwOn=(S.flags['bw_'+ci+'_'+pi]!==undefined?S.flags['bw_'+ci+'_'+pi]:p.bw);
-      if((CF.web||CF.actif)&&!bwOn) return false;
+      // Chaque filtre lit LA colonne de ws_products que sa bascule pilote —
+      // « Webshop » n'est plus un alias d'« Actif » depuis que le canal a sa
+      // colonne (click_and_collect) et que active ne veut dire que « publié ».
+      if(CF.web){ const ccOn=(S.flags['bw_'+ci+'_'+pi]!==undefined?S.flags['bw_'+ci+'_'+pi]:!!p.cc); if(!ccOn) return false; }
+      if(CF.actif){ const acOn=(S.flags['ac_'+ci+'_'+pi]!==undefined?S.flags['ac_'+ci+'_'+pi]:!!p.active); if(!acOn) return false; }
       if(CF.office){ const odOn=(S.flags['od_'+ci+'_'+pi]!==undefined?S.flags['od_'+ci+'_'+pi]:(p.od!==undefined?p.od:true)); if(!odOn) return false; }
-      if(CF.obl){ const bmOn=(S.flags['bm_'+ci+'_'+pi]!==undefined?S.flags['bm_'+ci+'_'+pi]:p.bm); if(!bmOn) return false; }
       if(CF.menu&&!_pMenuOn(c,ci,p,pi)) return false;
       return true; };
     // Recherche catalogue — filtre par nom de produit, de sous-catégorie ou de catégorie.
@@ -2007,28 +2004,32 @@ class Component extends DCLogic {
       const catMatch=!catQuery||c.cat.toLowerCase().includes(catQuery);
       // Un produit reste visible si la catégorie correspond, ou si son nom / sa sous-catégorie contient la recherche.
       const prodVisible=(p)=>!catQuery||catMatch||(!!p.nom&&p.nom.toLowerCase().includes(catQuery))||(!!p.sub&&p.sub.toLowerCase().includes(catQuery));
-      if(catQuery){ const _bwOn=(pp,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:pp.bw; }; const _hit=c.prods.some((pp,pi)=>prodVisible(pp)&&(!activeOnly||_bwOn(pp,pi))&&(!seasonFilter||pp.saison===seasonFilter)); if(!_hit) return; }
-      const nbWeb=c.prods.filter((p,pi)=>{ const v=S.flags['bw_'+ci+'_'+pi]; return v!==undefined?v:p.bw; }).length;
+      if(catQuery){ const _acOn=(pp,pi)=>{ const v=S.flags['ac_'+ci+'_'+pi]; return v!==undefined?v:!!pp.active; }; const _hit=c.prods.some((pp,pi)=>prodVisible(pp)&&(!activeOnly||_acOn(pp,pi))&&(!seasonFilter||pp.saison===seasonFilter)); if(!_hit) return; }
+      const nbAct=c.prods.filter((p,pi)=>{ const v=S.flags['ac_'+ci+'_'+pi]; return v!==undefined?v:!!p.active; }).length;
       const menuDefOn=this.api?!!this.api.getCategoryDefault(c.cat):false;
       // RÈGLE : l'état webshop de la CATÉGORIE est DÉRIVÉ de ses produits —
       // active dès qu'UN produit est en ligne, désactivée quand plus aucun.
-      const cwOn=c.prods.length?c.prods.some((pp,ppi)=>{ const v=S.flags['bw_'+ci+'_'+ppi]; return v!==undefined?v:pp.bw; })
+      const cwOn=c.prods.length?c.prods.some((pp,ppi)=>{ const v=S.flags['bw_'+ci+'_'+ppi]; return v!==undefined?v:!!pp.cc; })
         :(S.flags['catWeb_'+ci]!==undefined?S.flags['catWeb_'+ci]:true);
       const coffOn=S.flags['catOff_'+ci]!==undefined?S.flags['catOff_'+ci]:true;
-      const cobOn=S.flags['catObl_'+ci]!==undefined?S.flags['catObl_'+ci]:false;
-      if(activeOnly&&!cwOn) return;
-      if(CFon && !c.prods.some((pp,ppi)=>_cfOK(c,ci,pp,ppi)&&(!activeOnly||(S.flags['bw_'+ci+'_'+ppi]!==undefined?S.flags['bw_'+ci+'_'+ppi]:pp.bw))&&(!seasonFilter||pp.saison===seasonFilter))) return;
-      catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbWeb+' en ligne',open,caret:open?'▾':'▸',
+      // Actif de la catégorie : DÉRIVÉ des produits, comme le cache serveur
+      // (ws_categories.active = EXISTS produit actif) — un seul produit publié
+      // suffit à l'allumer.
+      const caOn=c.prods.length?c.prods.some((pp,ppi)=>{ const v=S.flags['ac_'+ci+'_'+ppi]; return v!==undefined?v:!!pp.active; })
+        :(S.flags['catAc_'+ci]!==undefined?S.flags['catAc_'+ci]:true);
+      if(activeOnly&&!caOn) return;
+      if(CFon && !c.prods.some((pp,ppi)=>_cfOK(c,ci,pp,ppi)&&(!activeOnly||(S.flags['ac_'+ci+'_'+ppi]!==undefined?S.flags['ac_'+ci+'_'+ppi]:!!pp.active))&&(!seasonFilter||pp.saison===seasonFilter))) return;
+      catTree.push({isCat:true,isProd:false,cat:c.cat,count:c.prods.length+' produits · '+nbAct+' actif'+(nbAct>1?'s':''),open,caret:open?'▾':'▸',
         menuDefStyle:swL(menuDefOn,RUBY,HCAT),menuDefKnob:knL(menuDefOn,HCAT),
-        catWebStyle:swL(cwOn,RUBY,HCAT),catWebKnob:knL(cwOn,HCAT),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
+        catWebStyle:swL(cwOn,RUBY,HCAT),catWebKnob:knL(cwOn,HCAT),catWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cwOn; this.setState(st=>{ const f={...st.flags,['catWeb_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bw_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,click_and_collect:nv?1:0}); },
         catOffStyle:swL(coffOn,APRICOT,HCAT),catOffKnob:knL(coffOn,HCAT),catOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!coffOn; this.setState(st=>{ const f={...st.flags,['catOff_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['od_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,office_delivery:nv?1:0}); },
-        catOblStyle:swL(cobOn,RUBY,HCAT),catOblKnob:knL(cobOn,HCAT),catOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!cobOn; this.setState(st=>{ const f={...st.flags,['catObl_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['bm_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,brand_mandatory:nv?1:0}); },
+        catAcStyle:swL(caOn,RUBY,HCAT),catAcKnob:knL(caOn,HCAT),catAcToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); const nv=!caOn; this.setState(st=>{ const f={...st.flags,['catAc_'+ci]:nv}; c.prods.forEach((pp,ppi)=>{ f['ac_'+ci+'_'+ppi]=nv; }); return {flags:f}; }); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,active:nv?1:0}); },
         menuDefToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); if(!this.api)return; const nv=menuDefOn?0:1; let db=this.api.setCategoryDefault(c.cat,nv); c.prods.forEach(pp=>{ const id=pp.id||('cat-'+slugId(pp.nom)); db=this.api.setProductOverride(id,null); }); this.setState({menus:db}); if(c.id!=null)this.frPost('/franchisor/category',{id:c.id,menu_default:nv}); },
         toggle:()=>this.setState(st=>({flags:{...st.flags,[ok]:!(st.flags[ok]!==undefined?st.flags[ok]:true)}}))});
       if(!open) return;
       let lastSub=null;
-      c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,p.bw), bm=tog('bm_'+ci+'_'+pi,p.bm), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
-        if(activeOnly&&!bw.on) return;
+      c.prods.forEach((p,pi)=>{ const bw=tog('bw_'+ci+'_'+pi,!!p.cc), ac=tog('ac_'+ci+'_'+pi,!!p.active), od=tog('od_'+ci+'_'+pi,p.od!==undefined?p.od:true);
+        if(activeOnly&&!ac.on) return;
         if(!_cfOK(c,ci,p,pi)) return;
         if(seasonFilter&&p.saison!==seasonFilter) return;
         if(catQuery&&!prodVisible(p)) return;
@@ -2039,16 +2040,16 @@ class Component extends DCLogic {
         if(p.sub && subId!==lastSub){ lastSub=subId;
           const grp=c.prods.map((pp,ppi)=>({pp,ppi})).filter(x=>String(x.pp.sub_id!=null?x.pp.sub_id:'')===subId);
           const gAll=(flag,field,dflt)=>grp.every(x=>{ const v=S.flags[flag+'_'+ci+'_'+x.ppi]; return v!==undefined?v:(x.pp[field]!==undefined?x.pp[field]:dflt); });
-          const sWeb=gAll('bw','bw',true), sOff=gAll('od','od',true), sObl=gAll('bm','bm',false);
+          const sWeb=gAll('bw','cc',true), sOff=gAll('od','od',true), sAc=gAll('ac','active',true);
           const sMenu=grp.length>0&&grp.every(x=>{ const pmid=x.pp.id||('cat-'+slugId(x.pp.nom)); const _m=S.menus||{}; if(_m[pmid]){ const rm=this.api?this.api.resolveMenu(pmid):{effective:0}; return rm.effective===1; } return this.api?!!this.api.getCategoryDefault(c.cat):false; });
           const sid=parseInt(subId,10)||null;
           const subSet=(flag,key,val)=>{ this.setState(st=>{ const f={...st.flags}; grp.forEach(x=>{ f[flag+'_'+ci+'_'+x.ppi]=val; }); return {flags:f}; }); if(sid)this.frPost('/franchisor/subcategory',{id:sid,[key]:val?1:0}); };
           const doSubMenu=()=>{ const nv=!sMenu; if(this.api){ let db=S.menus; grp.forEach(x=>{ const pmid=x.pp.id||('cat-'+slugId(x.pp.nom)); const pvv=S.flags['prix_'+ci+'_'+x.ppi]!==undefined?S.flags['prix_'+ci+'_'+x.ppi]:x.pp.prix; this.api.ensureProduct(pmid,x.pp.nom,pvv,c.cat); db=this.api.setProductOverride(pmid,nv?'on':'off'); }); this.setState({menus:db}); } if(sid)this.frPost('/franchisor/subcategory',{id:sid,menu_override:nv?'on':'off'}); };
           catTree.push({isCat:false,isProd:false,isSub:true,subLabel:p.sub,subCaret:subOpen?'▾':'▸',
             subToggle:()=>this.setState(st=>({flags:{...st.flags,[subOpenKey]:!(st.flags[subOpenKey]!==undefined?st.flags[subOpenKey]:true)}})),
-            subWebStyle:swL(sWeb,RUBY,HSUB),subWebKnob:knL(sWeb,HSUB),subWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('bw','active',!sWeb); },
+            subWebStyle:swL(sWeb,RUBY,HSUB),subWebKnob:knL(sWeb,HSUB),subWebToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('bw','click_and_collect',!sWeb); },
             subOffStyle:swL(sOff,APRICOT,HSUB),subOffKnob:knL(sOff,HSUB),subOffToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('od','office_delivery',!sOff); },
-            subOblStyle:swL(sObl,RUBY,HSUB),subOblKnob:knL(sObl,HSUB),subOblToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('bm','brand_mandatory',!sObl); },
+            subAcStyle:swL(sAc,RUBY,HSUB),subAcKnob:knL(sAc,HSUB),subAcToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); subSet('ac','active',!sAc); },
             subMenuStyle:swL(sMenu,RUBY,HSUB),subMenuKnob:knL(sMenu,HSUB),subMenuToggle:(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); doSubMenu(); }}); }
         if(p.sub && !subOpen) return;
         const pk='prix_'+ci+'_'+pi, pv=S.flags[pk]!==undefined?S.flags[pk]:p.prix;
@@ -2064,7 +2065,7 @@ class Component extends DCLogic {
           mnStyle:swL(mnOn,RUBY,HPRD),mnKnob:knL(mnOn,HPRD),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
           prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
-          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!bw.on?1:0}).then(ok=>{ if(!ok) bw.toggle(); }); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}).then(ok=>{ if(!ok) od.toggle(); }); }, bmStyle:swL(bm.on,RUBY,HPRD),bmKnob:knL(bm.on,HPRD),toggleBm:()=>{ bm.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,brand_mandatory:!bm.on?1:0}).then(ok=>{ if(!ok) bm.toggle(); }); },
+          bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,click_and_collect:!bw.on?1:0}).then(ok=>{ if(!ok) bw.toggle(); }); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}).then(ok=>{ if(!ok) od.toggle(); }); }, acStyle:swL(ac.on,RUBY,HPRD),acKnob:knL(ac.on,HPRD),toggleAc:()=>{ ac.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!ac.on?1:0}).then(ok=>{ if(!ok) ac.toggle(); }); },
           adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
@@ -2168,11 +2169,12 @@ class Component extends DCLogic {
       const raw=p.id;
       const pid=(typeof raw==='number')?raw:(/^\d+$/.test(String(raw==null?'':raw))?parseInt(raw,10):null);
       const id=(pid!=null)?String(pid):('cat-'+p.nom.toLowerCase().replace(/[^a-z0-9]+/g,'-'));
-      // `bw` = produit actif cote marque : seuls ceux-la peuvent etre proposes
-      // dans un menu, sinon on ferait choisir un produit non vendable.
+      // `active` = publié au catalogue : seuls les produits publiés peuvent
+      // être proposés dans un menu, sinon on ferait choisir un brouillon.
+      // (Lisait p.bw, champ de transition de l'API désormais égal à active.)
       flatProds.push({id,pid,name:p.nom,cat:c.cat,catId:(c.id!=null?+c.id:null),
         sub:(p.sub||null),subId:(p.sub_id!=null?+p.sub_id:null),
-        price:p.prix,menu:!!p.menu,active:(p.bw!==false)}); }); });
+        price:p.prix,menu:!!p.menu,active:(p.active!==false)}); }); });
     // Libelle d'une sous-categorie (ws_category_subs) par son identifiant.
     const subLabel=(sid)=>{ if(sid==null) return null;
       for(const cc of CATALOG){ const hit=(cc.subs||[]).find(sb=>+sb.id===+sid); if(hit) return hit.label; }
@@ -2409,7 +2411,7 @@ class Component extends DCLogic {
       profName:'Administrateur', profRole:'Admin réseau · Siège', profInit:'AD',
       isDash:S.screen==='dash', kpis, shopsRows,
       isBoutiques:S.screen==='boutiques',
-      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catFilterChips:[['web','Webshop'],['actif','Actif'],['obl','Obligatoire'],['office','Office'],['menu','Menu']].map(o=>{ const k=o[0], on=!!S.flags['catF_'+k]; return {label:o[1], active:on, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), toggle:()=>this.setState(st=>({flags:{...st.flags,['catF_'+k]:!st.flags['catF_'+k]}})) }; }), catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
+      isCatalogue:S.screen==='catalogue', catTree, seasonChips, catFilterChips:[['web','Webshop'],['actif','Actif'],['office','Office'],['menu','Menu']].map(o=>{ const k=o[0], on=!!S.flags['catF_'+k]; return {label:o[1], active:on, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), toggle:()=>this.setState(st=>({flags:{...st.flags,['catF_'+k]:!st.flags['catF_'+k]}})) }; }), catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),
       allCatsLabel:catAllOpen?'Tout replier':'Tout déplier', allCatsCaret:catAllOpen?'▾':'▸', toggleAllCats,
       addProduct:this.openForm('product'),
@@ -2586,7 +2588,7 @@ class Component extends DCLogic {
         const scopeN=c?(S.wizPart==='sel'?c.prods.filter((p,pi)=>S.wizSel[pi]).length:(S.wizPart==='sub'?c.prods.filter(p=>String(p.sub_id)===String(S.wizSubId)).length:c.prods.length)):0;
         const subSel=(S.wizPart==='sub'&&c)?(c.prods.find(p=>String(p.sub_id)===String(S.wizSubId))||{}).sub:'';
         const scopeLabel=S.wizPart==='sub'?('Sous-catégorie « '+(subSel||'—')+' »'):(S.wizPart==='sel'?'Sélection de produits':'Catégorie entière');
-        const propRows=[['web','Webshop','visible sur la boutique en ligne'],['office','Livraison bureau','commande B2B au bureau'],['obl','Obligatoire','imposé par la marque (whitelist)'],['menu','Menu','disponible dans les formules']].map(o=>{
+        const propRows=[['web','Webshop','vendu en click & collect (ws_products.click_and_collect)'],['office','Livraison bureau','commande B2B au bureau (ws_products.office_delivery)'],['actif','Actif','publié au catalogue — désactivé = brouillon, nulle part (ws_products.active)'],['menu','Menu','disponible dans les formules']].map(o=>{
           const k=o[0], cur=S.wizProps[k]||'keep', a=self._wizPropAgg(k);
           const tag = a.tot===0 ? {txt:'aucun produit',col:'#8a8a8a',bg:'#f0f0f0'}
             : a.unk===a.tot ? {txt:'état inconnu',col:'#8a8a8a',bg:'#f0f0f0'}
@@ -2602,8 +2604,8 @@ class Component extends DCLogic {
           const opts=[['on','Activer','#2d6a3e'],['off','Désactiver','#8D1D2C']].map(v=>({label:v[1], style:seg(shown===v[0], v[2]), pick:()=>self.wizPickProp(k,v[0])}));
           return { label:o[1], hint:o[2], tagTxt:tag.txt, tagStyle:'display:inline-block;border-radius:999px;padding:3px 9px;font:600 10px var(--font-ui);color:'+tag.col+';background:'+tag.bg, opts }; });
         const seasonOpts=[['','Toute l\'année'],['Été','Été'],['Noël','Noël']].map(v=>({label:v[1], style:chip((S.wizSeason||'')===v[0]), pick:()=>self.wizSetSeason(v[0])}));
-        const lbl={web:'Webshop',office:'Livraison bureau',obl:'Obligatoire',menu:'Menu'};
-        const changes=['web','office','obl','menu'].filter(k=>(S.wizProps[k]||'keep')!=='keep').map(k=>{ const on=S.wizProps[k]==='on'; return {label:lbl[k], val:on?'activé':'désactivé',
+        const lbl={web:'Webshop',office:'Livraison bureau',actif:'Actif',menu:'Menu'};
+        const changes=['web','office','actif','menu'].filter(k=>(S.wizProps[k]||'keep')!=='keep').map(k=>{ const on=S.wizProps[k]==='on'; return {label:lbl[k], val:on?'activé':'désactivé',
           icStyle:'width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;font:700 12px var(--font-ui);'+(on?'background:#eaf5ec;color:#2d6a3e':'background:#fbe9eb;color:#8D1D2C'), ic:on?'✓':'✕' }; });
         return { wizStep0Style:stepStyle(0), wizStep1Style:stepStyle(1), wizStep2Style:stepStyle(2), wizStep3Style:stepStyle(3),
           wizCatOpts:catOpts, wizHasCat:!!c, wizCatName:c?c.cat:'', wizCatCount:c?c.prods.length:0,
