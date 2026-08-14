@@ -1774,12 +1774,48 @@ class Component extends DCLogic {
       .then(async r=>{
         const j=await r.json().catch(()=>null);
         if(!r.ok){ this.printJob('⚠ Non enregistré — '+((j&&(j.error||j.message))||('HTTP '+r.status))); return false; }
-        this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base'); return true;
+        this.printJob((j&&j.code)?('✔ Bon '+j.code+' enregistré'):'✔ Enregistré en base');
+        // ÉDITION CATALOGUE → l'écran se resynchronise TOUT SEUL sur la base.
+        // Le catalogue était chargé une fois au boot : un produit activé dans
+        // l'écran Catalogue restait invisible du constructeur de menus (« Aucun
+        // produit actif dans cette catégorie ») jusqu'au rechargement de la
+        // page. Après chaque écriture réussie, on re-télécharge — débouncé,
+        // pour qu'une rafale de bascules ne parte pas en rafale de GET.
+        if(/^\/franchisor\/(product|category|subcategory)$/.test(path)){
+          clearTimeout(this._catRefetchT);
+          this._catRefetchT=setTimeout(()=>this.refetchCatalog(), 800);
+        }
+        return true;
       })
       .catch(()=>{ this.printJob('⚠ Non enregistré — réseau indisponible'); return false; }); }
+  /* Re-télécharge /franchisor/catalog et remplace la table en mémoire. Les
+     drapeaux locaux des bascules (état optimiste posé au clic) sont alors
+     effacés : la base vient de répondre, c'est elle qui fait foi — un drapeau
+     qui lui survivrait pourrait la contredire. Les états d'interface (plis de
+     catégories, prix en cours de frappe) sont conservés. */
+  refetchCatalog(){ const fr=(typeof window!=='undefined'&&window.__FR)||{}; if(!fr.base||!fr.token) return Promise.resolve(false);
+    return fetch(fr.base+'/franchisor/catalog',{headers:{'X-Admin-Token':fr.token},credentials:'omit'})
+      .then(r=>r.ok?r.json():null)
+      .then(data=>{ if(!Array.isArray(data)) return false;
+        const cur=window.BOServer?window.BOServer.table('catalog'):[];
+        if(JSON.stringify(cur)===JSON.stringify(data)) return false;
+        if(window.BOServer&&window.BOServer.save) window.BOServer.save('catalog', data);
+        this.setState(st=>{ const f={}; Object.keys(st.flags||{}).forEach(k=>{
+          if(!/^(bw|ac|od|bm|catWeb|catOff|catAc|catObl)_/.test(k)) f[k]=st.flags[k]; });
+          return {flags:f}; });
+        return true; })
+      .catch(()=>false); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); }); }
+  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+    // Catalogue toujours frais sur les écrans qui en dépendent : toutes les
+    // 30 s onglet visible, et immédiatement au retour sur l'onglet — même
+    // mécanique que la console franchisé. Combiné au refetch d'après-écriture
+    // (frPost), le sélecteur de produits des menus suit la base sans F5.
+    const catFresh=()=>{ if(document.visibilityState!=='visible') return;
+      if(this.state.screen==='catalogue'||this.state.screen==='menus') this.refetchCatalog(); };
+    this._catFreshTimer=setInterval(catFresh,30000);
+    document.addEventListener('visibilitychange',catFresh); }
   pid(){ return this.state.menuProductId || Object.keys(this.state.menus||{}).filter(k=>k!=='_categories')[0] || ''; }
   apply(db){ this.setState({menus:db}); this.saveMenu(db); }
   // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
