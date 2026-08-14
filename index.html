@@ -153,6 +153,24 @@
       <!-- TABLEAU DE BORD RÉSEAU -->
       <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
       <div style="display:flex;flex-direction:column;gap:18px">
+        <!-- RUN D'IMPRESSION DU CUT-OFF (delivery) — VERSION RÉSEAU. La marque
+             ne sert ni commandes ni tournées : les feuilles de tournée et les
+             étiquettes s'impriment dans la console de chaque boutique (écran
+             Préparation). Ce run imprime la feuille réseau — une page par
+             boutique active, avec l'adresse de sa console. Le navigateur
+             n'imprime pas sans clic : au passage du cut-off le panneau s'arme
+             et le toast le signale ; le run part d'un clic. -->
+        <div style="background:var(--color-surface);border:1.5px solid {{ runBorder }};border-radius:12px;padding:16px 20px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px">
+              <div class="t-section-title" style="font-size:15px">Run d'impression — cut-off delivery (réseau)</div>
+              <div style="font:400 11.5px/1.55 var(--font-ui);color:var(--color-text-muted);margin-top:4px">{{ runEtat }}</div>
+            </div>
+            <span style="{{ runPill }}">{{ runPillTxt }}</span>
+            <button onClick="{{ runGo }}" class="btn-primary" style="font-size:12.5px;display:flex;align-items:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7"><path d="M6 9V3h12v6M6 18h12v3H6zM6 14h12v4H6z"/></svg>Lancer le run réseau (1 document)</button>
+          </div>
+          <div style="font:400 11px/1.6 var(--font-ui);color:var(--color-text-muted);margin-top:8px">Une page A4 par boutique active, avec sa console Préparation (où s'impriment feuilles de tournée et étiquettes) · {{ runCounts }}</div>
+        </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
           <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
             <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:16px"><div class="t-admin-label">{{ k.label }}</div><div style="font:700 26px/1 var(--font-ui);color:{{ k.valColor }};margin:9px 0 4px">{{ k.value }}</div><div style="font:400 11px var(--font-ui);color:{{ k.deltaColor }}">{{ k.delta }}</div></div>
@@ -1339,6 +1357,97 @@ class Component extends DCLogic {
     {s:'audit',g:'Paramétrage',k:'journal trace action sensible historique qui a fait quoi'},
   ]; }
   printJob(msg){ this.setState({toast:msg}); clearTimeout(this._t); this._t=setTimeout(()=>this.setState({toast:''}),2600); }
+  /* ── RUN D'IMPRESSION DU CUT-OFF (delivery) — VERSION RÉSEAU ──────────────
+     La console marque ne sert AUCUNE donnée d'exploitation : /franchisor/*
+     n'a ni commandes, ni tournées, ni sites. Les feuilles de tournée et les
+     étiquettes s'impriment donc dans la console de CHAQUE boutique (écran
+     Préparation — panneau homologue, implanté côté franchisé le 14/08/2026).
+     Ici, le run imprime ce que la marque sert vraiment : une page par
+     boutique du réseau, avec l'adresse de sa console. Imprimer les tournées
+     du réseau DEPUIS cette console exigerait que php-api serve les commandes
+     delivery par boutique sous /franchisor/ — décision côté dépôt WebShop,
+     pas ici ; rien n'est affiché tant que rien n'est servi. */
+  cutoffCfg(){ const raw=String(window.BOServer?window.BOServer.getParam('order.cutoff_default',''):'').trim();
+    const m=raw.match(/^(\d{1,2}):(\d{2})$/); return {raw, ok:!!m, min:m?(+m[1]*60+ +m[2]):null}; }
+  /* Au cut-off, la console PRÉVIENT — elle ne peut pas plus : un navigateur
+     n'ouvre ni onglet ni impression sans geste de l'utilisateur (popup
+     bloquée). Le panneau du tableau de bord s'arme, le toast le signale une
+     fois par jour, et le run part d'UN clic. */
+  cutoffPing(){ const c=this.cutoffCfg(); if(!c.ok) return;
+    const d=new Date(); const iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(d.getHours()*60+d.getMinutes()<c.min||this._cutPing===iso) return;
+    this._cutPing=iso;
+    // Réseau sans boutique active = rien à imprimer : pas de toast pour rien.
+    const n=(window.BOServer?window.BOServer.table('shops'):[]).filter(s=>s&&s.act!==false&&s.act!==0).length;
+    if(n) this.printJob('⏰ Cut-off delivery ('+c.raw+') passé — lancez le run d’impression réseau (Tableau de bord)'); }
+  // Console franchisé d'une boutique, déduite de la base API réelle :
+  // <origine>/webshop/api → <origine>/webshop/backoffice_franchisee/?shop=N.
+  // Base absente ⇒ '' — la page du run le dit au lieu d'inventer une URL.
+  shopConsoleUrl(id){ const fr=window.__FR||{}; if(!fr.base) return '';
+    return String(fr.base).replace(/\/api\/?$/,'')+'/backoffice_franchisee/?shop='+encodeURIComponent(id); }
+  /* LE DOCUMENT DU RUN RÉSEAU — fabriqué depuis les tables servies (shops,
+     ws_param), jamais d'exemple : une page de synthèse, puis une page A4 par
+     boutique ACTIVE avec sa console. Les boutiques inactives sont comptées,
+     pas listées — et le document le dit (pas de troncature silencieuse). */
+  cutoffDocHtml(){
+    const T=(n)=>window.BOServer?window.BOServer.table(n):[];
+    const esc=(v)=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const d=new Date();
+    const dateFR=d.toLocaleDateString('fr-BE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const cut=this.cutoffCfg();
+    const shops=T('shops');
+    const actives=shops.filter(s=>s&&s.act!==false&&s.act!==0);
+    const nInact=shops.length-actives.length;
+    const vide=(txt)=>'<div class="vide">'+esc(txt)+'</div>';
+    const out=[];
+    out.push('<section class="page"><h1>Run d’impression — cut-off delivery (réseau)</h1>'
+      +'<div class="sub">'+esc(dateFR)+(cut.ok?(' · cut-off '+esc(cut.raw)):' · cut-off non configuré (order.cutoff_default)')+'</div>'
+      +'<div class="note">L’API marque (/franchisor/*) ne sert ni les commandes delivery, ni les tournées, ni les sites du réseau : '
+      +'les <strong>feuilles de tournée</strong> et <strong>toutes les étiquettes</strong> s’impriment dans la console de chaque boutique '
+      +'— écran <strong>Préparation</strong>, panneau « Run d’impression — cut-off delivery ». Ce document liste chaque boutique active et sa console.</div>'
+      +(actives.length?('<table><thead><tr><th>Boutique</th><th>Ville</th><th>Webshop</th><th>Console franchisé</th></tr></thead><tbody>'
+        +actives.map(s=>{ const u=this.shopConsoleUrl(s.id);
+          return '<tr><td>'+esc(s.nom||'—')+'</td><td>'+esc(s.ville||'—')+'</td><td>'+((s.web!==false&&s.web!==0)?'En ligne':'Coupé')+'</td>'
+            +'<td class="mono">'+(u?('<a href="'+esc(u)+'">'+esc(u)+'</a>'):'API non configurée — URL indéterminable')+'</td></tr>'; }).join('')
+        +'</tbody></table>'):vide('Aucune boutique servie (/franchisor/shops vide) — rien à imprimer.'))
+      +(nInact?('<div class="sub" style="margin-top:3mm">'+nInact+' boutique(s) inactive(s) non listée(s).</div>'):'')
+      +'</section>');
+    actives.forEach(s=>{ const u=this.shopConsoleUrl(s.id);
+      out.push('<section class="page"><h1>'+esc(s.nom||'—')+'</h1>'
+        +'<div class="sub">'+esc(s.ville||'—')+((s.contrat&&s.contrat!=='—')?(' · contrat '+esc(s.contrat)):'')+' · '+esc(dateFR)+'</div>'
+        +'<div class="fiche"><div class="k">Webshop</div><div>'+((s.web!==false&&s.web!==0)?'En ligne':'Coupé')+'</div>'
+        +'<div class="k">Adoption whitelist</div><div>'+((s.adoption!=null&&s.adoption!=='')?(esc(s.adoption)+' %'):'—')+'</div>'
+        +'<div class="k">Console franchisé</div><div class="mono">'+(u?('<a href="'+esc(u)+'">'+esc(u)+'</a>'):'API non configurée — URL indéterminable')+'</div></div>'
+        +'<div class="note">À l’ouverture de cette console : écran <strong>Préparation</strong> › panneau « Run d’impression — cut-off delivery » '
+        +'→ « Lancer le run (1 document) » imprime les feuilles A4 par tournée (tournée → sites → bureau → départements → clients) et toutes les étiquettes (delivery sites, clients, colis) de cette boutique.</div>'
+        +'</section>'); });
+    return '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Run d’impression réseau — '+esc(dateFR)+'</title><style>'
+      +'@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;font:12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#222}'
+      +'.bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #ddd;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}'
+      +'.bar button{border:none;background:#8D1D2C;color:#fff;border-radius:8px;padding:9px 16px;font:600 13px inherit;cursor:pointer}'
+      +'@media print{.no-print{display:none}}'
+      +'.page{page-break-after:always;padding:6mm 8mm}h1{font-size:17px;margin:0 0 1mm}.sub{color:#666;font-size:11px;margin-bottom:4mm}'
+      +'table{width:100%;border-collapse:collapse}th,td{border:.5px solid #ccc;padding:1.6mm 2.2mm;text-align:left;font-size:11px}'
+      +'th{background:#f4f1ec;font-size:9px;text-transform:uppercase;letter-spacing:.05em}'
+      +'.note{border:.6px solid #bbb;border-radius:2mm;padding:3mm;margin:0 0 4mm;font-size:11.5px;line-height:1.55}'
+      +'.fiche{display:grid;grid-template-columns:auto 1fr;gap:1.5mm 5mm;margin:0 0 4mm;font-size:12px}'
+      +'.fiche .k{font-weight:700;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:#8D1D2C;align-self:center}'
+      +'.vide{border:.6px dashed #aaa;border-radius:2mm;color:#666;padding:4mm;margin:2mm 0;font-size:11px}'
+      +'.mono{font-family:ui-monospace,Menlo,Consolas,monospace;word-break:break-all}'
+      +'a{color:#8D1D2C}'
+      +'</style></head><body><div class="no-print bar"><strong>Run d’impression réseau — '+esc(dateFR)+'</strong><button onclick="window.print()">Imprimer</button></div>'
+      +out.join('')+'</body></html>'; }
+  /* OUVERTURE AU CLIC — après coup l'onglet serait bloqué comme popup.
+     Bloqué malgré tout ⇒ téléchargement, et on le dit. */
+  runCutoff(){ const html=this.cutoffDocHtml();
+    const onglet=window.open('','_blank');
+    const u=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+    if(onglet){ onglet.location=u; setTimeout(()=>URL.revokeObjectURL(u),60000);
+      this.printJob('🖨 Document ouvert — le bouton « Imprimer » de l’onglet lance l’impression (papier ou PDF)'); }
+    else { const a=document.createElement('a'); a.href=u;
+      a.download='run-impression-reseau-'+new Date().toISOString().slice(0,10)+'.html';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000);
+      this.printJob('🖨 Onglet bloqué par le navigateur — document téléchargé à la place'); } }
   // Écriture vers l'API franchisor (POST). No-op propre si pas d'API/jeton (mode seed).
   // Chargement des contours de codes postaux : UNE fois, tôt, indépendant de l'écran (pas de course).
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
@@ -1808,6 +1917,11 @@ class Component extends DCLogic {
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
   componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+    // Cut-off delivery : signal au passage (toast, une fois par jour) et
+    // compte à rebours du panneau tenu à jour quand le tableau de bord est
+    // affiché. Calcul local (param + tables en mémoire), aucun fetch.
+    this._runTimer=setInterval(()=>{ if(document.visibilityState!=='visible') return;
+      this.cutoffPing(); if(this.state.screen==='dash') this.setState({}); },60000);
     // Catalogue toujours frais sur les écrans qui en dépendent : toutes les
     // 30 s onglet visible, et immédiatement au retour sur l'onglet — même
     // mécanique que la console franchisé. Combiné au refetch d'après-écriture
@@ -1986,6 +2100,17 @@ class Component extends DCLogic {
         webStyle:w.style,webKnob:w.knob,toggleWeb:()=>{ w.toggle(); this.frPost('/franchisor/shop',{id:s.id,webshop_enabled:!w.on}); },
         actStyle:a.style,actKnob:a.knob,toggleAct:()=>{ a.toggle(); this.frPost('/franchisor/shop',{id:s.id,active:!a.on}); },
         edit:this.editForm('shop',{id:s.id,nom:s.nom,ville:s.ville.replace(/\s\d+$/,''),contrat:(s.contrat&&s.contrat!=='—')?s.contrat:''})}; });
+
+    /* Run de cut-off (réseau) — l'heure vient d'order.cutoff_default
+       (ws_param, servi par /franchisor/params ; la config d'écran par défaut
+       du bo_server vaut tant que l'API n'a pas répondu). Pas d'heure lisible
+       ⇒ pas de compte à rebours inventé : le panneau le dit. */
+    const runCfg=this.cutoffCfg();
+    const runD=new Date(); const runNowMin=runD.getHours()*60+runD.getMinutes();
+    const runArmed=!!(runCfg.ok&&runNowMin>=runCfg.min);
+    const runActives=shopsRaw.filter(s=>s&&s.act!==false&&s.act!==0).length;
+    const runReste=(runCfg.ok&&!runArmed)?(runCfg.min-runNowMin):null;
+    const runResteTxt=runReste!=null?(runReste>=60?(Math.floor(runReste/60)+' h '+String(runReste%60).padStart(2,'0')):(runReste+' min')):'';
 
     // Catalogue + gouvernance + prix — arbre catégories › produits
     const CATALOG=SRV('catalog');
@@ -2446,6 +2571,15 @@ class Component extends DCLogic {
       profileOpen:!!S.profileOpen, profileParams, openProfile:()=>this.openProfile(), closeProfile:()=>this.closeProfile(),
       profName:'Administrateur', profRole:'Admin réseau · Siège', profInit:'AD',
       isDash:S.screen==='dash', kpis, shopsRows,
+      // Panneau « run de cut-off » (tableau de bord réseau).
+      runEtat:runCfg.ok?(runArmed?('Cut-off '+runCfg.raw+' passé — lancez le run réseau : une page par boutique, avec sa console Préparation.')
+          :('Cut-off à '+runCfg.raw+' (dans '+runResteTxt+') — le panneau s’arme au passage ; lancement anticipé possible.'))
+        :'Aucun cut-off configuré (order.cutoff_default) — lancement manuel du run.',
+      runPillTxt:runCfg.ok?(runArmed?'Armé — à imprimer':'Avant cut-off'):'Manuel',
+      runPill:pill(runArmed?'#fbe9eb':'var(--color-background-secondary)',runArmed?'var(--color-primary)':'var(--color-text-muted)')+';padding:6px 12px',
+      runBorder:runArmed?'var(--color-primary)':'var(--color-border-tertiary)',
+      runCounts:runActives+' boutique(s) active(s)',
+      runGo:()=>this.runCutoff(),
       isBoutiques:S.screen==='boutiques',
       isCatalogue:S.screen==='catalogue', catTree, seasonChips, catFilterChips:[['web','Webshop'],['actif','Actif'],['office','Office'],['menu','Menu']].map(o=>{ const k=o[0], on=!!S.flags['catF_'+k]; return {label:o[1], active:on, style:'border:none;cursor:pointer;border-radius:20px;padding:6px 13px;font:600 11px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'), toggle:()=>this.setState(st=>({flags:{...st.flags,['catF_'+k]:!st.flags['catF_'+k]}})) }; }), catActiveOnly:activeOnly, catFilterStyle:swS(activeOnly), catFilterKnob:knS(activeOnly), catFilterToggle:()=>this.setState(st=>({flags:{...st.flags,catActiveOnly:!(st.flags['catActiveOnly']!==undefined?st.flags['catActiveOnly']:true)}})),
       catSearch:S.catSearch||'', catSearchActive:!!(S.catSearch&&S.catSearch.length), setCatSearch:(e)=>{ const v=e.target.value; this.setState({catSearch:v}); }, clearCatSearch:()=>this.setState({catSearch:''}),

@@ -19,6 +19,14 @@ deux fois dans les deux.
 Cette répartition suit ce que chaque session a réellement construit, pas une
 préférence. Elle se change en éditant ce tableau — dans les **deux** dépôts.
 
+> **Note du 14/08/2026 — exception ponctuelle demandée explicitement par
+> l'utilisateur :** le panneau « Run d'impression — cut-off delivery (réseau) »
+> du tableau de bord (méthodes `cutoffCfg`/`cutoffPing`/`cutoffDocHtml`/
+> `runCutoff`, panneau du dash) a été écrit par la session « franchisé »,
+> branche `claude/cutoff-print-run-network`. Session marque : ne pas le
+> ré-implémenter — reprendre cette branche. La répartition ci-dessus reste
+> inchangée pour tout le reste.
+
 ## Pourquoi
 
 Trois incidents en une seule journée, tous dus au travail en parallèle :
