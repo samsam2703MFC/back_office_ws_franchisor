@@ -1802,9 +1802,9 @@ class Component extends DCLogic {
         if(Array.isArray(a)&&a.length){ const idx={}; a.forEach(e=>{ idx[String(e[0])]={city:e[1],lat:e[2],lng:e[3]}; });
           const communes={}; a.forEach(e=>{ const c=String(e[1]); (communes[c]=communes[c]||[]).push(String(e[0])); });
           window.__CPGEO={list:a,idx,communes,groups:Array.isArray(g)?g:[]}; this.setState(s=>({_rev:(s._rev||0)+1})); }
-        else { this.czMapMsg('⚠ ERREUR — référentiel des codes postaux vide (api/data/zipcodes_be.json) — please debug'); }
+        else { this.printJob('⚠ ERREUR — référentiel des codes postaux vide (api/data/zipcodes_be.json) — please debug'); }
       }).catch(e=>{ this._geoLoading=false;
-        this.czMapMsg('⚠ ERREUR — référentiel des codes postaux indisponible : '+(e&&e.message||e)+' — please debug'); }); }
+        this.printJob('⚠ ERREUR — référentiel des codes postaux indisponible : '+(e&&e.message||e)+' — please debug'); }); }
     if(!window.L){ clearTimeout(this._zmT); this._zmT=setTimeout(()=>this.czEnsure(),160); return; }
     const el=document.getElementById('map-zones'); if(!el) return;
     if(!el._leaflet_id){ const L=window.L; const m=L.map(el,{zoomControl:true}).setView([50.64,4.45],8);
@@ -1924,14 +1924,14 @@ class Component extends DCLogic {
     const rows=(window.BOServer?window.BOServer.table('prospects'):[]); const i=rows.findIndex(r=>String(r.id)===String(payload.id));
     if(i>=0){ rows[i]={...rows[i],...optimistic}; if(window.BOServer)window.BOServer.save('prospects',rows); }
     this.setState(st=>({_rev:(st._rev||0)+1}));
-    if(!fr.base) return Promise.resolve(true);
+    if(!fr.base) return Promise.resolve(false);
     return fetch(fr.base+'/franchisor/prospect',{method:'POST',headers:{'Content-Type':'application/json',...(fr.token?{'X-Admin-Token':fr.token}:{})},body:JSON.stringify(payload),credentials:'omit'}).then(r=>r.ok).catch(()=>false); }
   prConfirm(){ if(this.state.prBusy) return; const cp=String(this.state.prCp||'').trim(); const loc=this.state.prLocality||''; const cov=this.prCoverage(cp); this.setState({prBusy:true});
     if(cov.covered){ const shopId=this.state.prFr||cov.shop_id; const shops=(window.BOServer?window.BOServer.table('shops'):[]); const sh=shops.find(s=>String(s.id)===String(shopId)); const shopName=sh?(sh.nom||sh.name):(cov.shop_name||('Point de vente #'+shopId));
       this.prPersist({id:this.state.prId,action:'assign',franchisee_id:shopId,locality:loc,postcode:cp,status:'a_valider'},{locality:loc,postcode:cp,status:'a_valider',franchisee_id:shopId,franchisee_name:shopName})
-        .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?('✔ Prospect transféré à '+shopName+' · statut À valider'):'✔ Transfert enregistré en local'); }); }
+        .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?('✔ Prospect transféré à '+shopName+' · statut À valider'):'✖ Serveur injoignable — transfert NON enregistré côté serveur (état local seulement)'); }); }
     else { this.prPersist({id:this.state.prId,action:'hold',locality:loc,postcode:cp,status:'attente_franchise',email_template:'prospect_attente'},{locality:loc,postcode:cp,status:'attente_franchise',mailed:true})
-        .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?'✉ E-mail envoyé · prospect conservé pour future franchise':'✉ Mail simulé (local) · prospect conservé'); }); } }
+        .then(ok=>{ this.setState({prBusy:false,prOpen:false}); this.printJob(ok?'✉ E-mail envoyé · prospect conservé pour future franchise':'✖ Serveur injoignable — AUCUN e-mail envoyé, prospect non traité côté serveur'); }); } }
   // ===== Traçabilité client ↔ magasin (vue Marque) =====
   shopColor(sid){ if(sid==null||sid===''||sid==='__none') return '#9a9a9a'; const palette=['#8D1D2C','#3B3468','#2d7a3e','#C87A3F','#1f6f78','#7a2d5a','#b26a00','#2e5a8c','#8C4A2F','#4a6b1f']; return palette[Math.abs(this.geoHash(String(sid)))%palette.length]; }
   _traceCps(){ return String(this.state.traceCp||'').split(/[^0-9]+/).filter(Boolean); }
@@ -2095,29 +2095,33 @@ class Component extends DCLogic {
       .flatMap(c=>(c.prods||[])).map(pr=>pr.id+' — '+(pr.nom||pr.name||'')).filter(x=>!/^undefined/.test(x));
     const shopNames=shopList.map(s=>s.nom||s.name).filter(Boolean);
     const shopVilles=[...new Set(shopList.map(s=>(s.ville||s.city||'').replace(/\s*\d{4,}\s*$/,'').trim()).filter(Boolean))];
-    const villes=shopVilles.length?shopVilles:['Bruxelles','Anderlecht','Uccle','Schaerbeek','Louvain','Waterloo'];
-    const cats=['Boulangerie','Pâtisserie fraîche','Chocolaterie','Traiteur','Glaces'];
+    /* Audit go-live : plus de repli de villes fictives (« Bruxelles,
+       Anderlecht… ») quand /franchisor/shops est vide ou en échec — liste
+       vide, honnêtement. Les catégories du formulaire produit viennent du
+       CATALOGUE réel, plus d'une taxonomie inventée. */
+    const villes=shopVilles;
+    const cats=((this.state.CATALOG&&this.state.CATALOG.cats)||[]).map(c=>c.name||c.label).filter(Boolean);
     const sel=a=>a.map(x=>({value:x,label:x}));
     return {
       shop:{ title:'Boutique', table:'shops', save:'Enregistrer', fields:[
         {k:'nom',label:'Enseigne',type:'text',ph:'L\'Atelier — …'},
-        {k:'ville',label:'Ville',type:'select',options:sel(villes),def:villes[0]},
+        {k:'ville',label:'Ville',type:'select',options:sel(villes),def:villes[0]||''},
         {k:'contrat',label:'Contrat',type:'select',options:sel(['Franchise','Succursale','Master']),def:'Franchise'},
         {k:'accent',label:'Accent (branding)',type:'select',options:sel(['Ruby Red','Abricot','Old Copper']),def:'Ruby Red'},
       ]},
       product:{ title:'Produit', table:'ws_products', save:'Créer', fields:[
         {k:'nom',label:'Nom',type:'text',ph:'ex. Éclair chocolat'},
-        {k:'cat',label:'Catégorie',type:'select',options:sel(cats),def:cats[0]},
-        {k:'prix',label:'Prix de référence (€)',type:'number',def:3.5},
+        {k:'cat',label:'Catégorie',type:'select',options:sel(cats),def:cats[0]||''},
+        {k:'prix',label:'Prix de référence (€)',type:'number',def:''},
       ]},
       voucher:{ title:'Bon', table:'ws_vouchers', save:'Créer le bon', fields:[
         {k:'code',label:'Code (vide = généré automatiquement)',type:'text',ph:'Laisser vide pour générer'},
         {k:'type',label:'Type (type)',type:'select',options:sel(['percent','fixed','free_delivery']),def:'percent'},
-        {k:'value',label:'Valeur (value)',type:'number',def:10},
-        {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:20},
-        {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:100},
+        {k:'value',label:'Valeur (value)',type:'number',def:''},
+        {k:'min_order',label:'Commande min. (min_order €)',type:'number',def:''},
+        {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:''},
         {k:'per_customer',label:'Limite par client (vide = illimité · 1 = une fois par travailleur)',type:'number',def:''},
-        {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'2027-01-01'},
+        {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'',ph:'AAAA-MM-JJ'},
         {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
         {k:'scope_product',label:'Limiter à un produit (vide = panier entier)',type:'select',options:sel(['— panier entier —'].concat(prodOpts)),def:'— panier entier —'},
         {k:'scope_max_qty',label:'Pièces max remisées (avec périmètre · 1 = produit offert)',type:'number',def:''},
@@ -2165,7 +2169,13 @@ class Component extends DCLogic {
     else if(key==='user'){ path='/franchisor/user'; payload={nom:v.nom,email:v.email,role:v.role,portee:v.portee,active:true}; }
     else if(key==='template'){ path='/franchisor/email-template'; payload={cle:v.cle,langue:v.langue,sujet:v.sujet,corps:v.corps}; }
     if(path && !((key==='shop'||key==='product') && v.id==null)){ this.frPost(path,payload); }
-    else { this.printJob((this.state.formEdit?'✔ Mis à jour dans ':'✔ Enregistré dans ')+c.table); } }
+    else {
+      /* Audit go-live : l'ancien repli affichait « ✔ Enregistré dans
+         ws_products » sans RIEN envoyer ni stocker — perte silencieuse
+         maquillée en succès. Une création non câblée est refusée, dit
+         pourquoi, et la saisie reste à l'écran. */
+      this.printJob('✖ Création non câblée côté serveur ('+c.table+') — RIEN n\'a été enregistré. Créez cet élément par le canal réel (ERP / route dédiée).');
+      return; } }
   navStyle(s){ const on=this.state.screen===s; return 'display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:none;border-radius:9px;cursor:pointer;font:'+(on?'600':'500')+' 13px/1 var(--font-ui);text-align:left;'+(on?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text)'); }
   renderVals(){
     const S=this.state;
