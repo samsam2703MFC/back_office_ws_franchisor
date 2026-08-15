@@ -39,7 +39,11 @@ jobs:
       - name: Assemble static site
         run: |
           rm -rf site && mkdir -p site
-          cp back_office_ws_franchisor.dc.html api-config.js support.js bo_server.js menu_api.js menu_seed.js codes_postaux.geojson site/
+          # AUDIT GO-LIVE : back_office_ws_franchisor.dc.html (export DIVERGENT,
+          # déclaré « à ignorer totalement ») n'est PLUS copié — la page servie
+          # est index.html ; l'export traînait en production, téléchargeable et
+          # à jour de rien.
+          cp api-config.js support.js bo_server.js menu_api.js menu_seed.js codes_postaux.geojson site/
           cp codes_postaux.geojson site/codes_postaux.json
           # La page servie est index.html — la copie CÂBLÉE et maintenue (même
           # convention que le back-office franchisé). AVANT, cette étape écrasait
