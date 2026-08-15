@@ -36,7 +36,13 @@ export function getBundles(pid) { const p = P(pid); return p ? clone(p) : null; 
 
 // --- product ---
 // Lazily create a store row for any catalogue product the admin opens.
-export function ensureProduct(pid, name, basePrice, category) { ensure(); if (!DB[pid]) { DB[pid] = { productName: name || pid, category: category || '', menuOverride: null, basePrice: basePrice || 0, baseCost: 0, bundles: [] }; } return persist(); }
+export function ensureProduct(pid, name, basePrice, category) { ensure(); if (!DB[pid]) { DB[pid] = { productName: name || pid, category: category || '', basePrice: (basePrice != null ? basePrice : undefined), bundles: [] }; } return persist(); }
+// Audit go-live : baseCost et menuOverride ne sont PLUS initialisés à 0/null.
+// Ces défauts, indistinguables d'une vraie saisie, étaient renvoyés à chaque
+// ouverture d'un produit et ÉCRASAIENT en base son coût réel (→ 0) et sa
+// surcharge menu (→ NULL). Ils restent 'undefined' tant que l'utilisateur ne
+// les fixe pas, et saveMenu ne les envoie que définis (le serveur n'écrit
+// alors que les clés présentes).
 // Le serveur a créé le produit-menu réel : la fiche locale prend son id.
 export function renameProduct(oldId, newId) { ensure(); if (DB[oldId] && !DB[newId]) { DB[newId] = DB[oldId]; delete DB[oldId]; } return persist(); }
 export function updateProduct(pid, patch) { const p = P(pid); if (p) Object.assign(p, patch); return persist(); }

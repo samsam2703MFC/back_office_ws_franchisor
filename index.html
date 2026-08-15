@@ -2087,7 +2087,7 @@ class Component extends DCLogic {
   // Persiste TOUT l'arbre du produit courant (débounce) — le serveur le remplace.
   saveMenu(db){ const menus=db||this.state.menus, pid=this.pid(), m=menus&&menus[pid];
     if(!m||!(window.__FR&&window.__FR.base))return;
-    const payload={ productId:pid, productName:m.productName||'', menuOverride:m.menuOverride||null, basePrice:m.basePrice, baseCost:m.baseCost,
+    const payload={ productId:pid, productName:m.productName||'',
       bundles:(m.bundles||[]).map(bu=>({ name:bu.name, description:bu.description, price_modifier:bu.price_modifier, active:bu.active,
         // cat_id : la categorie dont proviennent les choix de cette etape. Le
         // libelle reste libre pour l'affichage client, mais il ne decide plus
@@ -2097,6 +2097,13 @@ class Component extends DCLogic {
           // affichage — sans l'identifiant, la commande ne pouvait pas relier le
           // choix a un produit (ni stock, ni prix, ni allergenes).
           choices:(s.choices||[]).map(c=>({ label:c.label, product_id:(c.product_id!=null?c.product_id:null), img:c.img, delta:c.delta, cost:c.cost, active:c.active })) })) })) };
+    // Champs SENSIBLES au « rien écraser » : envoyés seulement s'ils sont
+    // réellement définis. Sans ça, ouvrir un produit dans le constructeur
+    // renvoyait baseCost:0 / menuOverride:null et écrasait le coût réel et la
+    // surcharge en base. Le serveur n'écrit que les clés présentes.
+    if(m.menuOverride==='on'||m.menuOverride==='off') payload.menuOverride=m.menuOverride;
+    if(typeof m.basePrice==='number'&&isFinite(m.basePrice)) payload.basePrice=m.basePrice;
+    if(typeof m.baseCost==='number'&&isFinite(m.baseCost)) payload.baseCost=m.baseCost;
     clearTimeout(this._menuT); this._menuT=setTimeout(()=>this.frPost('/franchisor/menu',payload).then(r=>{
       /* MENU NÉ À L'ÉCRAN : le serveur vient de créer le produit-menu réel et
          rend son identifiant. On remplace l'identifiant local (menu-xxx) par
@@ -2154,10 +2161,14 @@ class Component extends DCLogic {
     const sel=a=>a.map(x=>({value:x,label:x}));
     return {
       shop:{ title:'Boutique', table:'shops', save:'Enregistrer', fields:[
-        {k:'nom',label:'Enseigne',type:'text',ph:'L\'Atelier — …'},
-        {k:'ville',label:'Ville',type:'select',options:sel(villes),def:villes[0]||''},
+        // Enseigne, ville et accent sont gérés par l'ERP / le branding : la
+        // route /franchisor/shop n'écrit QUE le contrat. Affichés en lecture
+        // seule pour ne pas laisser croire qu'ils s'enregistrent ici (ils
+        // étaient saisis puis silencieusement jetés).
+        {k:'nom',label:'Enseigne (géré par l\'ERP)',type:'text',ph:'L\'Atelier — …',readonly:true},
+        {k:'ville',label:'Ville (gérée par l\'ERP)',type:'text',readonly:true},
         {k:'contrat',label:'Contrat',type:'select',options:sel(['Franchise','Succursale','Master']),def:'Franchise'},
-        {k:'accent',label:'Accent (branding)',type:'select',options:sel(['Ruby Red','Abricot','Old Copper']),def:'Ruby Red'},
+        {k:'accent',label:'Accent — branding (lecture seule)',type:'text',readonly:true},
       ]},
       product:{ title:'Produit', table:'ws_products', save:'Créer', fields:[
         {k:'nom',label:'Nom',type:'text',ph:'ex. Éclair chocolat'},
@@ -2172,7 +2183,9 @@ class Component extends DCLogic {
         {k:'max_uses',label:'Utilisations max (max_uses · vide = illimité)',type:'number',def:''},
         {k:'per_customer',label:'Limite par client (vide = illimité · 1 = une fois par travailleur)',type:'number',def:''},
         {k:'expires_at',label:'Expiration (expires_at)',type:'text',def:'',ph:'AAAA-MM-JJ'},
-        {k:'shops',label:'Boutiques ciblées — vide = bon marque réseau ⇩ (shop_id NULL)',type:'checks',options:(shopNames.length?shopNames:['—'])},
+        // « Boutiques ciblées » retiré : /franchisor/voucher cible par
+        // target_kind (NETWORK/SHOP/OFFICE/CUSTOMER) + target_id, pas par une
+        // liste de boutiques — le champ était saisi puis jeté (bon créé réseau).
         {k:'scope_product',label:'Limiter à un produit (vide = panier entier)',type:'select',options:sel(['— panier entier —'].concat(prodOpts)),def:'— panier entier —'},
         {k:'scope_max_qty',label:'Pièces max remisées (avec périmètre · 1 = produit offert)',type:'number',def:''},
         {k:'reason_kind',label:'Motif',type:'select',options:sel(['MARKETING','FIDELITE','GESTE_CO','RECLAMATION']),def:'MARKETING'},
@@ -2397,9 +2410,9 @@ class Component extends DCLogic {
           photoMissing:(p.photo===false),
           mnStyle:swL(mnOn,RUBY,HPRD),mnKnob:knL(mnOn,HPRD),
           mnToggle:()=>{ if(!this.api)return; this.api.ensureProduct(pmid,p.nom,pv,c.cat); this.setState({menus:this.api.setProductOverride(pmid,mnOn?'off':'on')}); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,menu_override:mnOn?'off':'on'}); },
-          prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); this['_pp'+p.id]=setTimeout(()=>this.frPost('/franchisor/product',{id:p.id,price:parseFloat(v)||0}),700); } },
+          prix:pv,setPrix:(e)=>{const v=e.target.value;this.setState(st=>({flags:{...st.flags,[pk]:v}})); if(p.id!=null){ clearTimeout(this['_pp'+p.id]); const nv=parseFloat(v); this['_pp'+p.id]=setTimeout(()=>{ if(!isFinite(nv)||nv<=0){ this.printJob('⚠ Prix invalide — rien enregistré (un prix nul retirerait le produit de la vente).'); return; } this.frPost('/franchisor/product',{id:p.id,price:nv}); },700); } },
           bwStyle:swL(bw.on,RUBY,HPRD),bwKnob:knL(bw.on,HPRD),toggleBw:()=>{ bw.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,click_and_collect:!bw.on?1:0}).then(ok=>{ if(!ok) bw.toggle(); }); }, odStyle:swL(od.on,APRICOT,HPRD),odKnob:knL(od.on,HPRD),toggleOd:()=>{ od.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,office_delivery:!od.on?1:0}).then(ok=>{ if(!ok) od.toggle(); }); }, acStyle:swL(ac.on,RUBY,HPRD),acKnob:knL(ac.on,HPRD),toggleAc:()=>{ ac.toggle(); if(p.id!=null)this.frPost('/franchisor/product',{id:p.id,active:!ac.on?1:0}).then(ok=>{ if(!ok) ac.toggle(); }); },
-          adPct:p.ad+' %',adColor, edit:this.editForm('product',{nom:p.nom,cat:c.cat,prix:p.prix})});
+          adPct:p.ad+' %',adColor, edit:this.editForm('product',{id:p.id,nom:p.nom,cat:c.cat,prix:p.prix})});
       });
     });
 
@@ -2573,7 +2586,7 @@ class Component extends DCLogic {
     const trigList=Array.isArray(M.triggers)?M.triggers:[];
     const pushTriggers=(list)=>{ const pidN=parseInt(pid0,10);
       if(!pidN){ this.printJob('⚠ Le menu s’enregistre en base — réessayez dans une seconde.'); return; }
-      this.frPost('/franchisor/menu-triggers',{product_id:pidN,triggers:list.map(t=>({cat_id:t.cat_id,sub_cat_id:t.sub_cat_id!=null?t.sub_cat_id:null}))})
+      this.frPost('/franchisor/menu-triggers',{product_id:pidN,triggers:list.map(t=>({cat_id:t.cat_id,sub_cat_id:t.sub_cat_id!=null?t.sub_cat_id:null,article_id:t.article_id!=null?t.article_id:null}))})
         .then(ok=>{ if(ok&&this.api) this.setState({menus:this.api.updateProduct(pid0,{triggers:list})}); }); };
     /* L'ARBRE À COCHER : seulement les catégories armées « Menu » (bascule
        Menu = 1 dans l'écran Catalogue — c'est le filtre demandé), plus toute
@@ -2749,7 +2762,10 @@ class Component extends DCLogic {
     const vtResults=(S.vtResults||[]).map(r=>{ const nomFull=((r.name||'')+' '+(r.surname||'')).trim()||'—'; const label=(_vtKind==='CUSTOMER')?(nomFull+(r.soc?(' — '+r.soc):'')+(r.email?(' · '+r.email):(r.phone?(' · '+r.phone):''))):((r.name||'—')+(r.city?(' · '+r.city):'')); return {label,pick:()=>this.vtPick({id:r.id,label})}; });
     const _vtSel=S.vtSel||null;
     const formFields=fCfg?fCfg.fields.map(f=>{ const val=S.formVals[f.k]!==undefined?S.formVals[f.k]:'';
-      const onInput=e=>{ const v=e.target.value; this.setState(st=>({formVals:{...st.formVals,[f.k]:v}})); };
+      // Champ en lecture seule (géré ailleurs : ERP, branding) : la saisie est
+      // ignorée — le champ n'est pas persisté par la route, il ne doit pas
+      // laisser croire le contraire.
+      const onInput=f.readonly?(()=>{}):(e=>{ const v=e.target.value; this.setState(st=>({formVals:{...st.formVals,[f.k]:v}})); });
       const arr=Array.isArray(S.formVals[f.k])?S.formVals[f.k]:[];
       const checkOpts=(f.type==='checks'?f.options:[]).map(o=>{ const on=arr.includes(o); return { label:o, on,
         style:'border:none;cursor:pointer;border-radius:20px;padding:7px 13px;font:600 11.5px var(--font-ui);'+(on?'background:var(--color-primary);color:#fff':'background:var(--color-background-secondary);color:var(--color-text-muted)'),
@@ -3175,7 +3191,7 @@ class Component extends DCLogic {
       suSetLabel:this.suSet('label'), suSetKey:this.suSet('key'),
       suSetActive:this.suSet('active'), suSetRole:this.suSetRole(),
       isMenus:S.screen==='menus', menuProductName:M.productName, menuBasePrice:this.eur2(M.basePrice),
-      menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value)||0; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
+      menuBasePriceRaw:M.basePrice, setMenuBasePrice:(e)=>{ const v=parseFloat(e.target.value); if(!isFinite(v)) return; if(this.api)this.apply(this.api.updateProduct(pid0,{basePrice:v})); },
       productPickerOpen:!!S.productPickerOpen, productSearch:S.productSearch||'', productOptions,
       toggleProductPicker:()=>this.setState(st=>({productPickerOpen:!st.productPickerOpen})),
       setProductSearch:e=>{ const v=e.target.value; this.setState({productSearch:v}); },
