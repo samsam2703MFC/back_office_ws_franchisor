@@ -1390,7 +1390,9 @@
         <sc-if value="{{ wizIs1 }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex;flex-direction:column;gap:14px">
             <div style="display:flex;flex-direction:column;gap:6px"><span class="t-admin-label">Catégorie</span><div style="border:.5px solid var(--color-border-tertiary);border-radius:9px;padding:10px 12px;font:600 13px var(--font-ui);color:var(--color-text);background:var(--color-background-secondary)">{{ wizCatName }}</div><span style="font:11px var(--font-ui);color:var(--color-text-muted)">Nom géré par l'ERP — non modifiable ici.</span></div>
-            <div><span class="t-admin-label">Saison par défaut</span><div style="display:flex;gap:7px;margin-top:7px;flex-wrap:wrap"><sc-for list="{{ wizSeasonOpts }}" as="s" hint-placeholder-count="3"><button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button></sc-for></div></div>
+            <!-- « Saison par défaut » retirée (audit go-live) : aucune route ne
+                 l'écrit — elle était choisie puis jetée. À rétablir le jour où
+                 POST /franchisor/product|category acceptera un champ season. -->
             <div style="font:11.5px/1.5 var(--font-ui);color:var(--color-text-muted);background:var(--color-background-secondary);border-radius:9px;padding:10px 12px">Pour piloter une sous-catégorie précise, choisissez « Une sous-catégorie » à l'étape 1.</div>
           </div>
         </sc-if>
