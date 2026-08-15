@@ -839,10 +839,10 @@
           </sc-if>
           <sc-if value="{{ gbHasSt }}" hint-placeholder-val="{{ false }}">
             <sc-if value="{{ gbOk }}" hint-placeholder-val="{{ false }}">
-              <div style="background:#eaf5ec;border:.5px solid #cfe5d4;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#2d6a3e">✔ Connexion Business Profile active — compte(s) : {{ gbComptes }}</div>
+              <div style="background:#eaf5ec;border:.5px solid #cfe5d4;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#2d6a3e">✔ Connexion réseau active — compte(s) : {{ gbComptes }} · jetons boutique posés : {{ gbBoutiques }}</div>
             </sc-if>
             <sc-if value="{{ gbKo }}" hint-placeholder-val="{{ false }}">
-              <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#6b4420">{{ gbWhy }}</div>
+              <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#6b4420">{{ gbWhy }} — jetons boutique posés : {{ gbBoutiques }}</div>
             </sc-if>
           </sc-if>
           <sc-for list="{{ gbFields }}" as="f" hint-placeholder-count="5">
@@ -854,7 +854,7 @@
           <div style="display:flex;justify-content:flex-end;margin-top:10px">
             <button onClick="{{ gbSaveFn }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 16px;font:600 12px var(--font-ui);cursor:pointer">Enregistrer les champs remplis</button>
           </div>
-          <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:10px">Marche à suivre : 1. demander l'accès « Business Profile APIs » à Google (formulaire, quelques jours) et activer l'API sur le projet Cloud · 2. créer un client OAuth (type Web, redirection https://developers.google.com/oauthplayground) · 3. sur l'OAuth Playground (roue dentée → « Use your own OAuth credentials »), autoriser le scope https://www.googleapis.com/auth/business.manage puis « Exchange authorization code for tokens » et copier le refresh token · 4. coller les trois valeurs ci-dessus et tester.</div>
+          <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:10px">Marche à suivre : 1. demander l'accès « Business Profile APIs » à Google (formulaire, quelques jours) et activer l'API sur le projet Cloud · 2. créer un client OAuth (type Web, redirection https://developers.google.com/oauthplayground) · 3. CHAQUE FRANCHISÉ, avec SON compte Google (celui de sa fiche) : OAuth Playground (roue dentée → « Use your own OAuth credentials », ces client ID/secret), scope https://www.googleapis.com/auth/business.manage, « Exchange authorization code for tokens », puis coller SON refresh token dans SA console (carte Avis Google) · 4. le jeton réseau ci-dessus reste un repli pour les fiches gérées par la marque.</div>
         </div>
       </div>
       </sc-if>
@@ -3044,13 +3044,14 @@ class Component extends DCLogic {
       gbWhy:(S.gbSt&&S.gbSt.why)||'',
       gbKo:!!(S.gbSt&&!S.gbSt.ok),
       gbComptes:((S.gbSt&&S.gbSt.comptes)||[]).join(' · '),
+      gbBoutiques:(S.gbSt&&S.gbSt.boutiques!=null)?String(S.gbSt.boutiques):'0',
       gbTestLabel:S.gbBusy?'Test…':'Tester la connexion',
       gbFields:[
         {cle:'google_api_key',label:'Clé API Places (lecture des avis)',pw:false},
         {cle:'anthropic_api_key',label:'Clé API Anthropic (génération des brouillons)',pw:true},
         {cle:'google_oauth_client_id',label:'OAuth client ID (publication)',pw:false},
         {cle:'google_oauth_client_secret',label:'OAuth client secret',pw:true},
-        {cle:'google_oauth_refresh_token',label:'OAuth refresh token (scope business.manage)',pw:true},
+        {cle:'google_oauth_refresh_token',label:'OAuth refresh token RÉSEAU (facultatif — chaque franchisé colle le sien dans sa console)',pw:true},
       ].map(f=>{ const pose=!!(S.gbSt&&S.gbSt.cles&&S.gbSt.cles[({google_api_key:'places',anthropic_api_key:'anthropic',google_oauth_client_id:'client',google_oauth_client_secret:'secret',google_oauth_refresh_token:'refresh'})[f.cle]]);
         return {label:f.label, type:f.pw?'password':'text',
           ph:pose?'•••• déjà posé — retaper pour remplacer':'absent',
