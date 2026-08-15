@@ -825,6 +825,37 @@
             </sc-if>
           </sc-if>
         </div>
+
+        <!-- Clés & connexion — circuit des avis Google (ws_param, testé en direct) -->
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:4px">
+            <div class="t-section-title" style="font-size:15px">Clés &amp; connexion — avis Google</div>
+            <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">ws_param</span>
+            <button onClick="{{ gbTestFn }}" style="margin-left:auto;background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">{{ gbTestLabel }}</button>
+          </div>
+          <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">Lecture (Places), génération (Anthropic) et publication (OAuth Business Profile). Les clés vivent en base, jamais dans les dépôts. Le refresh token se génère une fois via l'OAuth Playground de Google (scope business.manage) — la redirection OAuth exige HTTPS, que ce serveur n'offre pas.</div>
+          <sc-if value="{{ gbHasErr }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fbe9eb;border:.5px solid #f0cdd2;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#8D1D2C">⚠ {{ gbErr }}</div>
+          </sc-if>
+          <sc-if value="{{ gbHasSt }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ gbOk }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#eaf5ec;border:.5px solid #cfe5d4;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#2d6a3e">✔ Connexion Business Profile active — compte(s) : {{ gbComptes }}</div>
+            </sc-if>
+            <sc-if value="{{ gbKo }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fdf3e7;border:.5px solid #ead9c3;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#6b4420">{{ gbWhy }}</div>
+            </sc-if>
+          </sc-if>
+          <sc-for list="{{ gbFields }}" as="f" hint-placeholder-count="5">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:7px 0">
+              <span style="font:600 11.5px var(--font-ui);color:var(--color-text-muted);flex:0 0 320px;display:inline-flex;align-items:center;gap:8px">{{ f.label }} <span style="{{ f.badgeStyle }}">{{ f.badge }}</span></span>
+              <input type="{{ f.type }}" value="{{ f.value }}" onChange="{{ f.set }}" placeholder="{{ f.ph }}" style="flex:1;min-width:240px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/>
+            </div>
+          </sc-for>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+            <button onClick="{{ gbSaveFn }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 16px;font:600 12px var(--font-ui);cursor:pointer">Enregistrer les champs remplis</button>
+          </div>
+          <div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:10px">Marche à suivre : 1. demander l'accès « Business Profile APIs » à Google (formulaire, quelques jours) et activer l'API sur le projet Cloud · 2. créer un client OAuth (type Web, redirection https://developers.google.com/oauthplayground) · 3. sur l'OAuth Playground (roue dentée → « Use your own OAuth credentials »), autoriser le scope https://www.googleapis.com/auth/business.manage puis « Exchange authorization code for tokens » et copier le refresh token · 4. coller les trois valeurs ci-dessus et tester.</div>
+        </div>
       </div>
       </sc-if>
 
@@ -1398,7 +1429,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgEdit:null, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgEdit:null, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
 
@@ -1533,7 +1564,7 @@ class Component extends DCLogic {
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
     const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
     fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); }
   // ===== Avis clients (satisfaction) — serveur autoritaire, aucune donnée inventée =====
   avEnsure(){ if(this.state.screen!=='avis') return; const key=String(this.state.avShop||''); if(this._avKey===key && !this._avForce) return; this._avKey=key; this._avForce=false; this.avLoad(); }
   avRefresh(){ this._avForce=true; this.avEnsure(); }
@@ -1557,6 +1588,25 @@ class Component extends DCLogic {
   }
   rgDel(id){ this.frPost('/franchisor/review-guideline',{id:id,delete:true})
       .then(ok=>{ if(ok){ this._rgForce=true; this.rgEnsure(); } }); }
+  // ===== Connexion Google Business Profile + clés du circuit avis =====
+  // Les clés vivent en ws_param (jamais dans les dépôts, publics). Le statut
+  // est sondé EN DIRECT chez Google : rien de mémorisé entre deux tests.
+  gbEnsure(){ if(this.state.screen!=='avis') return; if(this._gbDone && !this._gbForce) return; this._gbDone=true; this._gbForce=false; this.gbTest(); }
+  gbTest(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this.setState({gbErr:'API non configurée.',gbSt:null,gbBusy:false}); return; }
+    this.setState({gbBusy:true,gbErr:''});
+    fetch(fr.base+'/franchisor/gbp-status',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
+      .then(r=>r.json().then(j=>({ok:r.ok,j})).catch(()=>({ok:false,j:null})))
+      .then(x=>{ if(x.ok&&x.j&&typeof x.j==='object') this.setState({gbSt:x.j,gbErr:'',gbBusy:false});
+        else this.setState({gbSt:null,gbBusy:false,gbErr:(x.j&&x.j.error)?String(x.j.error):'Statut injoignable.'}); })
+      .catch(()=>this.setState({gbSt:null,gbBusy:false,gbErr:'API injoignable (serveur ou réseau).'}));
+  }
+  gbSave(){ const d=this.state.gbDraft||{}; const cles=Object.keys(d).filter(k=>String(d[k]||'').trim()!=='');
+    if(!cles.length){ this.printJob('⚠ Rien à enregistrer — aucun champ rempli.'); return; }
+    const un=(i)=>{ if(i>=cles.length){ this.setState({gbDraft:{}}); this._gbForce=true; this.gbEnsure(); return; }
+      this.frPost('/franchisor/param',{cle:cles[i],val:String(d[cles[i]]).trim()}).then(ok=>{ if(ok) un(i+1); });
+    }; un(0);
+  }
   avSetShop(e){ this.setState({avShop:e.target.value}); }
   avLoad(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
     if(!fr.base){ this.setState({avErr:'API non configurée — écran serveur-autoritaire (aucune donnée locale).',avData:null,avLoading:false}); return; }
@@ -2018,7 +2068,7 @@ class Component extends DCLogic {
       .catch(()=>false); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
     // Cut-off delivery : signal au passage (toast, une fois par jour) et
     // compte à rebours du panneau tenu à jour quand le tableau de bord est
     // affiché. Calcul local (param + tables en mémoire), aucun fetch.
@@ -2988,6 +3038,28 @@ class Component extends DCLogic {
       rgSetEx:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,example_reply:v}})); },
       rgCancel:()=>this.setState({rgEdit:null}),
       rgSave:()=>this.rgSave(),
+      gbBusy:!!S.gbBusy, gbHasErr:!!S.gbErr, gbErr:S.gbErr||'',
+      gbHasSt:!!S.gbSt,
+      gbOk:!!(S.gbSt&&S.gbSt.ok),
+      gbWhy:(S.gbSt&&S.gbSt.why)||'',
+      gbKo:!!(S.gbSt&&!S.gbSt.ok),
+      gbComptes:((S.gbSt&&S.gbSt.comptes)||[]).join(' · '),
+      gbTestLabel:S.gbBusy?'Test…':'Tester la connexion',
+      gbFields:[
+        {cle:'google_api_key',label:'Clé API Places (lecture des avis)',pw:false},
+        {cle:'anthropic_api_key',label:'Clé API Anthropic (génération des brouillons)',pw:true},
+        {cle:'google_oauth_client_id',label:'OAuth client ID (publication)',pw:false},
+        {cle:'google_oauth_client_secret',label:'OAuth client secret',pw:true},
+        {cle:'google_oauth_refresh_token',label:'OAuth refresh token (scope business.manage)',pw:true},
+      ].map(f=>{ const pose=!!(S.gbSt&&S.gbSt.cles&&S.gbSt.cles[({google_api_key:'places',anthropic_api_key:'anthropic',google_oauth_client_id:'client',google_oauth_client_secret:'secret',google_oauth_refresh_token:'refresh'})[f.cle]]);
+        return {label:f.label, type:f.pw?'password':'text',
+          ph:pose?'•••• déjà posé — retaper pour remplacer':'absent',
+          badge:pose?'posé':'absent',
+          badgeStyle:'display:inline-flex;border-radius:999px;padding:2px 8px;font:600 10px var(--font-ui);'+(pose?'background:#eaf5ec;color:#2d6a3e':'background:#fbe9eb;color:#8D1D2C'),
+          value:(S.gbDraft&&S.gbDraft[f.cle])||'',
+          set:(e)=>{ const v=e.target.value; this.setState(st=>({gbDraft:{...(st.gbDraft||{}),[f.cle]:v}})); }}; }),
+      gbSaveFn:()=>this.gbSave(),
+      gbTestFn:()=>{ this._gbForce=true; this.gbEnsure(); },
       avLoading:!!S.avLoading, avErr:S.avErr||'', avHasErr:!!S.avErr,
       avShopOpts:((S.avData&&S.avData.shops)||[]).map(s=>({id:String(s.id),label:s.name+(s.city?(' · '+s.city):''),sel:String(s.id)===String(S.avShop)})),
       ...(function(self,S){ const d=S.avData||{}; const t=d.totals||{total:0,liked:0,disliked:0,pending:0};
