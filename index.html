@@ -780,49 +780,45 @@
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:4px">
             <div class="t-section-title" style="font-size:15px">Directives de réponse — avis Google</div>
             <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">ws_review_guidelines</span>
-            <button onClick="{{ rgAdd }}" style="margin-left:auto;background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">+ Directive</button>
           </div>
-          <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">Par tranche de note, le ton et les consignes que la console franchisé applique pour générer un brouillon de réponse à un avis Google. La publication reste manuelle : le franchisé relit, copie et colle la réponse sur Google.</div>
+          <div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted);margin-bottom:12px">Un ton socle commun à toutes les réponses, puis — pour chaque note, 1★ à 5★ — le ton, la consigne et l'exemple que la console franchisé applique pour générer un brouillon de réponse. La publication reste manuelle : le franchisé relit avant d'envoyer.</div>
           <sc-if value="{{ rgHasErr }}" hint-placeholder-val="{{ false }}">
             <div style="background:#fbe9eb;border:.5px solid #f0cdd2;border-radius:10px;padding:12px 14px;margin-bottom:12px;font:12.5px var(--font-ui);color:#8D1D2C">⚠ {{ rgErr }}</div>
           </sc-if>
-          <sc-if value="{{ rgEditing }}" hint-placeholder-val="{{ false }}">
-            <div style="border:.5px solid var(--color-border-secondary);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px">
-              <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Note min (1–5)
-                  <input type="number" min="1" max="5" value="{{ rgE.note_min }}" onChange="{{ rgSetMin }}" style="width:90px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
-                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Note max (1–5)
-                  <input type="number" min="1" max="5" value="{{ rgE.note_max }}" onChange="{{ rgSetMax }}" style="width:90px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
-                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted);flex:1;min-width:220px">Ton (le sens de la réponse)
-                  <input value="{{ rgE.tone }}" onChange="{{ rgSetTone }}" placeholder="ex. Empathique et orienté solution, sans promesse commerciale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
-              </div>
-              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Consignes (quoi dire, quoi ne jamais dire)
-                <textarea rows="3" onChange="{{ rgSetInstr }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical">{{ rgE.instructions }}</textarea></label>
-              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Exemple du registre attendu (jamais recopié tel quel)
-                <textarea rows="2" onChange="{{ rgSetEx }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical">{{ rgE.example_reply }}</textarea></label>
-              <div style="display:flex;gap:8px;justify-content:flex-end">
-                <button onClick="{{ rgCancel }}" style="background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">Annuler</button>
-                <button onClick="{{ rgSave }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">Enregistrer</button>
+          <sc-if value="{{ rgHasList }}" hint-placeholder-val="{{ false }}">
+            <div style="border:.5px solid var(--color-border-secondary);border-radius:10px;padding:14px;margin-bottom:14px;background:var(--color-background-secondary);display:flex;flex-direction:column;gap:8px">
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Ton — socle commun (appliqué à toutes les réponses, avant le ton de chaque note)
+                <textarea rows="2" value="{{ rgSocle }}" onChange="{{ rgSocleSet }}" placeholder="ex. La voix de la marque : chaleureuse et artisanale, vouvoiement, jamais de promesse commerciale" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical"></textarea></label>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center">
+                <sc-if value="{{ rgSocleDirty }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:400 11px var(--font-ui);color:#a15c00">modifié — non enregistré</span>
+                </sc-if>
+                <button onClick="{{ rgSocleSaveFn }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:9px;padding:8px 14px;font:600 12px var(--font-ui);cursor:pointer">{{ rgSocleLabel }}</button>
               </div>
             </div>
-          </sc-if>
-          <sc-if value="{{ rgHasList }}" hint-placeholder-val="{{ false }}">
-            <div style="display:grid;grid-template-columns:.7fr 1.6fr 1fr .7fr auto;padding:8px 6px;border-bottom:.5px solid var(--color-border-tertiary)"><span class="t-admin-label">Tranche</span><span class="t-admin-label">Ton</span><span class="t-admin-label">Contenu</span><span class="t-admin-label">Màj</span><span></span></div>
-            <sc-for list="{{ rgRows }}" as="g" hint-placeholder-count="3">
-              <div style="display:grid;grid-template-columns:.7fr 1.6fr 1fr .7fr auto;align-items:center;gap:8px;padding:10px 6px;border-bottom:.5px solid var(--color-border-tertiary)">
-                <span style="font:700 12.5px var(--font-ui);color:var(--color-text)">{{ g.tranche }}</span>
-                <span style="font:400 12.5px var(--font-ui);color:var(--color-text);min-width:0">{{ g.ton }}</span>
-                <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ g.extra }}</span>
-                <span style="font:400 11px var(--font-mono,monospace);color:var(--color-text-muted)">{{ g.maj }}</span>
-                <span style="display:inline-flex;gap:6px">
-                  <button onClick="{{ g.edit }}" style="background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:8px;padding:6px 11px;font:600 11.5px var(--font-ui);cursor:pointer">Éditer</button>
-                  <button onClick="{{ g.del }}" style="background:#fbe9eb;color:#8D1D2C;border:none;border-radius:8px;padding:6px 11px;font:600 11.5px var(--font-ui);cursor:pointer">Suppr.</button>
-                </span>
+            <sc-for list="{{ rgNotes }}" as="n" hint-placeholder-count="5">
+              <div style="border:.5px solid var(--color-border-secondary);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+                  <span style="font:700 13px var(--font-ui);color:var(--color-text)">{{ n.titre }}</span>
+                  <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ n.etat }}</span>
+                  <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center">
+                    <sc-if value="{{ n.dirty }}" hint-placeholder-val="{{ false }}">
+                      <span style="font:400 11px var(--font-ui);color:#a15c00">modifié — non enregistré</span>
+                    </sc-if>
+                    <sc-if value="{{ n.hasDel }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ n.del }}" style="background:#fbe9eb;color:#8D1D2C;border:none;border-radius:8px;padding:6px 11px;font:600 11.5px var(--font-ui);cursor:pointer">Suppr.</button>
+                    </sc-if>
+                    <button onClick="{{ n.save }}" style="background:var(--color-primary);color:#fff;border:none;border-radius:8px;padding:6px 12px;font:600 11.5px var(--font-ui);cursor:pointer">Enregistrer</button>
+                  </span>
+                </div>
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Ton pour cette note
+                  <input value="{{ n.tone }}" onChange="{{ n.setTone }}" placeholder="ex. Empathique et orienté solution" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff"/></label>
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Consigne (quoi dire, quoi ne jamais dire)
+                  <textarea rows="2" value="{{ n.instructions }}" onChange="{{ n.setInstr }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical"></textarea></label>
+                <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Exemple du registre attendu (jamais recopié tel quel)
+                  <textarea rows="2" value="{{ n.example }}" onChange="{{ n.setEx }}" style="border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;resize:vertical"></textarea></label>
               </div>
             </sc-for>
-            <sc-if value="{{ rgEmpty }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:20px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune directive — la génération côté franchisé le dira tant que la tranche de la note manque.</div>
-            </sc-if>
           </sc-if>
         </div>
 
@@ -1429,7 +1425,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgEdit:null, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgSocle:'', rgSocleDraft:null, rgSocleBusy:false, rgDrafts:{}, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
 
@@ -1578,16 +1574,45 @@ class Component extends DCLogic {
     this.setState({rgLoading:true,rgErr:''});
     fetch(fr.base+'/franchisor/review-guidelines',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
       .then(r=>r.json().then(j=>({ok:r.ok,j})).catch(()=>({ok:false,j:null})))
-      .then(x=>{ if(x.ok&&Array.isArray(x.j)) this.setState({rgList:x.j,rgErr:'',rgLoading:false});
-        else this.setState({rgList:null,rgLoading:false,rgErr:(x.j&&x.j.error)?String(x.j.error):'Chargement des directives en échec.'}); })
+      .then(x=>{ const j=x.j;
+        if(x.ok&&j&&typeof j==='object'&&Array.isArray(j.directives))
+          this.setState({rgList:j.directives,rgSocle:String(j.socle||''),rgErr:'',rgLoading:false});
+        else this.setState({rgList:null,rgLoading:false,rgErr:(j&&j.error)?String(j.error):'Chargement des directives en échec.'}); })
       .catch(()=>this.setState({rgList:null,rgLoading:false,rgErr:'API injoignable (serveur ou réseau).'}));
   }
-  rgSave(){ const g=this.state.rgEdit||{};
-    this.frPost('/franchisor/review-guideline',{id:(g.id||0),note_min:(parseInt(g.note_min,10)||0),note_max:(parseInt(g.note_max,10)||0),tone:String(g.tone||'').trim(),instructions:String(g.instructions||''),example_reply:String(g.example_reply||'')})
-      .then(ok=>{ if(ok){ this.setState({rgEdit:null}); this._rgForce=true; this.rgEnsure(); } });
+  // Résolution d'une note vers SA directive : tranche la plus étroite puis le
+  // plus petit id — exactement le choix du serveur à la génération, pour que
+  // l'écran montre ce qui sera réellement appliqué. (== volontaire : le
+  // serveur sert les bornes en chaînes.)
+  rgFor(n){ return (this.state.rgList||[]).filter(g=>g.note_min<=n&&n<=g.note_max)
+      .sort((a,b)=>((a.note_max-a.note_min)-(b.note_max-b.note_min))||(a.id-b.id))[0]||null; }
+  rgDraftFor(n){ const d=(this.state.rgDrafts||{})[n]; if(d) return d;
+    const g=this.rgFor(n); return {tone:(g&&g.tone)||'',instructions:(g&&g.instructions)||'',example_reply:(g&&g.example_reply)||''}; }
+  rgSetD(n,k,v){ const base=this.rgDraftFor(n);
+    this.setState(st=>({rgDrafts:Object.assign({},st.rgDrafts||{},{[n]:Object.assign({},base,{[k]:v})})})); }
+  // Enregistrer fige la note N en tranche [N,N] — mettre à jour la tranche
+  // large dont elle hériterait changerait AUSSI les autres notes couvertes.
+  rgSaveN(n){ if(this._rgBusy) return; const d=this.rgDraftFor(n);
+    if(!String(d.tone||'').trim()){ this.printJob('⚠ Le ton de la note '+n+' est requis.'); return; }
+    const g=this.rgFor(n); const propre=!!(g&&g.note_min==n&&g.note_max==n);
+    this._rgBusy=true;
+    this.frPost('/franchisor/review-guideline',{id:propre?g.id:0,note_min:n,note_max:n,tone:String(d.tone||'').trim(),instructions:String(d.instructions||''),example_reply:String(d.example_reply||'')})
+      .then(ok=>{ this._rgBusy=false;
+        if(ok){ this.setState(st=>{ const dd=Object.assign({},st.rgDrafts||{}); delete dd[n]; return {rgDrafts:dd}; });
+          this._rgForce=true; this.rgEnsure(); } });
   }
-  rgDel(id){ this.frPost('/franchisor/review-guideline',{id:id,delete:true})
-      .then(ok=>{ if(ok){ this._rgForce=true; this.rgEnsure(); } }); }
+  rgDelN(n){ const g=this.rgFor(n); if(!g||g.note_min!=n||g.note_max!=n) return;
+    this.frPost('/franchisor/review-guideline',{id:g.id,delete:true})
+      .then(ok=>{ if(ok){ this.setState(st=>{ const dd=Object.assign({},st.rgDrafts||{}); delete dd[n]; return {rgDrafts:dd}; });
+        this._rgForce=true; this.rgEnsure(); } });
+  }
+  rgSocleSave(){ if(this.state.rgSocleBusy) return;
+    const v=String((this.state.rgSocleDraft!=null?this.state.rgSocleDraft:this.state.rgSocle)||'').trim();
+    this.setState({rgSocleBusy:true});
+    this.frPost('/franchisor/param',{cle:'reviews_tone_base',val:v})
+      .then(ok=>{ if(ok) this.setState({rgSocleBusy:false,rgSocle:v,rgSocleDraft:null});
+        else this.setState({rgSocleBusy:false}); });
+  }
   // ===== Connexion Google Business Profile + clés du circuit avis =====
   // Les clés vivent en ws_param (jamais dans les dépôts, publics). Le statut
   // est sondé EN DIRECT chez Google : rien de mémorisé entre deux tests.
@@ -3020,24 +3045,23 @@ class Component extends DCLogic {
       avShop:S.avShop||'', avSetShop:(e)=>this.avSetShop(e), avRefresh:()=>this.avRefresh(),
       rgHasErr:!!S.rgErr, rgErr:S.rgErr||'',
       rgHasList:Array.isArray(S.rgList),
-      rgEmpty:Array.isArray(S.rgList)&&S.rgList.length===0,
-      rgRows:(S.rgList||[]).map(g=>({
-        tranche:(g.note_min===g.note_max?String(g.note_min):(g.note_min+'–'+g.note_max))+' ★',
-        ton:g.tone||'—',
-        extra:[g.instructions?'consignes':null,g.example_reply?'exemple':null].filter(Boolean).join(' · ')||'ton seul',
-        maj:g.maj||'—',
-        edit:()=>this.setState({rgEdit:{id:g.id,note_min:g.note_min,note_max:g.note_max,tone:g.tone||'',instructions:g.instructions||'',example_reply:g.example_reply||''}}),
-        del:()=>this.rgDel(g.id),
-      })),
-      rgAdd:()=>this.setState({rgEdit:{id:0,note_min:1,note_max:2,tone:'',instructions:'',example_reply:''}}),
-      rgEditing:!!S.rgEdit, rgE:S.rgEdit||{},
-      rgSetMin:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,note_min:v}})); },
-      rgSetMax:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,note_max:v}})); },
-      rgSetTone:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,tone:v}})); },
-      rgSetInstr:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,instructions:v}})); },
-      rgSetEx:(e)=>{ const v=e.target.value; this.setState(st=>({rgEdit:{...st.rgEdit,example_reply:v}})); },
-      rgCancel:()=>this.setState({rgEdit:null}),
-      rgSave:()=>this.rgSave(),
+      rgSocle:(S.rgSocleDraft!=null?S.rgSocleDraft:(S.rgSocle||'')),
+      rgSocleSet:(e)=>this.setState({rgSocleDraft:e.target.value}),
+      rgSocleDirty:S.rgSocleDraft!=null&&S.rgSocleDraft!==(S.rgSocle||''),
+      rgSocleLabel:S.rgSocleBusy?'Enregistrement…':'Enregistrer le socle',
+      rgSocleSaveFn:()=>this.rgSocleSave(),
+      rgNotes:[1,2,3,4,5].map(n=>{ const d=this.rgDraftFor(n); const g=this.rgFor(n);
+        const propre=!!(g&&g.note_min==n&&g.note_max==n);
+        return {titre:n+' ★',
+          etat:propre?('directive posée'+(g.maj?(' — màj '+g.maj):''))
+            :(g?('héritée de la tranche '+g.note_min+'–'+g.note_max+' (ancienne grille) — Enregistrer la fige pour cette note seule')
+              :'aucune directive — la génération côté franchisé le dira pour cette note'),
+          tone:d.tone||'', instructions:d.instructions||'', example:d.example_reply||'',
+          setTone:(e)=>this.rgSetD(n,'tone',e.target.value),
+          setInstr:(e)=>this.rgSetD(n,'instructions',e.target.value),
+          setEx:(e)=>this.rgSetD(n,'example_reply',e.target.value),
+          save:()=>this.rgSaveN(n), hasDel:propre, del:()=>this.rgDelN(n),
+          dirty:!!(S.rgDrafts&&S.rgDrafts[n])}; }),
       gbBusy:!!S.gbBusy, gbHasErr:!!S.gbErr, gbErr:S.gbErr||'',
       gbHasSt:!!S.gbSt,
       gbOk:!!(S.gbSt&&S.gbSt.ok),

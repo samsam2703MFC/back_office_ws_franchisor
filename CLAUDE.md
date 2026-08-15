@@ -25,7 +25,7 @@ préférence. Elle se change en éditant ce tableau — dans les **deux** dépô
 > `runCutoff`, panneau du dash) a été écrit par la session « franchisé »,
 > branche `claude/cutoff-print-run-network`. Le même jour et sur la même
 > branche, elle a aussi écrit les cartes « Directives de réponse — avis
-> Google » (méthodes `rgEnsure`/`rgLoad`/`rgSave`/`rgDel`, table
+> Google » (méthodes `rg*` — depuis le 15/08 : ton socle commun + directives par note, table
 > `ws_review_guidelines` servie par php-api) et « Clés & connexion — avis
 > Google » (méthodes `gbEnsure`/`gbTest`/`gbSave`, endpoint
 > `/franchisor/gbp-status`) de l'écran Avis. Session marque : ne pas les
