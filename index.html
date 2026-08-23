@@ -307,13 +307,14 @@
             <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
               <sc-for list="{{ xsTrigChips }}" as="t" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
               <sc-for list="{{ xsTrigCatChips }}" as="t" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
+              <sc-for list="{{ xsTrigSubChips }}" as="t" hint-placeholder-count="1"><span style="display:inline-flex;align-items:center;gap:7px;background:#fbe9eb;color:var(--color-primary);border-radius:999px;padding:5px 11px;font:600 11.5px var(--font-ui)">{{ t.label }}<button onClick="{{ t.remove }}" style="border:none;background:transparent;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0">×</button></span></sc-for>
             </div>
             <input type="text" value="{{ xsTrigQ }}" onInput="{{ xsSetTrigQ }}" placeholder="Rechercher un produit déclencheur…" style="width:100%;max-width:420px;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text)"/>
             <div style="display:flex;flex-direction:column;gap:1px;margin-top:3px;max-width:420px">
               <sc-for list="{{ xsTrigHits }}" as="h" hint-placeholder-count="3"><button onClick="{{ h.pick }}" style="display:block;width:100%;text-align:left;border:none;background:transparent;color:var(--color-text);font:500 12px var(--font-ui);padding:6px 9px;cursor:pointer;border-radius:6px">{{ h.label }}</button></sc-for>
             </div>
-            <select onChange="{{ xsAddCat }}" value="" style="margin-top:8px;max-width:420px;width:100%;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text-muted);cursor:pointer">
-              <sc-for list="{{ xsCatOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+            <select onChange="{{ xsAddSub }}" value="" style="margin-top:8px;max-width:420px;width:100%;border:.5px dashed var(--color-border-secondary);border-radius:9px;padding:9px 11px;font:500 12.5px var(--font-ui);background:transparent;color:var(--color-text-muted);cursor:pointer">
+              <sc-for list="{{ xsSubOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
             </select>
             <div style="display:flex;gap:7px;margin-top:10px;align-items:center">
               <span style="font:400 11px var(--font-ui);color:var(--color-text-muted)">Le panier doit contenir</span>
@@ -2876,6 +2877,12 @@ class Component extends DCLogic {
         const RULES=SRV('cross_sell')||[];
         const PRODS=[]; CATALOG.forEach(c=>(c.prods||[]).forEach(p=>{ if(p&&p.id!=null) PRODS.push({id:+p.id,nom:p.nom,cat:c.cat}); }));
         const CATS=CATALOG.filter(c=>c.id!=null).map(c=>({id:+c.id,label:c.cat}));
+        // Sous-catégories (c.subs, servies par le GET catalogue) : depuis le
+        // 23/08 un déclencheur « catégorie » s'ajoute au grain SOUS-catégorie
+        // — « Tartes », pas toute la Pâtisserie. Les règles anciennes par
+        // catégorie entière restent affichées et retirables, plus ajoutables.
+        const SUBS=[]; CATALOG.forEach(c=>{ if(c&&c.id!=null) (c.subs||[]).forEach(sb=>SUBS.push({id:+sb.id,label:sb.label,cat:c.cat})); });
+        const sName=id=>{ const h=SUBS.find(x=>x.id===+id); return h?h.label:('#'+id); };
         const SHOPS=(SRV('shops')||[]).filter(x=>x&&x.id!=null).map(x=>({id:+x.id,nom:x.nom||x.name||('#'+x.id)}));
         const pName=id=>{ const h=PRODS.find(x=>x.id===+id); return h?h.nom:('#'+id); };
         const DAYS=[[1,'L'],[2,'Ma'],[3,'Me'],[4,'J'],[5,'V'],[6,'S'],[7,'D']];
@@ -2891,7 +2898,7 @@ class Component extends DCLogic {
 
         const blank={id:0,name:'',dateFrom:'',dateTo:'',hourFrom:'',hourTo:'',weekdays:[1,2,3,4,5,6,7],
           matchMode:'any',channel:'both',placement:['cart','checkout'],maxSuggestions:2,active:1,
-          triggerProducts:[],triggerCategories:[],targets:[],shops:[]};
+          triggerProducts:[],triggerCategories:[],triggerSubs:[],targets:[],shops:[]};
         const setX=patch=>this.setState(st=>({xs:{...(st.xs||blank),...patch}}));
         const tog=(arr,v)=>arr.indexOf(v)>=0?arr.filter(x=>x!==v):arr.concat([v]);
 
@@ -2917,7 +2924,7 @@ class Component extends DCLogic {
             jours:(!wd.length||wd.length===7)?'tous les jours':DAYS.filter(d=>wd.indexOf(d[0])>=0).map(d=>d[1]).join(' '),
             canal:r.channel==='collect'?'Click & Collect':(r.channel==='delivery'?'Livraison bureau':'Les deux canaux'),
             portee:(r.shops&&r.shops.length)?(r.shops.length+' boutique(s)'):'Tout le réseau',
-            declencheurs:[].concat((r.triggerProducts||[]).map(x=>x.name),(r.triggerCategories||[]).map(x=>'Catégorie · '+x.name)).map(l=>({label:l})),
+            declencheurs:[].concat((r.triggerProducts||[]).map(x=>x.name),(r.triggerCategories||[]).map(x=>'Catégorie · '+x.name),(r.triggerSubs||[]).map(x=>'Sous-catégorie · '+x.name)).map(l=>({label:l})),
             suggestions:(r.targets||[]).map((t,i)=>({label:(i+1)+'. '+t.name})),
             mode:r.match_mode==='all'?'tous les déclencheurs':'au moins un déclencheur',
             maxi:String(r.max_suggestions)+' max',
@@ -2934,6 +2941,7 @@ class Component extends DCLogic {
               maxSuggestions:+r.max_suggestions||2,active:+r.active?1:0,
               triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
               triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+              triggerSubs:(r.triggerSubs||[]).map(x=>+x.id),
               targets:(r.targets||[]).map(x=>+x.id), shops:(r.shops||[]).map(Number)}}),
             basculer:()=>{ this.frPost('/franchisor/cross-sell',{id:r.id,name:r.name,
                 dateFrom:String(r.date_from||'').slice(0,10)||null,dateTo:String(r.date_to||'').slice(0,10)||null,
@@ -2942,6 +2950,7 @@ class Component extends DCLogic {
                 maxSuggestions:+r.max_suggestions,active:+r.active?0:1,
                 triggerProducts:(r.triggerProducts||[]).map(x=>+x.id),
                 triggerCategories:(r.triggerCategories||[]).map(x=>+x.id),
+                triggerSubs:(r.triggerSubs||[]).map(x=>+x.id),
                 targets:(r.targets||[]).map(x=>+x.id),shops:(r.shops||[]).map(Number)})
               .then(ok=>{ if(ok) reload(); }); },
             supprimer:()=>{ if(!confirm('Supprimer la règle « '+r.name+' » ?\n\nLes statistiques déjà mesurées sont conservées.')) return;
@@ -2985,12 +2994,14 @@ class Component extends DCLogic {
         xsTrigChips:(X?X.triggerProducts:[]).map(id=>({label:pName(id),remove:()=>setX({triggerProducts:X.triggerProducts.filter(x=>x!==id)})})),
         xsTrigCatChips:(X?X.triggerCategories:[]).map(id=>{ const c=CATS.find(x=>x.id===id);
           return {label:'Catégorie · '+(c?c.label:('#'+id)),remove:()=>setX({triggerCategories:X.triggerCategories.filter(x=>x!==id)})}; }),
+        xsTrigSubChips:((X&&X.triggerSubs)||[]).map(id=>({label:'Sous-catégorie · '+sName(id),
+          remove:()=>setX({triggerSubs:(X.triggerSubs||[]).filter(x=>x!==id)})})),
         xsTrigQ:S.xsQt||'', xsSetTrigQ:e=>this.setState({xsQt:e.target.value}),
         xsTrigHits:pick(S.xsQt,(X?X.triggerProducts:[])).map(p=>({label:p.nom+' · '+p.cat,
           pick:()=>{ setX({triggerProducts:(X||blank).triggerProducts.concat([p.id])}); this.setState({xsQt:''}); }})),
-        xsCatOpts:[{value:'',label:'+ Ajouter une catégorie déclencheur…'}].concat(
-          CATS.filter(c=>(X?X.triggerCategories:[]).indexOf(c.id)<0).map(c=>({value:String(c.id),label:c.label}))),
-        xsAddCat:e=>{ const v=parseInt(e.target.value,10); if(v) setX({triggerCategories:(X||blank).triggerCategories.concat([v])}); },
+        xsSubOpts:[{value:'',label:'+ Ajouter une sous-catégorie déclencheur…'}].concat(
+          SUBS.filter(sb=>((X&&X.triggerSubs)||[]).indexOf(sb.id)<0).map(sb=>({value:String(sb.id),label:sb.cat+' › '+sb.label}))),
+        xsAddSub:e=>{ const v=parseInt(e.target.value,10); if(v) setX({triggerSubs:(((X||blank).triggerSubs)||[]).concat([v])}); },
         // — suggestions —
         xsTargChips:(X?X.targets:[]).map((id,i)=>({label:(i+1)+'. '+pName(id),remove:()=>setX({targets:X.targets.filter(x=>x!==id)})})),
         xsTargQ:S.xsQs||'', xsSetTargQ:e=>this.setState({xsQs:e.target.value}),
@@ -3009,6 +3020,7 @@ class Component extends DCLogic {
             weekdays:X.weekdays,matchMode:X.matchMode,channel:X.channel,placement:X.placement,
             maxSuggestions:X.maxSuggestions,active:X.active,
             triggerProducts:X.triggerProducts,triggerCategories:X.triggerCategories,
+            triggerSubs:X.triggerSubs||[],
             targets:X.targets,shops:X.shops})
             .then(ok=>{ if(ok){ this.setState({xs:null,xsQt:'',xsQs:''}); reload(); } }); },
         };

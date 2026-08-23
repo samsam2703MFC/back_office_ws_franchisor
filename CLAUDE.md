@@ -29,8 +29,11 @@ préférence. Elle se change en éditant ce tableau — dans les **deux** dépô
 > `ws_review_guidelines` servie par php-api) et « Clés & connexion — avis
 > Google » (méthodes `gbEnsure`/`gbTest`/`gbSave`, endpoint
 > `/franchisor/gbp-status`) de l'écran Avis. Session marque : ne pas les
-> ré-implémenter — reprendre cette branche. La répartition ci-dessus reste
-> inchangée pour tout le reste.
+> ré-implémenter — reprendre cette branche. Le 23/08, à la demande de
+> l'utilisateur, elle a aussi passé le déclencheur « catégorie » du Panier
+> Croisé au grain SOUS-catégorie (écran Panier Croisé + endpoints cross-sell,
+> migration 0085). La répartition ci-dessus reste inchangée pour tout le
+> reste.
 
 ## Pourquoi
 
