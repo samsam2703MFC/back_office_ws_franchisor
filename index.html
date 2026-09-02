@@ -728,6 +728,101 @@
       </sc-if>
 
       <!-- AVIS CLIENTS -->
+      <sc-if value="{{ isFidelite }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ lcHasErr }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fbe9eb;border:.5px solid #f0cdd2;border-radius:10px;padding:12px 14px;font:12.5px var(--font-ui);color:#8D1D2C">⚠ {{ lcErr }}</div>
+        </sc-if>
+        <!-- Jauge points → bon d'achat (pwa_loyalty_config) -->
+        <sc-if value="{{ lcHasCfg }}" hint-placeholder-val="{{ false }}">
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+            <div><div class="t-section-title" style="font-size:15px">Points → bon d'achat</div><div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">pwa_loyalty_config · {{ lcCfg.resume }} · les coefficients ×2 (Happy Hour, week-end) ne jouent que sur les points, jamais sur les tampons</div></div>
+            <span style="display:inline-flex;gap:8px;align-items:center">
+              <sc-if value="{{ lcCfgDirty }}" hint-placeholder-val="{{ false }}"><span style="font:400 11px var(--font-ui);color:#a15c00">modifié — non enregistré</span></sc-if>
+              <button onClick="{{ lcCfgSave }}" style="{{ lcBtnP }}">Enregistrer</button>
+            </span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Montant d'achat par point (€)
+              <input type="number" min="1" step="0.5" value="{{ lcCfg.epp }}" onChange="{{ lcCfgSetEpp }}" style="{{ lcInp }}"/></label>
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Points pour un bon
+              <input type="number" min="1" step="1" value="{{ lcCfg.points }}" onChange="{{ lcCfgSetPoints }}" style="{{ lcInp }}"/></label>
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Valeur du bon (€)
+              <input type="number" min="0.5" step="0.5" value="{{ lcCfg.value }}" onChange="{{ lcCfgSetValue }}" style="{{ lcInp }}"/></label>
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Libellé du bon (optionnel)
+              <input value="{{ lcCfg.label }}" onChange="{{ lcCfgSetLabel }}" placeholder="ex. Bon d'achat de 5 € à 100 pts" style="{{ lcInp }}"/></label>
+          </div>
+        </div>
+        </sc-if>
+        <!-- Cartes produit (pwa_loyalty_card) -->
+        <div style="background:var(--color-surface);border:.5px solid var(--color-border-tertiary);border-radius:12px;padding:20px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <div><div class="t-section-title" style="font-size:15px">Cartes produit à tampons <span style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">{{ lcCount }}</span></div><div style="font:400 11.5px var(--font-ui);color:var(--color-text-muted)">pwa_loyalty_card · une carte par famille · 1 tampon par unité achetée · la PWA rattache chaque ligne d'achat par mot-clé (mot entier, accents ignorés, le plus long l'emporte) ou par catégorie café</div></div>
+            <span style="display:inline-flex;gap:8px"><button onClick="{{ lcReload }}" style="{{ lcBtnS }}">Rafraîchir</button><button onClick="{{ lcNew }}" style="{{ lcBtnP }}">+ Nouvelle carte</button></span>
+          </div>
+          <sc-if value="{{ lcEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:26px;text-align:center;color:var(--color-text-muted);font:13px var(--font-ui)">Aucune carte : créez la première (Pain, Viennoiseries, Café…).</div>
+          </sc-if>
+          <sc-for list="{{ lcCards }}" as="c" hint-placeholder-count="3">
+            <div style="{{ c.rowStyle }}">
+              <span style="{{ c.illusStyle }}"><img src="{{ c.imgSrc }}" alt="" style="width:32px;height:32px;object-fit:contain"/></span>
+              <div style="min-width:0;overflow-wrap:anywhere"><div style="font:600 13px var(--font-ui);color:var(--color-text)">{{ c.name }} <span style="font:400 11px var(--font-mono,monospace);color:var(--color-text-muted)">{{ c.code }}</span></div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ c.kw }}</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ c.cats }}</div></div>
+              <div style="min-width:0;overflow-wrap:anywhere;font:400 12px var(--font-ui);color:var(--color-text)"><span style="{{ c.stampStyle }}"></span>{{ c.seuil }} → {{ c.reward }}<div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ c.validite }}</div></div>
+              <div><span style="{{ c.activeStyle }}">{{ c.activeTxt }}</span><div style="font:400 11px var(--font-ui);color:var(--color-text-muted);margin-top:4px">{{ c.scope }}</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ c.usage }}</div></div>
+              <span style="display:inline-flex;gap:6px"><button onClick="{{ c.toggle }}" style="{{ lcBtnS }}">{{ c.toggleTxt }}</button><button onClick="{{ c.edit }}" style="{{ lcBtnP }}">Modifier</button></span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ lcFormOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:16px;border:.5px solid var(--color-border-secondary);border-radius:12px;padding:16px;background:#fffdfa;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px"><div class="t-section-title" style="font-size:14px">{{ lcFormTitle }}</div>
+              <span style="display:inline-flex;gap:8px">
+                <sc-if value="{{ lcFormHasId }}" hint-placeholder-val="{{ false }}"><button onClick="{{ lcDelete }}" style="background:#fbe9eb;color:#8D1D2C;border:none;border-radius:8px;padding:7px 12px;font:600 11.5px var(--font-ui);cursor:pointer">Supprimer</button></sc-if>
+                <button onClick="{{ lcCancel }}" style="{{ lcBtnS }}">Annuler</button><button onClick="{{ lcSave }}" style="{{ lcBtnP }}">Enregistrer</button></span></div>
+            <!-- Aperçu : la ligne telle que la PWA la montre -->
+            <div style="max-width:390px;border:.5px solid var(--color-border-tertiary);border-radius:10px;background:#fff;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 14px">
+                <span style="{{ lcF.previewIllus }}"><img src="{{ lcF.imgSrc }}" alt="" style="width:30px;height:30px;object-fit:contain"/></span>
+                <div style="flex:1;min-width:0"><div style="font:500 13px var(--font-ui);color:var(--color-text)">{{ lcF.previewName }}</div><div style="font:400 11px var(--font-ui);color:var(--color-text-muted)">{{ lcF.previewSub }}</div><div style="height:3px;background:#eee;border-radius:2px;margin-top:6px"><div style="{{ lcF.previewBar }}"></div></div></div>
+                <span style="font:700 16px var(--font-ui);color:var(--color-text)">{{ lcF.previewCount }}</span>
+              </div>
+              <div style="display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap"><sc-for list="{{ lcF.previewStamps }}" as="s" hint-placeholder-count="10"><span style="{{ s.style }}"></span></sc-for></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Nom de la carte
+                <input value="{{ lcF.name }}" onChange="{{ lcSetName }}" placeholder="ex. Pain" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Code (stable, sans espace — vide = déduit du nom)
+                <input value="{{ lcF.code }}" onChange="{{ lcSetCode }}" placeholder="pain" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Illustration (chemin d'image côté PWA)
+                <input value="{{ lcF.img }}" onChange="{{ lcSetImg }}" placeholder="img/products/bread-1-240.webp" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Tampons requis (1–50)
+                <input type="number" min="1" max="50" value="{{ lcF.req }}" onChange="{{ lcSetReq }}" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Récompense
+                <input value="{{ lcF.reward }}" onChange="{{ lcSetReward }}" placeholder="ex. 1 pain offert" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Validité de la récompense (jours · 0 = sans limite)
+                <input type="number" min="0" value="{{ lcF.days }}" onChange="{{ lcSetDays }}" style="{{ lcInp }}"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Couleur · fond de l'illustration
+                <input type="color" value="{{ lcF.tint }}" onChange="{{ lcSetTint }}" style="height:38px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:2px;background:#fff;width:100%"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Couleur · tampon gagné
+                <input type="color" value="{{ lcF.fill }}" onChange="{{ lcSetFill }}" style="height:38px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:2px;background:#fff;width:100%"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Couleur · accent (bordure, jauge)
+                <input type="color" value="{{ lcF.accent }}" onChange="{{ lcSetAccent }}" style="height:38px;border:.5px solid var(--color-border-secondary);border-radius:9px;padding:2px;background:#fff;width:100%"/></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Portée
+                <select value="{{ lcF.shop }}" onChange="{{ lcSetShop }}" style="{{ lcInp }}"><option value="">Tout le réseau</option><sc-for list="{{ lcShopOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></label>
+              <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Ordre d'affichage
+                <input type="number" value="{{ lcF.sort }}" onChange="{{ lcSetSort }}" style="{{ lcInp }}"/></label>
+              <label style="display:flex;align-items:center;gap:8px;font:600 12px var(--font-ui);color:var(--color-text);padding-top:18px">
+                <input type="checkbox" checked="{{ lcF.active }}" onChange="{{ lcSetActive }}"/> Carte active (visible dans la PWA)</label>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Mots-clés reconnus dans les lignes d'achat (séparés par des virgules · mots entiers · accents ignorés · « pain au chocolat » l'emporte sur « pain »)
+              <textarea rows="2" value="{{ lcF.kw }}" onChange="{{ lcSetKw }}" placeholder="pain, baguette, levain, complet, campagne" style="{{ lcInp }};resize:vertical"></textarea></label>
+            <label style="display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-ui);color:var(--color-text-muted)">Catégories café rattachées (codes séparés par des virgules) <span style="font:400 11px var(--font-ui)">— {{ lcCatHint }}</span>
+              <input value="{{ lcF.cats }}" onChange="{{ lcSetCats }}" placeholder="boissons" style="{{ lcInp }}"/></label>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
       <sc-if value="{{ isAvis }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
@@ -1448,6 +1543,7 @@ class Component extends DCLogic {
     {s:'trace',g:'Pilotage',k:'flux client magasin frequente chalandise couleur'},
     {s:'prospects',g:'Pilotage',k:'candidat developpement implantation orientation attente'},
     {s:'avis',g:'Pilotage',k:'note etoile commentaire satisfaction produit negatif retour feedback'},
+    {s:'fidelite',g:'Pilotage',k:'fidelite carte tampon produit recompense offert bon achat points jauge pwa famille'},
     {s:'comms',g:'Paramétrage',k:'email modele transactionnel gabarit message'},
     {s:'users',g:'Paramétrage',k:'compte role rbac portee droit acces utilisateur'},
     {s:'zones',g:'Paramétrage',k:'chalandise code postal primaire exclusif territoire'},
@@ -1563,7 +1659,7 @@ class Component extends DCLogic {
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
     const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
     fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); }
+  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); }
   // ===== Avis clients (satisfaction) — serveur autoritaire, aucune donnée inventée =====
   avEnsure(){ if(this.state.screen!=='avis') return; const key=String(this.state.avShop||''); if(this._avKey===key && !this._avForce) return; this._avKey=key; this._avForce=false; this.avLoad(); }
   avRefresh(){ this._avForce=true; this.avEnsure(); }
@@ -1616,6 +1712,44 @@ class Component extends DCLogic {
       .then(ok=>{ if(ok) this.setState({rgSocleBusy:false,rgSocle:v,rgSocleDraft:null});
         else this.setState({rgSocleBusy:false}); });
   }
+  // ===== Cartes de fidélité par produit (PWA · pwa_loyalty_card) =====
+  // La marque définit ici les cartes à tampons que la PWA montre à ses clients
+  // (famille, illustration, couleurs, seuil, récompense, mots-clés, portée) et
+  // la jauge points → bon d'achat. Serveur-autoritaire : aucune donnée locale ;
+  // 501 tant que la migration PWA 025 n'est pas passée, et l'écran le dit.
+  lcEnsure(){ if(this.state.screen!=='fidelite') return; if(this._lcDone && !this._lcForce) return; this._lcDone=true; this._lcForce=false; this.lcLoad(); }
+  lcLoad(){ const fr=(typeof window!=='undefined'&&window.__FR)||{};
+    if(!fr.base){ this.setState({lcErr:'API non configurée — les cartes vivent en base (pwa_loyalty_card).',lcData:null,lcLoading:false}); return; }
+    this.setState({lcLoading:true,lcErr:''});
+    fetch(fr.base+'/franchisor/loyalty-cards',{headers:fr.token?{'X-Admin-Token':fr.token}:{},credentials:'omit'})
+      .then(r=>r.json().then(j=>({ok:r.ok,j})).catch(()=>({ok:false,j:null})))
+      .then(x=>{ const j=x.j;
+        if(x.ok&&j&&typeof j==='object'&&Array.isArray(j.cards)) this.setState({lcData:j,lcErr:'',lcLoading:false,lcCfgDraft:null});
+        else this.setState({lcData:null,lcLoading:false,lcErr:(j&&j.error)?String(j.error):'Chargement des cartes en échec.'}); })
+      .catch(()=>this.setState({lcData:null,lcLoading:false,lcErr:'API injoignable (serveur ou réseau).'}));
+  }
+  lcBlank(){ return {id:0,card_code:'',name:'',img:'img/products/bread-1-240.webp',color_tint:'#FBEBD2',color_fill:'#FAC775',color_accent:'#c17a2a',stamps_required:10,reward_label:'',reward_validity_days:30,match_keywords:'',cafe_cat_codes:'',shop_id:'',active:1,sort_order:0}; }
+  lcEdit(c){ this.setState({lcForm:Object.assign(this.lcBlank(), c||{}, {shop_id:(c&&c.shop_id!=null)?String(c.shop_id):''})}); }
+  lcNew(){ const n=((this.state.lcData||{}).cards||[]).length; this.setState({lcForm:Object.assign(this.lcBlank(),{sort_order:n})}); }
+  lcCancel(){ this.setState({lcForm:null}); }
+  lcSet(k,v){ this.setState(st=>({lcForm:Object.assign({},st.lcForm||{},{[k]:v})})); }
+  lcPayload(f){ return Object.assign({},f,{stamps_required:parseInt(f.stamps_required,10)||10, reward_validity_days:Math.max(0,parseInt(f.reward_validity_days,10)||0), sort_order:parseInt(f.sort_order,10)||0, active:f.active?1:0, shop_id:(f.shop_id===''||f.shop_id==null)?null:parseInt(f.shop_id,10)}); }
+  lcSave(){ const f=this.state.lcForm; if(!f||this._lcBusy) return;
+    if(!String(f.name||'').trim()){ this.printJob('⚠ Le nom de la carte est requis.'); return; }
+    if(!String(f.reward_label||'').trim()){ this.printJob('⚠ La récompense est requise (ex. « 1 pain offert »).'); return; }
+    this._lcBusy=true;
+    this.frPost('/franchisor/loyalty-card',this.lcPayload(f)).then(ok=>{ this._lcBusy=false;
+      if(ok){ this.printJob('✓ Carte enregistrée — visible dans la PWA au prochain chargement.'); this.setState({lcForm:null}); this._lcForce=true; this.lcEnsure(); } });
+  }
+  lcToggle(c){ this.frPost('/franchisor/loyalty-card',this.lcPayload(Object.assign({},c,{active:c.active?0:1}))).then(ok=>{ if(ok){ this._lcForce=true; this.lcEnsure(); } }); }
+  // Suppression : refusée par le serveur dès qu'un client porte un tampon (409,
+  // motif affiché) — on désactive alors la carte au lieu de la supprimer.
+  lcDelete(c){ if(!c||!c.id) return; if(typeof window!=='undefined'&&window.confirm&&!window.confirm('Supprimer la carte « '+c.name+' » ?')) return;
+    this.frPost('/franchisor/loyalty-card',{id:c.id,delete:true}).then(ok=>{ if(ok){ this.printJob('Carte supprimée.'); this.setState({lcForm:null}); this._lcForce=true; this.lcEnsure(); } }); }
+  lcCfgSet(k,v){ this.setState(st=>({lcCfgDraft:Object.assign({},st.lcCfgDraft||((st.lcData||{}).config||{}),{[k]:v})})); }
+  lcCfgSave(){ const d=this.state.lcCfgDraft; if(!d||this.state.lcCfgBusy) return; this.setState({lcCfgBusy:true});
+    this.frPost('/franchisor/loyalty-config',{voucher_points:parseInt(d.voucher_points,10)||0, voucher_value:parseFloat(String(d.voucher_value).replace(',','.'))||0, voucher_label:String(d.voucher_label||''), euros_per_point:parseFloat(String(d.euros_per_point).replace(',','.'))||0})
+      .then(ok=>{ this.setState({lcCfgBusy:false}); if(ok){ this.printJob('✓ Jauge points → bon enregistrée.'); this._lcForce=true; this.lcEnsure(); } }); }
   // ===== Connexion Google Business Profile + clés du circuit avis =====
   // Les clés vivent en ws_param (jamais dans les dépôts, publics). Le statut
   // est sondé EN DIRECT chez Google : rien de mémorisé entre deux tests.
@@ -2096,7 +2230,7 @@ class Component extends DCLogic {
       .catch(()=>false); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
     // Cut-off delivery : signal au passage (toast, une fois par jour) et
     // compte à rebours du panneau tenu à jour quand le tableau de bord est
     // affiché. Calcul local (param + tables en mémoire), aucun fetch.
@@ -2281,7 +2415,7 @@ class Component extends DCLogic {
 
     const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
     const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)'],['avis','Avis clients','#C9A227']]},
+      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['fidelite','Cartes de fidélité',APRICOT],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)'],['avis','Avis clients','#C9A227']]},
       {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
     ];
     const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
@@ -2290,8 +2424,8 @@ class Component extends DCLogic {
       chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
       items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
 
-    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin',avis:'Avis clients'};
-    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées',avis:'Satisfaction produits · avis clients par boutique'};
+    const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',fidelite:'Cartes de fidélité',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin',avis:'Avis clients'};
+    const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',fidelite:'Cartes produit à tampons · jauge points → bon d\'achat · pwa_loyalty_card (PWA)',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées',avis:'Satisfaction produits · avis clients par boutique'};
     // Valeur d'un paramètre ws_param : override local (modale profil, réactif) sinon
     // la valeur hydratée depuis /franchisor/params.
     const paramVal=(cle)=>{ const ov=(S.paramOv||{}); if(ov[cle]!==undefined)return String(ov[cle]); const p=(SRV('params')||[]).find(x=>x&&x.cle===cle); return p?String(p.val):undefined; };
@@ -3030,6 +3164,49 @@ class Component extends DCLogic {
       isUsers:S.screen==='users', isZones:S.screen==='zones',
       isProspects:S.screen==='prospects',
       isTrace:S.screen==='trace',
+      isFidelite:S.screen==='fidelite',
+      ...(function(self,S){ const D=S.lcData||null; const cards=(D&&D.cards)||[]; const f=S.lcForm||null; const fb=f||self.lcBlank(); const cfg=S.lcCfgDraft||((D&&D.config)||null);
+        const pwaBase=(D&&D.pwaBase)?(String(D.pwaBase).replace(/\/$/,'')+'/'):'';
+        const inp='border:.5px solid var(--color-border-secondary);border-radius:9px;padding:9px 12px;font:12.5px var(--font-ui);background:#fff;width:100%;box-sizing:border-box';
+        const btnS='background:var(--color-background-secondary);color:var(--color-text);border:none;border-radius:8px;padding:7px 12px;font:600 11.5px var(--font-ui);cursor:pointer';
+        const btnP='background:var(--color-primary);color:#fff;border:none;border-radius:8px;padding:7px 14px;font:600 11.5px var(--font-ui);cursor:pointer';
+        const shopName=(id)=>{ const sh=((D&&D.shops)||[]).find(x=>String(x.id)===String(id)); return sh?sh.name:('boutique #'+id); };
+        const num=(v,d)=>{ const n=parseFloat(String(v!=null?v:d).replace(',','.')); return isFinite(n)?n:d; };
+        const req=Math.max(1,Math.min(50,parseInt(fb.stamps_required,10)||10)); const shown=Math.round(req*0.6);
+        return {
+          lcLoading:!!S.lcLoading, lcHasErr:!!S.lcErr, lcErr:S.lcErr||'', lcHasData:!!D, lcEmpty:!!D&&cards.length===0, lcCount:cards.length+' carte'+(cards.length>1?'s':''),
+          lcReload:()=>{ self._lcForce=true; self.lcEnsure(); }, lcNew:()=>self.lcNew(), lcBtnS:btnS, lcBtnP:btnP, lcInp:inp,
+          lcCards:cards.map(c=>({ id:c.id, name:c.name, code:c.card_code, imgSrc:pwaBase+String(c.img||''),
+            illusStyle:'width:44px;height:44px;border-radius:50%;background:'+c.color_tint+';display:flex;align-items:center;justify-content:center;flex:none',
+            stampStyle:'width:14px;height:14px;border-radius:50%;background:'+c.color_fill+';border:1.5px solid '+c.color_accent+';display:inline-block;vertical-align:-2px;margin-right:4px',
+            seuil:c.stamps_required+' tampons', reward:c.reward_label, validite:c.reward_validity_days>0?('validité '+c.reward_validity_days+' j'):'sans limite de validité',
+            kw:c.match_keywords?('mots-clés : '+c.match_keywords):'aucun mot-clé — rattachement café seulement', cats:c.cafe_cat_codes?('café : '+c.cafe_cat_codes):'',
+            scope:c.shop_id==null?'Tout le réseau':shopName(c.shop_id),
+            usage:(c.usage?c.usage.stamps:0)+' tampons en cours · '+(c.usage?c.usage.clients:0)+' client(s) · '+(c.ready||0)+' récompense(s) prête(s)',
+            activeTxt:c.active?'Active':'Inactive', activeStyle:'display:inline-block;border-radius:999px;padding:3px 9px;font:600 10px var(--font-ui);'+(c.active?'color:#2d6a3e;background:#eaf5ec':'color:#8a8a8a;background:#f0f0f0'),
+            edit:()=>self.lcEdit(c), toggle:()=>self.lcToggle(c), toggleTxt:c.active?'Désactiver':'Activer',
+            rowStyle:'display:grid;grid-template-columns:52px 1.5fr 1.2fr 1.2fr auto;gap:12px;align-items:center;padding:12px 6px;border-bottom:.5px solid var(--color-border-tertiary)'+((f&&f.id===c.id)?';background:#fdf3e7':'') })),
+          lcFormOpen:!!f, lcFormTitle:f?(f.id?('Modifier « '+(f.name||'')+' »'):'Nouvelle carte'):'', lcFormHasId:!!(f&&f.id),
+          lcF:{ name:fb.name||'', code:fb.card_code||'', img:fb.img||'', imgSrc:pwaBase+String(fb.img||''), tint:fb.color_tint||'#FBEBD2', fill:fb.color_fill||'#FAC775', accent:fb.color_accent||'#c17a2a',
+                req:String(fb.stamps_required!=null?fb.stamps_required:10), reward:fb.reward_label||'', days:String(fb.reward_validity_days!=null?fb.reward_validity_days:30), kw:fb.match_keywords||'', cats:fb.cafe_cat_codes||'',
+                shop:(fb.shop_id==null?'':String(fb.shop_id)), active:!!fb.active, sort:String(fb.sort_order||0),
+                previewName:fb.name||'Nom de la carte', previewSub:'Encore '+Math.max(1,req-shown)+', puis '+(fb.reward_label||'…'), previewCount:shown+'/'+req,
+                previewIllus:'width:40px;height:40px;border-radius:50%;background:'+(fb.color_tint||'#FBEBD2')+';display:flex;align-items:center;justify-content:center;flex:none',
+                previewBar:'height:3px;border-radius:2px;background:'+(fb.color_accent||'#c17a2a')+';width:'+Math.round(shown/req*100)+'%',
+                previewStamps:Array.from({length:Math.min(req,10)},(_,i)=>({style:'width:22px;height:22px;border-radius:50%;flex:none;'+(i<shown?('background:'+(fb.color_fill||'#FAC775')+';border:1px solid '+(fb.color_accent||'#c17a2a')):'border:1px dashed #cfc7bb')})) },
+          lcSetName:(e)=>self.lcSet('name',e.target.value), lcSetCode:(e)=>self.lcSet('card_code',e.target.value), lcSetImg:(e)=>self.lcSet('img',e.target.value),
+          lcSetTint:(e)=>self.lcSet('color_tint',e.target.value), lcSetFill:(e)=>self.lcSet('color_fill',e.target.value), lcSetAccent:(e)=>self.lcSet('color_accent',e.target.value),
+          lcSetReq:(e)=>self.lcSet('stamps_required',e.target.value), lcSetReward:(e)=>self.lcSet('reward_label',e.target.value), lcSetDays:(e)=>self.lcSet('reward_validity_days',e.target.value),
+          lcSetKw:(e)=>self.lcSet('match_keywords',e.target.value), lcSetCats:(e)=>self.lcSet('cafe_cat_codes',e.target.value), lcSetShop:(e)=>self.lcSet('shop_id',e.target.value),
+          lcSetActive:(e)=>self.lcSet('active',e.target.checked?1:0), lcSetSort:(e)=>self.lcSet('sort_order',e.target.value),
+          lcSave:()=>self.lcSave(), lcCancel:()=>self.lcCancel(), lcDelete:()=>self.lcDelete(f),
+          lcShopOpts:((D&&D.shops)||[]).map(sh=>({id:String(sh.id),label:sh.name+(sh.city?(' · '+sh.city):'')})),
+          lcCatHint:((D&&D.cafeCategories)||[]).length?('codes disponibles : '+D.cafeCategories.map(c=>c.code+' ('+c.label+')').join(', ')):'aucune catégorie café en base',
+          lcHasCfg:!!cfg, lcCfgDirty:!!S.lcCfgDraft, lcCfgBusy:!!S.lcCfgBusy, lcCfgEditable:!!(cfg&&cfg.voucher_editable!==false),
+          lcCfg:{ points:String(cfg&&cfg.voucher_points!=null?cfg.voucher_points:100), value:String(cfg&&cfg.voucher_value!=null?cfg.voucher_value:5), label:(cfg&&cfg.voucher_label)||'', epp:String(cfg&&cfg.euros_per_point!=null?cfg.euros_per_point:10),
+                  resume:'1 point par '+num(cfg&&cfg.euros_per_point,10)+' € d\'achat · bon de '+num(cfg&&cfg.voucher_value,5)+' € à '+num(cfg&&cfg.voucher_points,100)+' pts' },
+          lcCfgSetPoints:(e)=>self.lcCfgSet('voucher_points',e.target.value), lcCfgSetValue:(e)=>self.lcCfgSet('voucher_value',e.target.value), lcCfgSetLabel:(e)=>self.lcCfgSet('voucher_label',e.target.value), lcCfgSetEpp:(e)=>self.lcCfgSet('euros_per_point',e.target.value), lcCfgSave:()=>self.lcCfgSave(),
+        }; })(this,S),
       isAvis:S.screen==='avis',
       wizStart:()=>this.wizStart(), wizClose:()=>this.wizClose(), wizNext:()=>this.wizNext(), wizBack:()=>this.wizBack(), wizApply:()=>this.wizApply(), wizBusy:!!S.wizBusy,
       wizSelAll:()=>this.wizSelAll(), wizSelNone:()=>this.wizSelNone(),
