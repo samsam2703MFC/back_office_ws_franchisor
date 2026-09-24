@@ -124,7 +124,7 @@
         <sc-if value="{{ b.collapsible }}" hint-placeholder-val="{{ false }}"><button onClick="{{ b.toggle }}" style="{{ b.headStyle }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="{{ b.chevStyle }}"><path d="M9 6l6 6-6 6"/></svg><span style="flex:1;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase">{{ b.label }}</span></button></sc-if>
         <sc-if value="{{ b.open }}" hint-placeholder-val="{{ true }}">
         <sc-for list="{{ b.items }}" as="it" hint-placeholder-count="4">
-          <button onClick="{{ it.go }}" style="{{ it.style }}"><span style="{{ it.dot }}"></span><span style="flex:1;text-align:left">{{ it.label }}</span><span style="{{ it.badgeStyle }}">{{ it.badge }}</span></button>
+          <button onClick="{{ it.go }}" title="{{ it.addr }}" style="{{ it.style }}"><span style="{{ it.dot }}"></span><span style="flex:1;text-align:left">{{ it.label }}</span><span style="{{ it.badgeStyle }}">{{ it.badge }}</span></button>
         </sc-for>
         </sc-if>
       </sc-for>
@@ -1525,7 +1525,7 @@
 class Component extends DCLogic {
   state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', openGroups:{}, flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgSocle:'', rgSocleDraft:null, rgSocleBusy:false, rgDrafts:{}, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
-  go(s){ return ()=>this.setState({screen:s}); }
+  go(s){ return ()=>{ this.addrPush(s); this.setState({screen:s}); }; }
 
   // ===== Recherche profonde =====
   // Une entrée par écran atteignable. Le libellé et l'explication viennent des
@@ -1659,7 +1659,7 @@ class Component extends DCLogic {
   loadPoly(){ if(window.__CPPOLY||this._polyLoading) return; this._polyLoading=true;
     const _mkPoly=(gj)=>{ if(gj&&Array.isArray(gj.features)){ const idx={}; gj.features.forEach(f=>{ const cp=String(f.properties&&f.properties.postcode||''); if(!cp)return; (idx[cp]=idx[cp]||[]).push(f); }); window.__CPPOLY={geo:gj,idx}; this.setState(s=>({_rev:(s._rev||0)+1})); } else { this._polyLoading=false; } };
     fetch('./codes_postaux.geojson').then(r=>r.ok?r.json():null).then(gj=>gj?_mkPoly(gj):fetch('./codes_postaux.json').then(r=>r.ok?r.json():null).then(_mkPoly)).catch(()=>{ this._polyLoading=false; }); }
-  componentDidUpdate(){ this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); }
+  componentDidUpdate(){ this.addrSync(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.loadPoly(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); }
   // ===== Avis clients (satisfaction) — serveur autoritaire, aucune donnée inventée =====
   avEnsure(){ if(this.state.screen!=='avis') return; const key=String(this.state.avShop||''); if(this._avKey===key && !this._avForce) return; this._avKey=key; this._avForce=false; this.avLoad(); }
   avRefresh(){ this._avForce=true; this.avEnsure(); }
@@ -2230,7 +2230,11 @@ class Component extends DCLogic {
       .catch(()=>false); }
   eur(n){ return n.toLocaleString('fr-BE',{minimumFractionDigits:0})+' €'; }
   eur2(n){ return (Math.round(n*100)/100).toLocaleString('fr-BE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
-  componentDidMount(){ this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
+  componentDidMount(){ this.addrApply();
+    this._addrPop=()=>this.addrApply();
+    window.addEventListener('popstate',this._addrPop);
+    window.addEventListener('hashchange',this._addrPop);
+    this.loadPoly(); this.czEnsure(); this.geoEnsure(); this.traceEnsure(); this.avEnsure(); this.rgEnsure(); this.gbEnsure(); this.lcEnsure(); import('./menu_api.js').then(api=>{ this.api=api; const db=api.initDB(); this.setState({menus:db, menuProductId:this.state.menuProductId||Object.keys(db).filter(k=>k!=='_categories')[0]}); }).catch(e=>{ console.error('menu_api load failed',e); this.setState({menuErr:true}); });
     // Cut-off delivery : signal au passage (toast, une fois par jour) et
     // compte à rebours du panneau tenu à jour quand le tableau de bord est
     // affiché. Calcul local (param + tables en mémoire), aucun fetch.
@@ -2425,6 +2429,65 @@ class Component extends DCLogic {
   // Section à déplier pour qu'un écran atteint autrement que par le menu
   // (recherche profonde, lien) se voie dans la colonne.
   navGroupOf(s){ const g=this.navGroupsDef().find(x=>x.items.some(it=>it[0]===s)); return g?g.id:null; }
+
+  /* ── UNE ADRESSE PAR SECTION ────────────────────────────────────────────
+     …/backoffice_franchisor/panier-croise ouvre le Panier Croisé. La console
+     entière tenait sous UNE adresse : impossible d'envoyer un lien vers un
+     écran, de le mettre en favori, ou de revenir en arrière sans sortir de
+     la console. Le serveur sert index.html pour tout segment qui n'est ni
+     fichier ni dossier (.htaccess) ; ici on lit ce segment et on ouvre
+     l'écran. Repli sans serveur : la même adresse en dièse marche aussi.
+     Le libellé est le NOM MÉTIER, pas la clé interne — une adresse se lit. */
+  ADDR_SLUGS = { dash:'tableau-de-bord', geo:'analyse-geographique', catalogue:'catalogue',
+    menus:'menus-et-formules', crosssell:'panier-croise', promos:'promotions-reseau',
+    fidelite:'cartes-de-fidelite', avis:'avis-clients', boutiques:'boutiques',
+    zones:'zones-de-chalandise', prospects:'prospects', trace:'tracabilite-clients',
+    comms:'communications', users:'utilisateurs-et-roles', audit:'journal-d-audit',
+    gouvernance:'gouvernance-produit', prix:'prix-de-reference', config:'config-marque' };
+  addrSlug(s){ return this.ADDR_SLUGS[s]||s; }
+  // Tolérant : « panier-croise », « paniercroise » et « crosssell » ouvrent
+  // le même écran. Une adresse tapée de mémoire ne doit pas tomber à côté.
+  addrNorm(v){ return String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]/g,''); }
+  addrScreenOf(seg){ const k=this.addrNorm(seg); if(!k) return '';
+    if(!this._addrBySeg){ const m={}; Object.keys(this.ADDR_SLUGS).forEach(x=>{ m[this.addrNorm(x)]=x; m[this.addrNorm(this.ADDR_SLUGS[x])]=x; }); this._addrBySeg=m; }
+    return this._addrBySeg[k]||''; }
+  // Dossier de la console, que l'adresse courante nomme déjà une section
+  // (…/panier-croise), le fichier (…/index.html) ou rien (…/).
+  addrBase(){ const p=location.pathname||'/'; const parts=p.split('/');
+    const last=decodeURIComponent(parts[parts.length-1]||'');
+    if(last==='') return p;
+    if(/\./.test(last)||this.addrScreenOf(last)){ parts.pop(); return parts.join('/')+'/'; }
+    return p+'/'; }
+  // Une adresse est faite pour être affichée, survolée et collée : jamais
+  // pour promener le jeton admin (api-config le mémorise déjà).
+  addrQuery(){ let q=location.search||'';
+    try{ const u=new URLSearchParams(location.search);
+      ['token','pin','secret','key','pass'].forEach(k=>u.delete(k));
+      const t=u.toString(); q=t?('?'+t):''; }catch(e){}
+    return q; }
+  addrOf(s){ return this.addrBase()+this.addrSlug(s)+this.addrQuery(); }
+  addrFull(s){ return location.origin+this.addrOf(s); }
+  addrTitle(s){ return 'Adresse de cette section :\n'+this.addrFull(s); }
+  // Navigation depuis le menu : une entrée d'historique, donc « Précédent »
+  // ramène à la section précédente et non hors de la console.
+  addrPush(s){ try{ const w=this.addrBase()+this.addrSlug(s);
+    if(location.pathname!==w) history.pushState(null,'',w+this.addrQuery()); }catch(e){} }
+  // L'adresse suit l'écran même quand il change sans passer par go() :
+  // REMPLACEMENT, pas empilement — ce n'est pas un pas de navigation de plus.
+  addrSync(){ try{ const s=this.state.screen; if(!s) return;
+    const w=this.addrBase()+this.addrSlug(s);
+    if(location.pathname!==w) history.replaceState(null,'',w+this.addrQuery()); }catch(e){} }
+  // Arrivée PAR l'adresse : ouverture, Précédent/Suivant, lien collé.
+  addrApply(){ let seg='';
+    try{ const parts=String(location.pathname||'').replace(/\/+$/,'').split('/'); seg=decodeURIComponent(parts[parts.length-1]||''); }catch(e){}
+    let s=this.addrScreenOf(seg);
+    if(!s){ try{ s=this.addrScreenOf(String(location.hash||'').replace(/^#\/?/,'').split(/[?&]/)[0]); }catch(e){} }
+    // Adresse absente (ouverture sur le dossier) ou déjà juste : on l'ALIGNE
+    // sur l'écran affiché plutôt que de la laisser muette — le lien qu'on
+    // copierait à cet instant ne ramènerait sinon personne où l'on était.
+    if(!s||s===this.state.screen){ this.addrSync(); return; }
+    const g=this.navGroupOf(s);
+    this.setState(st=>({screen:s, openGroups:g?Object.assign({},st.openGroups||{},{[g]:true}):st.openGroups})); }
   renderVals(){
     const S=this.state;
     const SRV=(n)=>(window.BOServer?window.BOServer.table(n):[]);
@@ -2455,7 +2518,7 @@ class Component extends DCLogic {
           else this.setState(st=>({openGroups:{...(st.openGroups||{}),[g.id]:!cur}})); }),
         headStyle:'display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;margin:14px 0 2px;border:none;border-radius:8px;cursor:pointer;text-align:left;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;background:'+((single&&hasActive)?'var(--color-primary)':'transparent')+';color:'+((single&&hasActive)?'#fff':'var(--color-text-muted)'),
         chevStyle:'flex:none;transition:transform .15s'+(single?';opacity:0;width:0':'')+(open?';transform:rotate(90deg)':''),
-        items:g.items.map(([sc,label,c])=>({label,go:this.go(sc),style:this.navStyle(sc,true),dot:dot(this.state.screen===sc?'#fff':c),badge:'',badgeStyle:'display:none'})),
+        items:g.items.map(([sc,label,c])=>({label,go:this.go(sc),style:this.navStyle(sc,true),dot:dot(this.state.screen===sc?'#fff':c),badge:'',badgeStyle:'display:none',addr:this.addrTitle(sc)})),
       };
     });
 
