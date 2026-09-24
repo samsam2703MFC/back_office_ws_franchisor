@@ -17,3 +17,25 @@
   ExpiresActive On
   ExpiresByType text/html "access plus 0 seconds"
 </IfModule>
+
+# ADRESSES DE SECTION (…/backoffice_franchisor/panier-croise).
+#
+# POURQUOI : une console dont tous les écrans partagent UNE adresse ne se
+# partage pas. On ne peut ni envoyer un lien vers « Panier Croisé », ni le
+# mettre en favori, ni revenir en arrière. Chaque écran a donc son adresse.
+#
+# COMMENT : le nom d'une section n'est ni un fichier ni un dossier — les deux
+# conditions ci-dessous l'établissent, et rien d'existant n'est détourné. La
+# requête sert alors index.html, qui lit le chemin et ouvre l'écran demandé.
+# Un seul segment, sans barre finale : depuis « …/panier-croise », les adresses
+# relatives (api-config.js, _ds/…) visent toujours le bon dossier.
+#
+# Si mod_rewrite venait à manquer, le <IfModule> neutralise le bloc : les
+# adresses à dièse (…/#panier-croise) continuent de fonctionner, elles sont
+# gérées entièrement côté navigateur.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^[a-z0-9-]+$ index.html [L]
+</IfModule>
