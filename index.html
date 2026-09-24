@@ -1523,7 +1523,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgSocle:'', rgSocleDraft:null, rgSocleBusy:false, rgDrafts:{}, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
+  state = { geoShop:'', geoFr:'', geoHl:null, czOpen:false, czDraft:'', cz:{id:0,name:'',shop_id:'',cps:[],exclusive:true}, screen:'dash', scope:'__all', openGroups:{}, flags:{}, formKey:null, formVals:{}, formEdit:false, toast:'', prOpen:false, prStep:0, prId:null, prCp:'', prLocality:'', prLocState:'', prFr:'', prBusy:false, traceCp:'', traceHidden:{}, avShop:'', avData:null, avErr:'', avLoading:false, rgList:null, rgErr:'', rgLoading:false, rgSocle:'', rgSocleDraft:null, rgSocleBusy:false, rgDrafts:{}, gbSt:null, gbErr:'', gbBusy:false, gbDraft:{}, wizOpen:false, wizStep:0, wizCatIdx:null, wizPart:'all', wizSubId:null, wizSel:{}, wizName:'', wizSeason:'', wizProps:{web:'keep',office:'keep',actif:'keep',menu:'keep'}, wizBusy:false,
     activeBundle:'b1', sel:{}, schemaOpen:true, menuProductId:'', productPickerOpen:false, productSearch:'', menus:null };
   go(s){ return ()=>this.setState({screen:s}); }
 
@@ -2401,7 +2401,30 @@ class Component extends DCLogic {
          pourquoi, et la saisie reste à l'écran. */
       this.printJob('✖ Création non câblée côté serveur ('+c.table+') — RIEN n\'a été enregistré. Créez cet élément par le canal réel (ERP / route dédiée).');
       return; } }
-  navStyle(s){ const on=this.state.screen===s; return 'display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border:none;border-radius:9px;cursor:pointer;font:'+(on?'600':'500')+' 13px/1 var(--font-ui);text-align:left;'+(on?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text)'); }
+  navStyle(s,sub){ const on=this.state.screen===s; return 'display:flex;align-items:center;gap:11px;width:100%;padding:'+(sub?'9px 12px 9px 26px':'11px 12px')+';border:none;border-radius:9px;cursor:pointer;font:'+(on?'600':'500')+' '+(sub?'12.5px':'13px')+'/1 var(--font-ui);text-align:left;'+(on?'background:var(--color-primary);color:#fff':'background:transparent;color:var(--color-text)'); }
+
+  /* ── SECTIONS ET SOUS-SECTIONS DU MENU ──────────────────────────────────
+     Les quatorze écrans tenaient dans une seule liste « Pilotage » de onze
+     entrées : on cherchait un écran en lisant toute la colonne. Ils sont
+     désormais rangés par métier, chaque section se repliant pour son compte.
+     Aucune section ne se réduit à un seul écran : une tête qui remplace le
+     nom de l'écran le fait disparaître du menu. Le cas reste géré (sa tête
+     devient alors le lien), il n'est simplement pas utilisé. Définition
+     sortie du rendu : la recherche profonde et les futures adresses doivent
+     pouvoir la lire aussi. */
+  navGroupsDef(){ const A='#E8A15C', C='#8C4A2F', P='var(--color-primary)';
+    return [
+      {id:'g_pilotage',label:'Pilotage',items:[['dash','Tableau de bord réseau',C],['geo','Analyse géographique',C]]},
+      {id:'g_catalogue',label:'Catalogue',items:[['catalogue','Catalogue',P],['menus','Menus & formules',C],['crosssell','Panier Croisé',C]]},
+      {id:'g_commercial',label:'Commercial',items:[['promos','Promotions réseau',A],['fidelite','Cartes de fidélité',A],['avis','Avis clients','#C9A227']]},
+      {id:'g_reseau',label:'Réseau',items:[['boutiques','Boutiques',A],['zones','Zones de chalandise',A]]},
+      {id:'g_clients',label:'Clients',items:[['prospects','Prospects',P],['trace','Traçabilité clients','#2e5a8c']]},
+      {id:'g_param',label:'Paramétrage',items:[['comms','Communications',P],['users','Utilisateurs & rôles',C]]},
+    ]; }
+
+  // Section à déplier pour qu'un écran atteint autrement que par le menu
+  // (recherche profonde, lien) se voie dans la colonne.
+  navGroupOf(s){ const g=this.navGroupsDef().find(x=>x.items.some(it=>it[0]===s)); return g?g.id:null; }
   renderVals(){
     const S=this.state;
     const SRV=(n)=>(window.BOServer?window.BOServer.table(n):[]);
@@ -2413,16 +2436,28 @@ class Component extends DCLogic {
     const dot=c=>'width:7px;height:7px;border-radius:50%;flex:none;background:'+c;
     const APRICOT='#E8A15C', COPPER='#8C4A2F';
 
-    const paramNavOpen=S.paramNavOpen!==undefined?S.paramNavOpen:false;
-    const navRaw=[
-      {label:'Pilotage',plain:true,open:true,items:[['dash','Tableau de bord réseau',COPPER],['boutiques','Boutiques',APRICOT],['catalogue','Catalogue','var(--color-primary)'],['menus','Menus & formules',COPPER],['promos','Promotions réseau',APRICOT],['crosssell','Panier Croisé',COPPER],['fidelite','Cartes de fidélité',APRICOT],['geo','Analyse géographique',COPPER],['trace','Traçabilité clients','#2e5a8c'],['prospects','Prospects','var(--color-primary)'],['avis','Avis clients','#C9A227']]},
-      {label:'Paramétrage',collapsible:true,open:paramNavOpen,items:[['comms','Communications','var(--color-primary)'],['users','Utilisateurs & rôles',COPPER],['zones','Zones de chalandise',APRICOT]]},
-    ];
-    const navBlocks=navRaw.map(b=>({label:b.label, plain:!b.collapsible, collapsible:!!b.collapsible, open:b.open,
-      toggle:()=>this.setState(st=>({paramNavOpen:!(st.paramNavOpen!==undefined?st.paramNavOpen:false)})),
-      headStyle:'display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;margin:14px 0 2px;border:none;border-radius:8px;cursor:pointer;text-align:left;background:transparent;color:var(--color-text-muted)',
-      chevStyle:'flex:none;transition:transform .15s'+(b.open?';transform:rotate(90deg)':''),
-      items:b.items.map(([s,label,c])=>({label,go:this.go(s),style:this.navStyle(s),dot:dot(this.state.screen===s?'#fff':c),badge:'',badgeStyle:'display:none'}))}));
+    /* Un seul drapeau `paramNavOpen` pilotait le repli, partagé par TOUTES les
+       sections : avec une seule section repliable ça tenait, la deuxième les
+       aurait ouvertes et fermées ensemble. L'état est donc par section. */
+    const groupsDef=this.navGroupsDef();
+    const navBlocks=groupsDef.map(g=>{
+      const hasActive=g.items.some(([sc])=>sc===S.screen);
+      const single=g.items.length===1;
+      const open=single?false:((S.openGroups||{})[g.id]!==undefined?S.openGroups[g.id]:hasActive);
+      const solo=single?g.items[0][0]:null;
+      return {
+        label:g.label, plain:false, collapsible:true, open,
+        // Section fermée : un clic l'ouvre ET mène à son premier écran ;
+        // section ouverte : le clic la replie. Une section d'un seul écran
+        // est un lien direct.
+        toggle: single ? this.go(solo) : (()=>{ const cur=(S.openGroups||{})[g.id]!==undefined?S.openGroups[g.id]:hasActive;
+          if(!hasActive){ this.setState(st=>({openGroups:{...(st.openGroups||{}),[g.id]:true}})); this.go(g.items[0][0])(); }
+          else this.setState(st=>({openGroups:{...(st.openGroups||{}),[g.id]:!cur}})); }),
+        headStyle:'display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;margin:14px 0 2px;border:none;border-radius:8px;cursor:pointer;text-align:left;font:600 10px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;background:'+((single&&hasActive)?'var(--color-primary)':'transparent')+';color:'+((single&&hasActive)?'#fff':'var(--color-text-muted)'),
+        chevStyle:'flex:none;transition:transform .15s'+(single?';opacity:0;width:0':'')+(open?';transform:rotate(90deg)':''),
+        items:g.items.map(([sc,label,c])=>({label,go:this.go(sc),style:this.navStyle(sc,true),dot:dot(this.state.screen===sc?'#fff':c),badge:'',badgeStyle:'display:none'})),
+      };
+    });
 
     const titles={dash:'Tableau de bord réseau',boutiques:'Boutiques',audit:'Journal d\'audit',catalogue:'Catalogue',gouvernance:'Gouvernance produit',prix:'Prix de référence',menus:'Menus & formules',promos:'Promotions réseau',crosssell:'Panier Croisé',fidelite:'Cartes de fidélité',config:'Config marque',comms:'Communications',users:'Utilisateurs & rôles',zones:'Zones de chalandise',geo:'Analyse géographique',prospects:'Prospects & développement réseau',trace:'Traçabilité client ↔ magasin',avis:'Avis clients'};
     const subs={dash:'Consolidé multi-boutiques · L\'Atelier By',boutiques:'Identité · branding · webshop',audit:'Traçabilité des actions sensibles',catalogue:'Produits · catégories · i18n',gouvernance:'Whitelist & obligations réseau',prix:'Prix conseillés marque',menus:'Éditeur de formules produit · ws_bundles',promos:'Bons & règles à portée réseau',crosssell:'Ventes croisées · si le panier contient X, proposer Y — période, heures de retrait, périmètre',fidelite:'Cartes produit à tampons · jauge points → bon d\'achat · pwa_loyalty_card (PWA)',config:'Paramètres généraux (liste blanche)',comms:'Modèles d\'email transactionnels',users:'Comptes back-office & portée (RBAC)',zones:'Zones primaires par point de vente · codes postaux · ws_franchisor_catchment',geo:'Carte des clients · répartition autour des boutiques du réseau',prospects:'Suivi des prospects · orientation vers un franchisé ou mise en attente',trace:'Flux clients : couleur = magasin fréquenté · zones de chalandise superposées',avis:'Satisfaction produits · avis clients par boutique'};

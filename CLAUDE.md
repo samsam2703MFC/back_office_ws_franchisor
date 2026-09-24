@@ -35,6 +35,19 @@ préférence. Elle se change en éditant ce tableau — dans les **deux** dépô
 > migration 0085). La répartition ci-dessus reste inchangée pour tout le
 > reste.
 
+> **Note du 24/09/2026 — exception ponctuelle demandée explicitement par
+> l'utilisateur :** la session « franchisé » a réorganisé la COLONNE DE
+> NAVIGATION de cette console en sections et sous-sections (`navGroupsDef()`
+> et `navGroupOf()` près de `navStyle`, construction de `navBlocks` dans
+> `renderVals`). Les quatorze écrans tenaient dans une liste « Pilotage » de
+> onze entrées ; ils sont désormais rangés en six sections repliables :
+> Pilotage, Catalogue, Commercial, Réseau, Clients, Paramétrage. Au passage,
+> le repli n'est plus piloté par le drapeau unique `paramNavOpen` — partagé
+> par toutes les sections, il les aurait ouvertes et fermées ensemble dès la
+> deuxième — mais par `state.openGroups`, un état par section. Session
+> marque : pour ajouter un écran au menu, éditer `navGroupsDef()`, pas
+> `renderVals`. La répartition ci-dessus reste inchangée pour tout le reste.
+
 ## Pourquoi
 
 Trois incidents en une seule journée, tous dus au travail en parallèle :
